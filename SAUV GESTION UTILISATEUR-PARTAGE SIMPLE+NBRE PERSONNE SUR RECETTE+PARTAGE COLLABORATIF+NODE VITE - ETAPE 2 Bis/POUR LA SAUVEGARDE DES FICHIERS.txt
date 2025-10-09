@@ -1,0 +1,28 @@
+  Voici la liste exacte de ce que vous devez copier de votre PC du travail vers votre PC à la maison :
+
+  Dossiers à copier :
+  *   src/ (contient tout votre code JS et CSS)
+  *   public/ (contient robot.txt pour l'indexation des moteurs de recherche)
+  *   SAUV.../ (tous vos dossiers de sauvegarde, si vous voulez les conserver)
+
+
+  Fichiers à la racine à copier :
+  *   index.html
+  *   login.html
+  *   package.json (très important, décrit votre projet et ses dépendances)
+  *   package-lock.json (très important, garantit que vous aurez les mêmes versions de librairies partout)
+  *   vite.config.js (la configuration de Vite)
+  *   PROMPT.txt (si vous voulez le garder)
+
+
+  IMPORTANT : Ne copiez surtout pas le dossier node_modules s'il existe. Ce dossier est lourd et sera recréé automatiquement.
+
+
+  Une fois que vous avez copié ces éléments sur votre nouveau PC, la procédure est celle du guide :
+  1.  Installer Node.js (si ce n'est pas déjà fait).
+  2.  Ouvrir un terminal dans le dossier du projet.
+  3.  Lancer npm install (cela va recréer le dossier node_modules).
+  4.  Lancer npm run dev pour démarrer l'application.
+
+
+  En résumé : copiez tout sauf le dossier node_modules.

@@ -1,0 +1,22 @@
+Contexte et règles de fonctionnement :
+1.	Gestion des amis
+o	Un utilisateur peut rechercher une autre personne par nom et prénom.
+o	Si la personne existe déjà dans l’application, elle apparaît dans les résultats.
+o	L’utilisateur peut lui envoyer une invitation d’amitié.
+o	La personne reçoit l’invitation dans sa boîte aux lettres interne de l’application.
+o	Si elle accepte, elle apparaît dans la liste d’amis de l’utilisateur.
+o	Si la personne n’est pas inscrite, l’utilisateur peut lui envoyer une invitation par email.
+o	Quand cette personne s’inscrit, elle apparaît automatiquement dans la liste d’amis.
+
+2.	Partage de contenu
+o	Quand l’utilisateur clique sur “Partager” depuis une planification ou une liste de courses :
+	Il voit sa liste d’amis.
+	Il peut sélectionner une ou plusieurs personnes.
+	Il choisit s’il veut partager la planification et/ou la liste de courses.
+o	Après validation, les amis reçoivent un message dans leur boîte aux lettres.
+o	Si l’ami accepte le partage :
+	La planification partagée apparaît dans un menu “Planifications partagées”.
+	Les listes partagées apparaissent dans un menu “Listes partagées”.
+
+3.	Règles de modification
+o	Quand une planification ou une liste est partagée, la personne qui la reçoit peut la modifier, mais sans modifier la version originale de l’expéditeur.

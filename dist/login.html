@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - GustoPlan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.8.1/firebase-ui-auth.css" />
+    <style>
+        body {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Bienvenue sur GustoPlan</h1>
+            <p class="text-gray-600 mt-2">Veuillez vous connecter pour continuer</p>
+        </div>
+        <div id="firebaseui-auth-container"></div>
+        <div id="loader" class="text-center p-4">Chargement...</div>
+    </div>
+
+    <!-- Firebase v9 Compatibility scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <!-- FirebaseUI JS -->
+    <script src="https://www.gstatic.com/firebasejs/ui/4.8.1/firebase-ui-auth.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Utilise la configuration du nouveau projet
+            const firebaseConfig = {
+                apiKey: "AIzaSyAf2Fmg5SBU6zpZ9r-VP_eTF49r-e1go7Q",
+                authDomain: "gustoplan-dev.firebaseapp.com",
+                projectId: "gustoplan-dev",
+                storageBucket: "gustoplan-dev.firebasestorage.app",
+                messagingSenderId: "554162135180",
+                appId: "1:554162135180:web:f5addf322a0977ffe31ba9"
+            };
+
+            // Initialise Firebase avec la syntaxe de compatibilité
+            firebase.initializeApp(firebaseConfig);
+
+            const ui = new firebaseui.auth.AuthUI(firebase.auth());
+
+            const uiConfig = {
+                callbacks: {
+                    signInSuccessWithAuthResult: function(authResult, redirectUrl) {
+                        const user = authResult.user;
+                        if (user) {
+                            const db = firebase.firestore();
+                            const userRef = db.collection('users').doc(user.uid);
+                            userRef.set({
+                                uid: user.uid,
+                                displayName: user.displayName,
+                                email: user.email,
+                                photoURL: user.photoURL,
+                                displayName_lowercase: user.displayName ? user.displayName.toLowerCase() : ''
+                            }, { merge: true }).then(() => {
+                                window.location.assign('/');
+                            }).catch(error => {
+                                console.error("Error writing user to Firestore: ", error);
+                                // Even if there's an error, we still redirect
+                                window.location.assign('/');
+                            });
+                        }
+                        return false; // We handle the redirect manually
+                    },
+                    uiShown: function() {
+                        document.getElementById('loader').style.display = 'none';
+                    }
+                },
+                credentialHelper: firebaseui.auth.CredentialHelper.NONE,
+                signInFlow: 'popup',
+                signInOptions: [
+                    firebase.auth.EmailAuthProvider.PROVIDER_ID,
+                    {
+                      provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                      customParameters: {
+                        prompt: 'select_account'
+                      }
+                    }
+                ]
+            };
+
+            // Lance le widget FirebaseUI
+            ui.start('#firebaseui-auth-container', uiConfig);
+        });
+    </script>
+
+</body>
+</html>
