@@ -1,6 +1,6 @@
 {
   "name": "menu",
-  "homepage": "https://VOTRE_NOM.github.io/gustoplan",
+  "homepage": "https://killbill81.github.io/gustoplan",
   "version": "1.0.0",
   "description": "",
   "main": "auth.js",
@@ -15,6 +15,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "vite": "^7.1.7"
   },
   "dependencies": {

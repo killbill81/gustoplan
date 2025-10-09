@@ -46,6 +46,10 @@ build/Release
 
 # Dependency directories
 node_modules/
+dist/
+
+# Backup directories
+SAUV*/
 
 # Optional npm cache directory
 .npm
