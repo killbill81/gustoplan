@@ -50,6 +50,7 @@ dist/
 
 # Backup directories
 SAUV*/
+dist - Copie/
 
 # Optional npm cache directory
 .npm
