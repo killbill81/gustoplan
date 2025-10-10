@@ -1,0 +1,53 @@
+Voici un résumé de la procédure pour synchroniser votre travail entre plusieurs ordinateurs en utilisant Git et GitHub.
+
+============================================================
+MISE EN PLACE INITIALE (À FAIRE UNE SEULE FOIS PAR NOUVEAU PC)
+============================================================
+
+Lorsque vous configurez le projet sur un nouvel ordinateur (par exemple, votre PC personnel pour la première fois).
+
+1. Clonez le dépôt depuis GitHub :
+   Ouvrez un terminal et tapez :
+   git clone https://github.com/killbill81/gustoplan.git
+
+2. Allez dans le dossier du projet :
+   cd gustoplan  (ou le nom du dossier qui a été créé)
+
+3. Installez les dépendances (Vite, Firebase, etc.) :
+   npm install
+
+Après ces trois étapes, votre projet est prêt. Vous pouvez le lancer avec `npm run dev`.
+
+
+============================================================
+ROUTINE QUOTIDIENNE (À FAIRE À CHAQUE FOIS)
+============================================================
+
+---
+### Quand vous COMMENCEZ à travailler sur un PC :
+---
+
+Avant de commencer à coder, assurez-vous d'avoir la version la plus récente du code.
+
+1. Récupérez les dernières modifications depuis GitHub :
+   git pull origin master
+
+
+---
+### Quand vous AVEZ FINI de travailler sur un PC :
+---
+
+Avant de quitter votre poste, envoyez toutes vos modifications sur GitHub pour pouvoir les récupérer ailleurs.
+
+1. Ajoutez tous vos fichiers modifiés :
+   git add .
+
+2. Créez un "commit" (un instantané de vos changements) avec un message descriptif :
+   git commit -m "Décrivez ici les changements que vous avez faits"
+
+3. Envoyez votre "commit" sur GitHub :
+   git push origin master
+
+
+En résumé, le cycle est :
+PULL -> TRAVAILLER -> ADD -> COMMIT -> PUSH
