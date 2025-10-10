@@ -1,13 +1,13 @@
 {
   "name": "menu",
-  "homepage": "https://killbill81.github.io/gustoplan",
   "version": "1.0.0",
   "description": "",
   "main": "auth.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "gh-pages -d dist",
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist -r https://github.com/killbill81/killbill81.github.io.git -b main",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,7 +16,8 @@
   "type": "commonjs",
   "devDependencies": {
     "gh-pages": "^6.3.0",
-    "vite": "^7.1.7"
+    "vite": "^7.1.7",
+    "vite-plugin-javascript-obfuscator": "^3.1.0"
   },
   "dependencies": {
     "firebase": "^12.3.0",

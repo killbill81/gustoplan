@@ -399,10 +399,24 @@ const routes = {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="md:col-span-2">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Liste d'amis</h3>
-                <div id="friends-list-container" class="space-y-4">
-                    <!-- La liste d'amis sera chargée ici -->
+            <div class="md:col-span-2 space-y-8">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Liste d'amis</h3>
+                    <div id="friends-list-container" class="space-y-4">
+                        <!-- La liste d'amis sera chargée ici -->
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Demandes envoyées en attente</h3>
+                    <div id="pending-requests-container" class="space-y-4">
+                        <!-- Les demandes envoyées en attente seront chargées ici -->
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Demandes rejetées</h3>
+                    <div id="declined-requests-container" class="space-y-4">
+                        <!-- Les demandes rejetées seront chargées ici -->
+                    </div>
                 </div>
             </div>
             <div>
@@ -446,7 +460,7 @@ const routes = {
     }
 };
 
-const modules = import.meta.glob('./*.js');
+const modules = import.meta.glob('./*.js', { eager: true });
 let currentCleanup = null;
 
 async function navigateTo(path) {
@@ -459,9 +473,8 @@ async function navigateTo(path) {
     if (route && mainContent) {
         mainContent.innerHTML = route.html;
         if (route.script) {
-            const moduleLoader = modules[route.script];
-            if (moduleLoader) {
-                const module = await moduleLoader();
+            const module = modules[route.script];
+            if (module) {
                 if (module.default && typeof module.default === 'function') {
                     currentCleanup = module.default(); // Store the returned cleanup function
                 }
