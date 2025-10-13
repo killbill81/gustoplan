@@ -262,7 +262,6 @@ export default function init() {
             menuData = weekData.menuData || {};
             servingsData = weekData.servingsData || {};
             remarksData = weekData.remarksData || {};
-            // These settings are per-plan, not per-week
             defaultNumPeople = currentPlan.defaultNumPeople || 1;
             startDay = currentPlan.startDay || 'Lundi';
         }
@@ -1446,11 +1445,13 @@ export default function init() {
         elements.nextWeekBtn?.addEventListener('click', () => changeWeek(currentWeek + 1));
         elements.clearMenuBtn?.addEventListener('click', clearMenu);
         
-        elements.startDaySelect?.addEventListener('change', (event) => { 
+        elements.startDaySelect?.addEventListener('change', async (event) => { 
             startDay = event.target.value; 
-            if (currentPlan) currentPlan.startDay = startDay;
-            renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false); 
-            saveCurrentPlan();
+            if (currentPlan) {
+                const planRef = doc(db, "plans", currentPlan.id);
+                await updateDoc(planRef, { startDay: startDay, lastUpdated: new Date() });
+            }
+            // No need to re-render, the listener will catch the change
         });
 
         elements.planSelect?.addEventListener('change', loadPlanFromSelection);
@@ -1560,14 +1561,25 @@ export default function init() {
     }
 
     async function handleServingsChange(servingsKey, newValue) {
+        if (!currentPlan) return;
+
+        const newServingsData = JSON.parse(JSON.stringify(servingsData));
+
         if (newValue === defaultNumPeople) {
-            delete servingsData[servingsKey]; // Revert to default, clean up data
+            delete newServingsData[servingsKey]; // Revert to default
         } else {
-            servingsData[servingsKey] = newValue;
+            newServingsData[servingsKey] = newValue;
         }
-        renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false); // Re-render to apply style changes
-        await saveCurrentPlan();
-        await generateShoppingListFromPlan();
+
+        const planRef = doc(db, "plans", currentPlan.id);
+        try {
+            await updateDoc(planRef, {
+                [`weeks.${currentWeek}.servingsData`]: newServingsData,
+                lastUpdated: new Date()
+            });
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour du nombre de personnes: ", error);
+        }
     }
 
     async function initializeApp() {
@@ -1578,7 +1590,6 @@ export default function init() {
         setupShoppingListAutocomplete();
 
         await fetchMasterIngredients();
-        await loadAvailableMeals();
         await loadAvailableMeals();
 
         // Get all plans for the user and populate the selector

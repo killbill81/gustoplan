@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, writeBatch, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, arrayUnion, arrayRemove, writeBatch, serverTimestamp, onSnapshot, deleteDoc, addDoc } from "firebase/firestore";
 import { getCurrentUser } from './auth.js';
 
 let unsubscribeFriends = () => {};
@@ -81,20 +81,21 @@ function createFriendCard(friendData) {
 
 async function removeFriend(friendId) {
     const currentUserId = getCurrentUser()?.uid;
-    if (!currentUserId || !friendId) return;
+    if (!currentUserId || !friendId) {
+        console.error("Impossible de supprimer l'ami : ID utilisateur ou ID ami manquant.");
+        return;
+    }
 
-    if (!confirm("Voulez-vous vraiment retirer cet ami ?")) return;
+    if (!confirm("Voulez-vous vraiment retirer cet ami ? Cette action est unilatérale.")) return;
 
+    console.log(`Tentative de suppression de l'ami ${friendId} pour l'utilisateur ${currentUserId}`);
     const userRef = doc(db, "users", currentUserId);
-    const friendRef = doc(db, "users", friendId);
-
-    const batch = writeBatch(db);
-    batch.update(userRef, { friends: arrayRemove(friendId) });
-    batch.update(friendRef, { friends: arrayRemove(currentUserId) });
 
     try {
-        await batch.commit();
-        // loadFriends() will be called automatically by the onSnapshot listener
+        await updateDoc(userRef, { 
+            friends: arrayRemove(friendId) 
+        });
+        console.log("Ami supprimé avec succès de la base de données.");
     } catch (error) {
         console.error("Erreur lors de la suppression de l'ami: ", error);
         alert("Une erreur est survenue.");
@@ -110,25 +111,41 @@ async function searchUsers(searchTerm) {
 
     try {
         const lowerCaseTerm = searchTerm.toLowerCase();
-        const q = query(collection(db, "users"), where("keywords", "array-contains", lowerCaseTerm));
-        const querySnapshot = await getDocs(q);
+        const endTerm = lowerCaseTerm + '\uf8ff';
+
+        // Requête 1 : Recherche par nom
+        const nameQuery = query(
+            collection(db, "users"), 
+            where("displayName_lowercase", ">=", lowerCaseTerm),
+            where("displayName_lowercase", "<", endTerm)
+        );
+
+        // Requête 2 : Recherche par email
+        const emailQuery = query(collection(db, "users"), where("email", "==", lowerCaseTerm));
+
+        // Exécute les deux requêtes en parallèle
+        const [nameSnapshot, emailSnapshot] = await Promise.all([getDocs(nameQuery), getDocs(emailQuery)]);
+
+        // Fusionne les résultats sans doublons
+        const results = new Map();
+        nameSnapshot.forEach(doc => results.set(doc.id, doc.data()));
+        emailSnapshot.forEach(doc => results.set(doc.id, doc.data()));
 
         resultsContainer.innerHTML = '';
-        if (querySnapshot.empty) {
+        if (results.size === 0) {
             resultsContainer.innerHTML = '<p class="text-gray-500">Aucun utilisateur trouvé.</p>';
             return;
         }
 
-        querySnapshot.forEach(doc => {
-            const userData = doc.data();
-            if (userData.uid === currentUserId) return; // Don't show self
+        results.forEach(userData => {
+            if (userData.uid === currentUserId) return; // Ne pas s'afficher soi-même
 
             const card = document.createElement('div');
             card.className = 'bg-gray-50 p-2 rounded-lg flex items-center justify-between';
             card.innerHTML = `
                 <div class="flex items-center">
                     <img src="${userData.photoURL || 'https://placehold.co/32'}" class="w-8 h-8 rounded-full mr-2">
-                    <span class="font-medium text-sm">${userData.displayName}</span>
+                    <span class="font-medium text-sm">${userData.displayName} (${userData.email})</span>
                 </div>
             `;
             const addButton = document.createElement('button');
@@ -149,12 +166,18 @@ async function sendFriendRequest(receiverId) {
     if (!senderId || senderId === receiverId) return;
 
     // Check if a request already exists
-    const q = query(collection(db, "friend_requests"), 
-        where("senderId", "in", [senderId, receiverId]), 
-        where("receiverId", "in", [senderId, receiverId])
+    const q1 = query(collection(db, "friend_requests"), 
+        where("senderId", "==", senderId), 
+        where("receiverId", "==", receiverId)
     );
-    const existingRequest = await getDocs(q);
-    if (!existingRequest.empty) {
+    const q2 = query(collection(db, "friend_requests"),
+        where("senderId", "==", receiverId),
+        where("receiverId", "==", senderId)
+    );
+
+    const [existingRequest1, existingRequest2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+
+    if (!existingRequest1.empty || !existingRequest2.empty) {
         return alert("Une demande d'ami existe déjà avec cet utilisateur.");
     }
 
@@ -265,28 +288,14 @@ function createRequestCard(request) {
 
 // --- Functions to be called by notifications.js ---
 
-export async function acceptFriendRequest(requestId, senderId) {
-    const currentUserId = getCurrentUser()?.uid;
-    if (!currentUserId || !senderId) return;
-
-    const userRef = doc(db, "users", currentUserId);
-    const senderRef = doc(db, "users", senderId);
-    const requestRef = doc(db, "friend_requests", requestId);
-
-    const batch = writeBatch(db);
-
-    // Add each user to the other's friends list
-    batch.update(userRef, { friends: arrayUnion(senderId) });
-    batch.update(senderRef, { friends: arrayUnion(currentUserId) });
-
-    // Delete the friend request
-    batch.delete(requestRef);
-
+export async function acceptFriendRequest(requestId) {
     try {
-        await batch.commit();
+        const requestRef = doc(db, "friend_requests", requestId);
+        // La Cloud Function se chargera de la logique de création d'amitié
+        await updateDoc(requestRef, { status: 'accepted' });
     } catch (error) {
         console.error("Erreur lors de l'acceptation de la demande d'ami: ", error);
-        throw error; // Re-throw to be caught by the caller
+        throw error;
     }
 }
 

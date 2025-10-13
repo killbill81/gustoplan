@@ -17,7 +17,30 @@ initializeApp({
 
 const db = getFirestore();
 
-// Liste de toutes les collections à sauvegarder
+// --- Fonctions de Nettoyage ---
+async function cleanupFriends() {
+    console.log("--- Lancement du nettoyage des listes d'amis ---");
+    const usersRef = db.collection('users');
+    let totalUsersUpdated = 0;
+    try {
+        const snapshot = await usersRef.get();
+        if (snapshot.empty) {
+            console.log("Aucun utilisateur à nettoyer.");
+            return;
+        }
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, { friends: [] });
+            totalUsersUpdated++;
+        });
+        await batch.commit();
+        console.log(`\n✅ ${totalUsersUpdated} utilisateurs ont vu leur liste d'amis vidée.`);
+    } catch (error) {
+        console.error("\n❌ Erreur lors du nettoyage des amis :", error);
+    }
+}
+
+// --- Fonctions de Sauvegarde ---
 const collectionsToBackup = [
     'active_shopping_list',
     'friend_requests',
@@ -66,5 +89,12 @@ async function runBackup() {
     console.log("--- Fin du script ---");
 }
 
-// Lance le script
-runBackup();
+// --- Exécution du script ---
+
+const command = process.argv[2]; // Récupère le premier argument après le nom du script
+
+if (command === 'cleanup_friends') {
+    cleanupFriends().then(() => console.log("--- Fin du script ---"));
+} else {
+    runBackup();
+}

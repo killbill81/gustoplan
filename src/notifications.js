@@ -84,9 +84,9 @@ async function declineShare(shareId) {
 }
 
 // --- Friend Request Handling ---
-async function handleAcceptFriendRequest(notificationId, senderId) {
+async function handleAcceptFriendRequest(notificationId) {
     try {
-        await acceptFriendRequest(notificationId, senderId);
+        await acceptFriendRequest(notificationId);
     } catch {
         alert("Erreur lors de l'acceptation.");
     }
@@ -140,7 +140,9 @@ function renderNotification(notification) {
     const buttonsDiv = document.createElement('div');
     buttonsDiv.className = 'flex space-x-2 justify-end';
 
-    if (notification.data.type === 'collaborative_plan_invite') {
+    const notificationType = notification.data.type || notification.type;
+
+    if (notificationType === 'collaborative_plan_invite') {
         title.textContent = `Invitation à collaborer`;
         info.textContent = `${notification.sender.displayName} vous invite à modifier son plan "${notification.data.planName}".`;
 
@@ -155,7 +157,7 @@ function renderNotification(notification) {
         });
         buttonsDiv.append(acceptBtn, declineBtn);
 
-    } else if (notification.type === 'share') {
+    } else if (notificationType === 'share') {
         title.textContent = `Partage de ${notification.sender.displayName || notification.sender.email}`;
         let sharedItems = [];
         if (notification.data.plan) sharedItems.push('planification');
@@ -173,14 +175,14 @@ function renderNotification(notification) {
         });
         buttonsDiv.append(acceptBtn, declineBtn);
 
-    } else if (notification.type === 'friend_request') {
+    } else if (notificationType === 'friend_request') {
         title.textContent = `Invitation d'ami`;
         info.textContent = `${notification.sender.displayName || notification.sender.email} vous a envoyé une invitation.`;
 
         const acceptBtn = createButton('Accepter', 'btn-secondary', (e) => {
             e.target.textContent = '...';
             e.target.disabled = true;
-            handleAcceptFriendRequest(notification.id, notification.data.senderId);
+            handleAcceptFriendRequest(notification.id);
         });
         const declineBtn = createButton('Refuser', 'btn-ghost text-red-500', (e) => {
             e.target.disabled = true;
@@ -216,7 +218,7 @@ function listenForShares(userId) {
             const senderDoc = await getDoc(doc(db, 'users', share.senderId));
             if (senderDoc.exists()) {
                 shares.push({
-                    type: 'share',
+                    type: share.type || 'share', // Utilise le type du document, avec 'share' comme fallback
                     id: shareDoc.id,
                     data: share,
                     sender: senderDoc.data(),
