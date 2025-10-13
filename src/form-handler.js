@@ -21,6 +21,7 @@ class RecipeFormHandler {
         this.cancelButton = document.getElementById(cancelButtonId);
 
         this.masterIngredientList = [];
+        this.activityUpdater = null; // Pour le suivi d'activité
 
         // Bind methods to ensure 'this' context is correct and allow for removal
         this.boundAddIngredient = () => this.addIngredientInput(undefined, this.form.ingredients);
@@ -33,6 +34,10 @@ class RecipeFormHandler {
         this.saveRecipeBtn.addEventListener('click', this.boundHandleSubmit);
     }
 
+    setActivityUpdater(updaterFn) {
+        this.activityUpdater = updaterFn;
+    }
+
     destroy() {
         this.addIngredientBtn.removeEventListener('click', this.boundAddIngredient);
         this.closeButton.removeEventListener('click', this.boundCloseForm);
@@ -41,6 +46,10 @@ class RecipeFormHandler {
     }
 
     async openForm(recipe = null, title = 'Ajouter une recette') {
+        if (this.activityUpdater) {
+            this.activityUpdater('editing_recipe');
+        }
+
         await this.fetchMasterIngredients(); // Charger les ingrédients de base
 
         console.log("openForm called with recipe:", recipe, "and title:", title);
@@ -82,6 +91,9 @@ class RecipeFormHandler {
     }
 
     closeForm() {
+        if (this.activityUpdater) {
+            this.activityUpdater('idle');
+        }
         this.modal.classList.add('hidden');
     }
 

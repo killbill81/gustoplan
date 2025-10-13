@@ -240,21 +240,11 @@ Le comportement correspond à Office 365 (perçu immédiat).
 
 
 
-##### **Étape 7 — Présence \& actions en cours (avatars + “Sophie ajoute …”)**
+##### **En cours --- Étape 7 — Présence \& actions en cours (avatars + “Sophie ajoute …”)**
 
 
 
 Objectif : voir qui est connecté et afficher action en cours.
-
-Tâches :
-
-
-
-Utiliser Realtime Database pour présence : presence/{uid}/{planId} = {status: "online", lastSeen} ; set onDisconnect à offline.
-
-
-
-Lorsqu’un utilisateur commence à éditer un item : écrire plans/{planId}/locks/{itemId} = {uid, action:"editing", startedAt}. Supprimer lock à la fin.
 
 
 

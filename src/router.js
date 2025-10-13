@@ -63,6 +63,11 @@ const routes = {
                                     <div id="collaborators-bar" class="flex items-center space-x-2 mb-4 hidden">
                                         <!-- Avatars will be injected here -->
                                     </div>
+
+                                    <!-- Activity Labels -->
+                                    <div id="activity-labels-container" class="text-sm text-gray-600 mb-4 h-6">
+                                        <!-- e.g., 'Sophie is adding a recipe...' -->
+                                    </div>
                             
                                             <!-- Settings Section -->
                                             <div class="inline-flex items-center space-x-6 bg-white p-3 rounded-lg shadow-sm mb-4">                                        <div>

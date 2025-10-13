@@ -5,6 +5,7 @@ import { RecipeFormHandler } from './form-handler.js';
 import { getCurrentUserId } from './auth.js';
 import { openShareModal } from './sharing.js';
 import { initPlanManagement, getUserPlans, populatePlanSelector } from './plans.js';
+import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
 
 let editRecipeFormHandler = null;
 
@@ -153,6 +154,8 @@ export default function init() {
         'close-edit-recipe-modal',
         'edit-cancel-recipe-btn'
     );
+
+    editRecipeFormHandler.setActivityUpdater(updateUserActivity);
 
     editRecipeFormHandler.setOnSaveCallback(async () => {
         await loadAvailableMeals();
@@ -1592,26 +1595,41 @@ export default function init() {
         return initials.substring(0, 2).toUpperCase();
     }
 
-    function renderCollaborators(participants = []) {
-        const container = document.getElementById('collaborators-bar');
+    function updateCollaboratorsUI(allParticipants = [], presences = {}) {
+        const avatarContainer = document.getElementById('collaborators-bar');
+        const activityContainer = document.getElementById('activity-labels-container');
         const tooltip = document.getElementById('name-tooltip');
-        if (!container || !tooltip) return;
+        if (!avatarContainer || !tooltip || !activityContainer) return;
 
-        container.innerHTML = '';
-        if (participants.length <= 1) {
-            container.classList.add('hidden');
+        avatarContainer.innerHTML = '';
+        activityContainer.innerHTML = '';
+
+        if (allParticipants.length <= 1 && Object.keys(presences).length <= 1) {
+            avatarContainer.classList.add('hidden');
             return;
         }
 
-        participants.forEach(p => {
+        let activityHtml = '';
+        allParticipants.forEach(p => {
+            if (!p) return;
+
+            const isOnline = presences.hasOwnProperty(p.uid);
+            const presenceInfo = presences[p.uid] || {};
+
             const avatar = document.createElement('div');
-            avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-gray-300 text-white font-bold text-xs ring-2 ring-white cursor-pointer';
-            avatar.dataset.name = p.displayName || 'Inconnu';
+            avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-gray-300 text-white font-bold text-xs ring-2 ring-white cursor-pointer transition-all duration-300';
+            
+            const statusText = isOnline ? '(présent)' : '(absent)';
+            avatar.dataset.name = `${p.displayName || 'Inconnu'} ${statusText}`;
 
             if (p.photoURL) {
                 avatar.innerHTML = `<img src="${p.photoURL}" alt="${p.displayName}" class="w-full h-full rounded-full object-cover">`;
             } else {
                 avatar.textContent = getInitials(p.displayName);
+            }
+
+            if (!isOnline) {
+                avatar.classList.add('grayscale', 'opacity-50');
             }
 
             avatar.addEventListener('mouseenter', (e) => {
@@ -1626,17 +1644,35 @@ export default function init() {
                 tooltip.classList.add('hidden');
             });
 
-            container.appendChild(avatar);
-        });
+            avatarContainer.appendChild(avatar);
 
-        container.classList.remove('hidden');
+            // Gérer les labels d'activité uniquement pour les utilisateurs en ligne
+            if (isOnline && presenceInfo.status && presenceInfo.status !== 'idle') {
+                let actionText = '';
+                switch(presenceInfo.status) {
+                    case 'editing_recipe':
+                        actionText = 'modifie une recette...';
+                        break;
+                    // Ajouter d'autres cas ici
+                }
+                if (actionText) {
+                    activityHtml += `<span class="italic mr-4">${p.displayName} ${actionText}</span>`;
+                }
+            }
+        });
+        
+        activityContainer.innerHTML = activityHtml;
+        avatarContainer.classList.remove('hidden');
     }
 
     function loadPlanFromSelection() {
+        // Déconnexion du canal de présence de l'ancien plan
+        disconnectFromPresenceChannel();
+
         const selectedPlanId = elements.planSelect.value;
         currentPlan = allPlans.find(p => p.id === selectedPlanId) || null;
         
-        // Show/hide action buttons based on ownership
+        // Afficher/cacher les boutons d'action en fonction de la propriété
         const deletePlanBtn = document.getElementById('delete-plan-btn');
         const renamePlanBtn = document.getElementById('rename-plan-btn');
         const leavePlanBtn = document.getElementById('leave-plan-btn');
@@ -1645,8 +1681,18 @@ export default function init() {
         if (renamePlanBtn) renamePlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
         if (leavePlanBtn) leavePlanBtn.style.display = currentPlan && !currentPlan.isOwner ? 'inline-flex' : 'none';
 
-        // Render the collaborators bar
-        renderCollaborators(currentPlan?.participants);
+        // Gérer l'affichage des collaborateurs et la présence
+        if (currentPlan && currentPlan.participants && currentPlan.participants.length > 1) {
+            // Afficher immédiatement tous les participants comme étant hors ligne
+            updateCollaboratorsUI(currentPlan.participants, {});
+            // Se connecter pour recevoir les mises à jour de statut en temps réel
+            connectToPresenceChannel(currentPlan.id, (presences) => {
+                updateCollaboratorsUI(currentPlan.participants, presences);
+            });
+        } else {
+            // S'assurer que la barre est cachée si le plan n'est pas collaboratif
+            updateCollaboratorsUI([], {});
+        }
 
         if (currentPlan) {
             currentPlan.manualItems = currentPlan.manualItems || [];
