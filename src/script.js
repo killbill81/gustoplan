@@ -37,6 +37,7 @@ export default function init() {
         importListContainer: document.getElementById('import-list-container'),
         exportTxtBtn: document.getElementById('export-txt-btn'),
         exportPdfBtn: document.getElementById('export-pdf-btn'),
+        exportPlanPdfBtn: document.getElementById('export-plan-pdf-btn'),
         sharePlanBtn: document.getElementById('share-plan-btn'),
         planSelect: document.getElementById('plan-select'),
     };
@@ -797,7 +798,99 @@ export default function init() {
         doc.save("liste-de-courses.pdf");
     }
 
-    async function addIngredientToShoppingList(name, quantity, unit, isAdjustment = false) {
+            async function exportPlanToPDF() {
+                if (!currentPlan) {
+                    alert("Veuillez sélectionner un plan à exporter.");
+                    return;
+                }
+            
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+            
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const pdfDoc = new jsPDF();
+        
+                    const planRef = doc(db, "plans", currentPlan.id);
+                    const planSnap = await getDoc(planRef);
+                    const fullPlan = planSnap.exists() ? planSnap.data() : null;
+            
+                    if (!fullPlan || !fullPlan.weeks) {
+                        alert("Ce plan est vide et ne peut pas être exporté.");
+                        return;
+                    }
+        
+                    pdfDoc.setFontSize(18);
+                    pdfDoc.text(`Plan de Repas: ${fullPlan.name}`, 14, 20);
+        
+                    const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+                    const categories = { '0': 'E', '1': 'P', '2': 'A', '3': 'D' }; // Abrégé pour la clarté
+        
+                    const sortedWeeks = Object.keys(fullPlan.weeks).sort((a, b) => parseInt(a) - parseInt(b));
+                    let firstTable = true;
+        
+                    for (const weekNumber of sortedWeeks) {
+                        const weekData = fullPlan.weeks[weekNumber];
+                        const menu = weekData.menuData || {};
+            
+                        if (Object.keys(menu).length === 0) {
+                            continue; // Skip empty weeks
+                        }
+        
+                        const head = [['Jour', 'Midi', 'Soir']];
+                        const body = [];
+                        const startDayIndex = allDays.indexOf(fullPlan.startDay || 'Lundi');
+                        const weekDays = [...allDays.slice(startDayIndex), ...allDays.slice(0, startDayIndex)];
+        
+                        for (const dayName of weekDays) {
+                            const dayIndex = allDays.indexOf(dayName);
+                            let lunchMeals = [];
+                            let dinnerMeals = [];
+        
+                            for (const mealType of ['lunch', 'dinner']) {
+                                for (const catIndex in categories) {
+                                    const slotId = `${dayIndex}-${mealType}-${catIndex}`;
+                                    if (menu[slotId] && Array.isArray(menu[slotId])) {
+                                        menu[slotId].forEach(meal => {
+                                            const mealText = `[${categories[catIndex]}] ${meal.name}`;
+                                            if (mealType === 'lunch') {
+                                                lunchMeals.push(mealText);
+                                            } else {
+                                                dinnerMeals.push(mealText);
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                            body.push([dayName, lunchMeals.join('\n') || '-', dinnerMeals.join('\n') || '-']);
+                        }
+        
+                        pdfDoc.setFontSize(14);
+                        const startY = firstTable ? 30 : pdfDoc.autoTable.previous.finalY + 20;
+                        pdfDoc.text(`Semaine ${weekNumber}`, 14, startY - 5);
+        
+                        pdfDoc.autoTable({
+                            startY: startY,
+                            head: head,
+                            body: body,
+                            theme: 'grid',
+                            styles: { cellPadding: 2, fontSize: 8, valign: 'middle' },
+                            headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+                            alternateRowStyles: { fillColor: [245, 245, 245] },
+                        });
+        
+                        firstTable = false;
+                    }
+        
+                    pdfDoc.save(`plan_${fullPlan.name.replace(/ /g, '_')}.pdf`);
+        
+                } catch (error) {
+                    console.error("Erreur lors de la génération du PDF du plan :", error);
+                    alert("Une erreur est survenue lors de la création du PDF.");
+                } finally {
+                    if (loadingOverlay) loadingOverlay.classList.add('hidden');
+                }
+            }    async function addIngredientToShoppingList(name, quantity, unit, isAdjustment = false) {
         if (!currentPlan) return alert("Veuillez sélectionner un plan.");
 
         const planRef = doc(db, "plans", currentPlan.id);
@@ -1467,6 +1560,7 @@ export default function init() {
 
         elements.exportTxtBtn?.addEventListener('click', exportToTxt);
         elements.exportPdfBtn?.addEventListener('click', exportToPdf);
+        elements.exportPlanPdfBtn?.addEventListener('click', exportPlanToPDF);
 
         elements.mealPlanGrid?.addEventListener('click', (e) => {
             const infoButton = e.target.closest('.info-meal-btn');

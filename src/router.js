@@ -17,6 +17,9 @@ const routes = {
                                             <button id="clear-menu-btn" class="btn btn-outline btn-sm text-red-800 hover:bg-red-100">
                                                 <i class="fas fa-trash-alt mr-1 md:mr-2"></i> Vider le menu
                                             </button>
+                                            <button id="export-plan-pdf-btn" class="btn btn-outline btn-sm">
+                                                <i class="fas fa-file-pdf mr-1 md:mr-2"></i> Exporter Plan (PDF)
+                                            </button>
                                             <button id="share-plan-btn" class="btn btn-secondary btn-sm">
                                                 <i class="fas fa-share-alt mr-1 md:mr-2"></i> Partager
                                             </button>
