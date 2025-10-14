@@ -1,0 +1,69 @@
+
+# Rapport d'Inventaire de l'Application : GustoPlan
+
+## 1. Objectif de l'Application
+
+GustoPlan est un assistant de planification de repas intelligent et collaboratif. Son objectif principal est de simplifier et d'automatiser l'organisation des repas hebdomadaires, de la création des menus à la génération des listes de courses, tout en intégrant des fonctionnalités sociales et de collaboration en temps réel.
+
+---
+
+## 2. Spécificités et Fonctionnalités Clés
+
+L'application est construite sur une architecture web moderne (Vite, JavaScript, Firebase) et offre une expérience utilisateur riche et réactive.
+
+### Gestion des Plans de Repas
+*   **Planification Hebdomadaire :** Interface visuelle sous forme de grille pour organiser les repas (midi et soir) pour chaque jour de la semaine.
+*   **Plans Multiples :** L'utilisateur peut créer et gérer plusieurs plans distincts (ex: "Semaine Famille", "Régime Sportif").
+*   **Personnalisation :** Chaque plan peut être configuré avec un jour de début de semaine et un nombre de personnes par défaut.
+*   **Navigation Facile :** Possibilité de naviguer entre les semaines d'un même plan.
+
+### Gestion des Recettes
+*   **Bibliothèque Personnelle :** Un espace centralisé pour créer, modifier et supprimer des recettes.
+*   **Détails Complets :** Chaque recette inclut des informations essentielles : nom, catégorie (Entrée, Plat, Dessert...), temps de préparation, difficulté, nombre de personnes, instructions de préparation et liste d'ingrédients.
+*   **Organisation :** Les recettes sont classées et filtrables par catégorie pour un accès rapide.
+
+### Gestion des Ingrédients
+*   **Base de Données Centralisée :** Une liste maîtresse de tous les ingrédients que l'utilisateur peut gérer.
+*   **Catégorisation :** Les ingrédients peuvent être organisés en catégories personnalisables (ex: "Fruits & Légumes", "Produits Laitiers"), ce qui facilite l'organisation de la liste de courses.
+
+### Liste de Courses Intelligente
+*   **Génération Automatique :** La fonctionnalité la plus puissante de l'application. La liste de courses est générée automatiquement à partir de tous les repas planifiés dans *toutes les semaines* d'un plan.
+*   **Agrégation :** L'application calcule et regroupe les quantités totales nécessaires pour chaque ingrédient.
+*   **Gestion Manuelle :** Possibilité d'ajouter, de modifier ou de supprimer manuellement des articles de la liste.
+*   **Listes Personnalisées :** Les utilisateurs peuvent créer et sauvegarder des listes de courses manuelles indépendantes des plans.
+
+### Collaboration et Partage (La Plus-Value Principale)
+*   **Système d'Amis :** Les utilisateurs peuvent rechercher d'autres utilisateurs par nom ou email et s'ajouter en tant qu'amis.
+*   **Modes de Partage :**
+    1.  **Envoyer une Copie :** Partager une version "photographie" d'un plan. Le destinataire reçoit une copie indépendante qu'il peut modifier sans affecter l'original.
+    2.  **Inviter à Collaborer :** Fonctionnalité unique où plusieurs utilisateurs peuvent modifier le *même* plan de repas en temps réel.
+*   **Présence en Temps Réel :** Dans un plan collaboratif, les participants peuvent voir qui est actuellement en ligne et consulte le plan, grâce à un système d'avatars.
+*   **Notifications :** Un système de notifications informe les utilisateurs des nouvelles demandes d'ami et des invitations de partage.
+
+### Fonctionnalités Avancées et UX
+*   **Assistance IA :** Des boutons ("IA Semaine", "Astuce Économique") suggèrent l'intégration de fonctionnalités d'intelligence artificielle pour la génération de menus et l'optimisation des courses.
+*   **Commandes Vocales :** L'interface prévoit un assistant vocal pour ajouter des articles ou poser des questions sur le planning.
+*   **Export :** Les utilisateurs peuvent exporter leurs listes de courses (PDF, TXT) et leurs plans de repas complets (PDF) pour une utilisation hors ligne.
+*   **Interface Réactive :** Conçue pour être utilisée aussi bien sur ordinateur que sur mobile.
+
+---
+
+## 3. Options Proposées
+
+*   **Flexibilité du Planning :** Choix du jour de début de la semaine (Lundi, Dimanche, etc.).
+*   **Ajustement des Quantités :** Modification du nombre de personnes par défaut pour un plan, ou ajustement fin pour un repas spécifique directement dans la grille.
+*   **Gestion Fine :** Possibilité de gérer les catégories d'ingrédients, d'ajouter des ingrédients à la volée, et de créer des listes de courses thématiques.
+*   **Contrôle Social :** Gestion complète des amis, des demandes envoyées et des invitations reçues.
+
+---
+
+## 4. Plus-Value de GustoPlan
+
+La véritable force de GustoPlan réside dans sa **dimension collaborative en temps réel**, une fonctionnalité rarement présente dans les applications de planification de repas grand public. Là où la plupart des applications sont des outils personnels, GustoPlan se positionne comme une plateforme de coordination pour les familles, les colocataires ou les groupes.
+
+1.  **Réduction de la Charge Mentale :** En centralisant la planification, les recettes et la liste de courses, l'application élimine le besoin de jongler entre plusieurs outils (notes, messages, etc.).
+2.  **Collaboration Harmonieuse :** La possibilité de travailler à plusieurs sur le même menu en temps réel simplifie radicalement l'organisation des repas en commun. Fini les questions "On mange quoi ce soir ?".
+3.  **Gain de Temps et Économies :** L'automatisation de la liste de courses, basée sur les besoins réels du planning, permet de gagner un temps considérable et de réduire le gaspillage alimentaire en n'achetant que le nécessaire.
+4.  **Centralisation et Organisation :** GustoPlan devient le "livre de recettes" et le "gestionnaire de placard" numérique du foyer, accessible à tous les membres, à tout moment.
+
+En conclusion, GustoPlan n'est pas juste un planificateur de repas, mais un véritable **hub social et organisationnel pour l'alimentation du foyer**, ce qui lui confère une valeur ajoutée significative par rapport à la concurrence.

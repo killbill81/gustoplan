@@ -2,6 +2,7 @@ import { db } from './firebase-config.js';
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, addDoc, arrayUnion } from "firebase/firestore";
 import { getCurrentUserId } from './auth.js';
 import { acceptFriendRequest, declineFriendRequest } from './friends.js';
+import { addCollaborator } from './plans.js';
 
 // --- State ---
 let pendingShares = [];
@@ -62,11 +63,18 @@ async function acceptShare(shareId, shareData, sender) {
     }
 }
 
-async function acceptCollaborativePlan(shareId) {
+async function acceptCollaborativePlan(shareId, shareData) {
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId || !shareData || !shareData.planId) return;
+
     try {
+        // Add the user to the plan's collaborators
+        await addCollaborator(shareData.planId, currentUserId);
+
+        // Then, mark the share as accepted
         const shareRef = doc(db, 'shares', shareId);
         await updateDoc(shareRef, { status: 'accepted' });
-        // The Cloud Function will handle adding the user to the plan's collaborators
+
     } catch (error) {
         console.error("Erreur lors de l'acceptation de l'invitation : ", error);
         alert("Une erreur est survenue.");
@@ -149,7 +157,7 @@ function renderNotification(notification) {
         const acceptBtn = createButton('Accepter', 'btn-secondary', (e) => {
             e.target.textContent = '...';
             e.target.disabled = true;
-            acceptCollaborativePlan(notification.id);
+            acceptCollaborativePlan(notification.id, notification.data);
         });
         const declineBtn = createButton('Refuser', 'btn-ghost text-red-500', (e) => {
             e.target.disabled = true;

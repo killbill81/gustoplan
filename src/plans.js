@@ -1,4 +1,4 @@
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import { getCurrentUser } from './auth.js';
 
 const db = getFirestore();
@@ -307,3 +307,17 @@ export function initPlanManagement() {
 }
 
 export { getUserPlans, populatePlanSelector };
+
+export async function addCollaborator(planId, userId) {
+    if (!planId || !userId) return;
+    try {
+        const planRef = doc(db, 'plans', planId);
+        await updateDoc(planRef, {
+            collaborators: arrayUnion(userId),
+            type: 'collaborative' // Ensure plan type is set to collaborative
+        });
+    } catch (error) {
+        console.error("Error adding collaborator: ", error);
+        // Handle the error appropriately
+    }
+}

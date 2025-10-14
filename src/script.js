@@ -1,9 +1,9 @@
 // Importe les fonctions Firebase
 import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, where, updateDoc, runTransaction } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, where, updateDoc, runTransaction, onSnapshot } from "firebase/firestore";
 import { RecipeFormHandler } from './form-handler.js';
 import { getCurrentUserId } from './auth.js';
-import { openShareModal } from './sharing.js';
+import { openShareModal, openInviteParticipantModal } from './sharing.js';
 import { initPlanManagement, getUserPlans, populatePlanSelector } from './plans.js';
 import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
 
@@ -41,6 +41,7 @@ export default function init() {
         exportPlanPdfBtn: document.getElementById('export-plan-pdf-btn'),
         sharePlanBtn: document.getElementById('share-plan-btn'),
         planSelect: document.getElementById('plan-select'),
+        inviteParticipantBtn: document.getElementById('invite-participant-btn'),
     };
 
     // --- New UI Component Functions ---
@@ -158,23 +159,8 @@ export default function init() {
     editRecipeFormHandler.setActivityUpdater(updateUserActivity);
 
     editRecipeFormHandler.setOnSaveCallback(async () => {
-        await loadAvailableMeals();
-        // After a recipe is edited, we need to update it in our in-memory plan (menuData)
-        for (const slotId in menuData) {
-            const mealsInSlot = menuData[slotId];
-            if (Array.isArray(mealsInSlot)) {
-                const updatedMealsInSlot = mealsInSlot.map(mealInPlan => {
-                    if (mealInPlan && mealInPlan.id) {
-                        const updatedMeal = availableMeals.find(m => m.id === mealInPlan.id);
-                        return updatedMeal ? { ...updatedMeal } : mealInPlan;
-                    }
-                    return mealInPlan;
-                });
-                menuData[slotId] = updatedMealsInSlot;
-            }
-        }
-        renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
-        await generateShoppingListFromPlan();
+        // The real-time recipe listener will now handle updates.
+        // No need to manually reload everything here.
     });
 
     // --- State Variables ---
@@ -243,16 +229,7 @@ export default function init() {
         }
     }
 
-    async function loadAvailableMeals() {
-        if (!db) return;
-        const recipesCollectionRef = collection(db, "recipes");
-        try {
-            const snapshot = await getDocs(recipesCollectionRef);
-            availableMeals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } catch (error) {
-            console.error("Error loading available meals from Firebase:", error);
-        }
-    }
+
 
     function loadWeekDataFromPlan() {
         if (!currentPlan) {
@@ -1587,6 +1564,14 @@ export default function init() {
             }
             openShareModal({ plan: currentPlan });
         });
+
+        elements.inviteParticipantBtn?.addEventListener('click', () => {
+            if (!currentPlan) {
+                alert("Veuillez sélectionner un plan pour inviter des participants.");
+                return;
+            }
+            openInviteParticipantModal(currentPlan);
+        });
     }
 
     function getInitials(name = '') {
@@ -1676,10 +1661,15 @@ export default function init() {
         const deletePlanBtn = document.getElementById('delete-plan-btn');
         const renamePlanBtn = document.getElementById('rename-plan-btn');
         const leavePlanBtn = document.getElementById('leave-plan-btn');
+        const inviteParticipantBtn = document.getElementById('invite-participant-btn');
 
         if (deletePlanBtn) deletePlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
         if (renamePlanBtn) renamePlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
         if (leavePlanBtn) leavePlanBtn.style.display = currentPlan && !currentPlan.isOwner ? 'inline-flex' : 'none';
+        if (inviteParticipantBtn) {
+            const isCollaborative = currentPlan && (currentPlan.type === 'collaborative' || (currentPlan.collaborators && currentPlan.collaborators.length > 0));
+            inviteParticipantBtn.style.display = currentPlan && currentPlan.isOwner && isCollaborative ? 'inline-flex' : 'none';
+        }
 
         // Gérer l'affichage des collaborateurs et la présence
         if (currentPlan && currentPlan.participants && currentPlan.participants.length > 1) {
@@ -1730,7 +1720,34 @@ export default function init() {
         setupShoppingListAutocomplete();
 
         await fetchMasterIngredients();
-        await loadAvailableMeals();
+
+        // Set up a real-time listener for recipes
+        const unsubscribeFromRecipes = onSnapshot(collection(db, "recipes"), (snapshot) => {
+            console.log("Recipe data updated from listener.");
+            availableMeals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // If a plan is currently loaded, refresh the UI that depends on recipe data.
+            if (currentPlan) {
+                // This logic is important to update the in-memory representation of meals in the plan
+                for (const slotId in menuData) {
+                    const mealsInSlot = menuData[slotId];
+                    if (Array.isArray(mealsInSlot)) {
+                        const updatedMealsInSlot = mealsInSlot.map(mealInPlan => {
+                            if (mealInPlan && mealInPlan.id) {
+                                const updatedMeal = availableMeals.find(m => m.id === mealInPlan.id);
+                                return updatedMeal ? { ...updatedMeal } : mealInPlan;
+                            }
+                            return mealInPlan;
+                        });
+                        menuData[slotId] = updatedMealsInSlot;
+                    }
+                }
+                // Re-render the planner to update meal cards, tooltips, etc.
+                renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+                // Re-generate the shopping list which is the core of the fix.
+                generateShoppingListFromPlan();
+            }
+        });
 
         // Get all plans for the user and populate the selector
         const unsubscribeFromPlans = getUserPlans((plans) => {
@@ -1739,7 +1756,11 @@ export default function init() {
             loadPlanFromSelection(); // Load data directly after populating
         });
 
-        return unsubscribeFromPlans; // Return the cleanup function
+        // Return a function that unsubscribes from both listeners
+        return () => {
+            unsubscribeFromPlans();
+            unsubscribeFromRecipes();
+        };
     }
     
     const cleanupPromise = initializeApp();

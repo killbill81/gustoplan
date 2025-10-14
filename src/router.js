@@ -56,6 +56,9 @@ const routes = {
                                             <button id="delete-plan-btn" class="btn btn-ghost text-red-500 hover:bg-red-100 btn-sm" title="Supprimer le plan sélectionné">
                                                 <i class="fas fa-trash"></i>
                                             </button>
+                                            <button id="invite-participant-btn" class="btn btn-ghost text-green-500 hover:bg-green-100 btn-sm hidden" title="Inviter un participant">
+                                                <i class="fas fa-user-plus"></i>
+                                            </button>
                                         </div>
                                     </div>
 
