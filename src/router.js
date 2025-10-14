@@ -59,6 +59,9 @@ const routes = {
                                             <button id="invite-participant-btn" class="btn btn-ghost text-green-500 hover:bg-green-100 btn-sm hidden" title="Inviter un participant">
                                                 <i class="fas fa-user-plus"></i>
                                             </button>
+                                            <button id="history-plan-btn" class="btn btn-ghost text-purple-500 hover:bg-purple-100 btn-sm hidden" title="Historique du plan">
+                                                <i class="fas fa-history"></i>
+                                            </button>
                                         </div>
                                     </div>
 

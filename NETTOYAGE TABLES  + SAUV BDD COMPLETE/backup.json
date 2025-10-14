@@ -237,17 +237,7 @@
       ]
     }
   },
-  "friend_requests": {
-    "p5Kmp0s7f2UkYzSOwWhR": {
-      "senderId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
-      "receiverId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
-      "createdAt": {
-        "_seconds": 1758179692,
-        "_nanoseconds": 179000000
-      },
-      "status": "accepted"
-    }
-  },
+  "friend_requests": {},
   "ingredient_categories": {
     "2rnlbJcPt7AC2P008gL5": {
       "id": "2rnlbJcPt7AC2P008gL5",
@@ -596,10 +586,9 @@
       "category": "Légume"
     },
     "8VZqExYXCSGRdMj0wMu5": {
-      "id": "8VZqExYXCSGRdMj0wMu5",
-      "category": "Fruit",
       "name": "Orange",
-      "unit": ""
+      "unit": "pièce(s)",
+      "category": "Fruit"
     },
     "8zm8w0gmcP9bkPnR8i5L": {
       "id": "8zm8w0gmcP9bkPnR8i5L",
@@ -2357,9 +2346,8 @@
       "category": "Viande/Poisson"
     },
     "xWfgZqzsYuAQUOeOeUOV": {
-      "id": "xWfgZqzsYuAQUOeOeUOV",
       "name": "chocolat en poudre",
-      "unit": "",
+      "unit": "pièce(s)",
       "category": "Petit déj"
     },
     "y64i4u78KggwEDxRYeWj": {
@@ -2430,224 +2418,402 @@
     }
   },
   "plans": {
-    "KpMFiM9ewUrMRMtTyao6": {
-      "weeks": {
-        "1": {
-          "menuData": {
-            "4-dinner-1": [
-              {
-                "servings": 1,
-                "steps": "",
-                "prepTime": 0,
-                "id": "1N6NweLntK5tfYOpyKTz",
-                "imageUrl": "",
-                "difficulty": "",
-                "name": "Blanquette de poulet express",
-                "category": "PLAT",
-                "ingredients": []
-              }
-            ]
-          }
-        }
-      },
-      "startDay": "Lundi",
-      "manualItems": [
-        {
-          "unit": "pièce(s)",
-          "source": "manual",
-          "totalQuantity": 1,
-          "name": "Avocat",
-          "category": "Légume"
-        }
-      ],
-      "defaultNumPeople": 1,
-      "name": "Copie de \"PERSO\" (de Jean-Philippe JOLLY)",
-      "userId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
-      "isShared": true,
-      "originalOwnerId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
-      "sharedAt": {
-        "_seconds": 1760011159,
-        "_nanoseconds": 861000000
-      },
-      "collaborators": []
-    },
-    "LQovQt91qmktMNvsbc15": {
+    "JOl63ckW28lxTfMJzs5h": {
       "userId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
       "name": "PERSO",
       "type": "personal",
       "defaultNumPeople": 1,
       "startDay": "Lundi",
-      "manualItems": [
-        {
-          "name": "Avocat",
-          "totalQuantity": 1,
-          "unit": "pièce(s)",
-          "source": "manual",
-          "category": "Légume"
-        }
-      ],
-      "lastUpdated": {
-        "_seconds": 1760011141,
-        "_nanoseconds": 753000000
-      },
       "weeks": {
         "1": {
           "menuData": {
-            "4-dinner-1": [
+            "1-dinner-1": [
               {
-                "id": "1N6NweLntK5tfYOpyKTz",
+                "id": "ireZsvtb0JwLzPmcqwtx",
+                "category": "PLAT",
+                "imageUrl": "",
+                "prepTime": 0,
+                "steps": "",
                 "difficulty": "",
-                "name": "Blanquette de poulet express",
+                "name": "Blanquette veau + riz",
                 "ingredients": [],
-                "imageUrl": "",
-                "prepTime": 0,
-                "steps": "",
-                "category": "PLAT",
                 "servings": 1
-              }
-            ]
-          }
-        }
-      }
-    },
-    "OuScpaEFPHG6zbVITdx5": {
-      "name": "Copie de \"Test PARTAGE SIMPLE\" (de Pierre Fourain)",
-      "startDay": "Lundi",
-      "manualItems": [],
-      "defaultNumPeople": 1,
-      "userId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
-      "isShared": true,
-      "originalOwnerId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
-      "sharedAt": {
-        "_seconds": 1759997950,
-        "_nanoseconds": 808000000
-      },
-      "collaborators": [],
-      "lastUpdated": {
-        "_seconds": 1760010975,
-        "_nanoseconds": 490000000
-      },
-      "weeks": {
-        "1": {
-          "menuData": {}
-        }
-      }
-    },
-    "oYu6qWrFyOV18vTNNFtx": {
-      "userId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
-      "name": "Test PARTAGE SIMPLE",
-      "type": "personal",
-      "weeks": {},
-      "manualItems": [],
-      "defaultNumPeople": 1,
-      "startDay": "Lundi",
-      "lastUpdated": {
-        "_seconds": 1759997938,
-        "_nanoseconds": 38000000
-      }
-    },
-    "x6muRpabRbMVFjIHtYDA": {
-      "userId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
-      "name": "TEST PERSO",
-      "type": "personal",
-      "startDay": "Lundi",
-      "collaborators": [
-        "N3xsPHL9pwR2MeLlhYbSycQHVVQ2"
-      ],
-      "defaultNumPeople": 2,
-      "weeks": {
-        "1": {
-          "remarksData": {},
-          "servingsData": {},
-          "menuData": {
-            "2-dinner-1": [
-              {
-                "prepTime": 0,
-                "name": "Aligot + saucisse",
-                "servings": 2,
-                "steps": "",
-                "ingredients": [
-                  {
-                    "id": "xTUuMN0NRR2h6TkkOFcU",
-                    "name": "Saucisse",
-                    "quantity": "500",
-                    "unit": "g"
-                  },
-                  {
-                    "name": "Aligot",
-                    "unit": "pièce(s)",
-                    "quantity": "1",
-                    "id": "lN2j28RxKNwD8ZepK49M"
-                  }
-                ],
-                "imageUrl": "",
-                "category": "PLAT",
-                "id": "bZXLWQNTi0bToIrTgKQz",
-                "difficulty": "Moyen"
               }
             ],
             "3-dinner-1": [
               {
-                "steps": "",
+                "id": "G4cXBt8KGhZ4ucf6JCoO",
                 "category": "PLAT",
                 "servings": 1,
-                "name": "Bœuf aux oignons",
-                "difficulty": "",
                 "prepTime": 0,
                 "imageUrl": "",
-                "id": "s7PP6C0JpqIcjI4TpEyh",
-                "ingredients": []
-              }
-            ],
-            "4-dinner-1": [
-              {
-                "category": "PLAT",
-                "name": "canard - magret",
-                "ingredients": [],
-                "steps": "",
-                "id": "6kQpY640r2scjdaSvUph",
-                "imageUrl": "",
-                "prepTime": 0,
-                "servings": 1,
-                "difficulty": ""
-              }
-            ],
-            "0-dinner-1": [
-              {
-                "id": "R5XCd8uWXgb4cn3q4qpA",
-                "steps": "",
                 "difficulty": "Moyen",
-                "category": "PLAT",
-                "prepTime": 0,
-                "imageUrl": "",
-                "name": "viande rouge",
+                "name": "croque monsieur",
+                "steps": "",
                 "ingredients": [
                   {
-                    "quantity": "1",
-                    "name": "viande rouge",
-                    "unit": "",
-                    "id": "dpgwakD1jDSBQG1upjcZ"
+                    "quantity": "6",
+                    "name": "pain de mie",
+                    "unit": "pièce(s)",
+                    "id": "FjLQzNkeafZOETYENBCS"
+                  },
+                  {
+                    "id": "1G36sJGhREwEAqYbarqP",
+                    "quantity": "6",
+                    "unit": "pièce(s)",
+                    "name": "fromage croque monsieur"
+                  },
+                  {
+                    "unit": "pièce(s)",
+                    "name": "jambon",
+                    "quantity": "2",
+                    "id": "P5I2eMgaHtwarPqWcvhG"
+                  },
+                  {
+                    "quantity": "200",
+                    "unit": "g",
+                    "id": "Qe4rqGw6FTGzplXwVDOu",
+                    "name": "emmental rapé"
                   }
-                ],
-                "servings": 1
+                ]
               }
             ]
           }
         }
       },
       "lastUpdated": {
-        "_seconds": 1760011087,
-        "_nanoseconds": 809000000
+        "_seconds": 1760435987,
+        "_nanoseconds": 230000000
+      },
+      "manualItems": []
+    },
+    "Sjql4DSPeVYeqoZZHiJM": {
+      "userId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "name": "du 16 au 23 octobre 2025",
+      "type": "personal",
+      "startDay": "Jeudi",
+      "defaultNumPeople": 2,
+      "collaborators": [
+        "mWN4krlYiDhkvWZ6yTFBGa3fihR2",
+        "k24QBJQ1xBUsPaYrLP5sVn8awBk1"
+      ],
+      "weeks": {
+        "1": {
+          "menuData": {
+            "1-dinner-1": [
+              {
+                "ingredients": [],
+                "servings": 1,
+                "steps": "",
+                "imageUrl": "",
+                "difficulty": "",
+                "category": "PLAT",
+                "prepTime": 0,
+                "id": "tJF5IFmMmAkTtYQpTVCN",
+                "name": "RESTES"
+              }
+            ],
+            "6-lunch-1": [
+              {
+                "ingredients": [],
+                "category": "PLAT",
+                "servings": 1,
+                "prepTime": 0,
+                "name": "canard - confit",
+                "difficulty": "",
+                "imageUrl": "",
+                "id": "ym254RIWhVASghakLSJU",
+                "steps": ""
+              }
+            ],
+            "6-dinner-1": [
+              {
+                "imageUrl": "",
+                "name": "Quiche Thon, tomates et mozarella",
+                "ingredients": [],
+                "id": "787xJsSwr1a7MoSkHkHv",
+                "difficulty": "",
+                "prepTime": 0,
+                "steps": "",
+                "servings": 1,
+                "category": "PLAT"
+              }
+            ],
+            "6-lunch-2": [
+              {
+                "steps": "",
+                "servings": 2,
+                "id": "yqk7jVUKw6mgtHssHIJa",
+                "ingredients": [
+                  {
+                    "quantity": "100",
+                    "unit": "g",
+                    "id": "cs0Eu0qtueYUrIDeyfsG",
+                    "name": "Haricot blanc"
+                  },
+                  {
+                    "unit": "pièce(s)",
+                    "id": "DE3U8SsmAiPyefZ5Ib1X",
+                    "quantity": "2",
+                    "name": "Carotte"
+                  },
+                  {
+                    "unit": "pièce(s)",
+                    "name": "Cube bouquet garni",
+                    "quantity": "1",
+                    "id": "RxcqkP66Wg9eXEjOUtEd"
+                  },
+                  {
+                    "quantity": "1",
+                    "unit": "pièce(s)",
+                    "name": "Oignon",
+                    "id": "qZ5Nm1L3wcxl5nh5xR8V"
+                  },
+                  {
+                    "unit": "pièce(s)",
+                    "quantity": "1",
+                    "name": "Bouillon de légumes",
+                    "id": "M3KINToHgGcwMs1CEcEq"
+                  }
+                ],
+                "category": "ACCOMPAGNEMENT",
+                "difficulty": "Facile",
+                "prepTime": 0,
+                "name": "Haricot blanc carotte",
+                "imageUrl": ""
+              }
+            ],
+            "5-lunch-2": [
+              {
+                "id": "5Kf3IlrVkgIwqGqEoRep",
+                "category": "ACCOMPAGNEMENT",
+                "servings": 1,
+                "steps": "",
+                "name": "frites",
+                "imageUrl": "",
+                "difficulty": "Moyen",
+                "ingredients": [
+                  {
+                    "name": "Pomme de terre",
+                    "quantity": "3",
+                    "unit": "pièce(s)",
+                    "id": "gIZdPRf5DMcszcYMQ0YD"
+                  }
+                ],
+                "prepTime": 0
+              }
+            ],
+            "5-lunch-1": [
+              {
+                "steps": "",
+                "category": "PLAT",
+                "name": "viande rouge",
+                "servings": 1,
+                "difficulty": "Moyen",
+                "id": "R5XCd8uWXgb4cn3q4qpA",
+                "imageUrl": "",
+                "prepTime": 0,
+                "ingredients": [
+                  {
+                    "name": "viande rouge",
+                    "quantity": "1",
+                    "id": "dpgwakD1jDSBQG1upjcZ",
+                    "unit": ""
+                  }
+                ]
+              }
+            ],
+            "3-dinner-1": [
+              {
+                "id": "YRAuEq7WlfrEz5LyrpNl",
+                "imageUrl": "",
+                "prepTime": 0,
+                "name": "Fajitas",
+                "ingredients": [
+                  {
+                    "quantity": "1",
+                    "id": "bWfn4cX9tkaV728X9fqr",
+                    "name": "Fajitas",
+                    "unit": "pièce(s)"
+                  },
+                  {
+                    "name": "Tomate",
+                    "id": "pxsYTOIeRPUEO2tHiAsw",
+                    "unit": "pièce(s)",
+                    "quantity": "2"
+                  },
+                  {
+                    "unit": "pièce(s)",
+                    "id": "FgvIwwxhU9O50bLq8q17",
+                    "name": "Poivron",
+                    "quantity": "1"
+                  },
+                  {
+                    "unit": "pièce(s)",
+                    "id": "Es56r9xb74cyTv6olatZ",
+                    "quantity": "4",
+                    "name": "Filet de dinde"
+                  },
+                  {
+                    "quantity": "1",
+                    "name": "Oignon rouge",
+                    "unit": "pièce(s)",
+                    "id": "KcOzOp8MVnZHR10mTWp6"
+                  },
+                  {
+                    "unit": "g",
+                    "id": "Qe4rqGw6FTGzplXwVDOu",
+                    "quantity": "100",
+                    "name": "emmental rapé"
+                  }
+                ],
+                "servings": 4,
+                "category": "PLAT",
+                "difficulty": "Moyen",
+                "steps": ""
+              }
+            ]
+          },
+          "servingsData": {
+            "5-dinner": 4,
+            "6-dinner": 3,
+            "4-dinner": 4,
+            "6-lunch": 4,
+            "5-lunch": 4,
+            "3-dinner": 3
+          }
+        },
+        "2": {
+          "menuData": {},
+          "servingsData": {}
+        }
+      },
+      "lastUpdated": {
+        "_seconds": 1760436101,
+        "_nanoseconds": 673000000
       },
       "manualItems": [
         {
-          "name": "farine",
-          "totalQuantity": 1,
-          "unit": "g",
+          "name": "Citron",
+          "totalQuantity": -1,
+          "unit": "pièce(s)",
           "source": "manual",
-          "category": "Condiments"
+          "category": "Fruit"
+        },
+        {
+          "name": "Gaufre",
+          "totalQuantity": 1,
+          "unit": "pièce(s)",
+          "source": "manual",
+          "category": "Brioche/pain"
+        },
+        {
+          "name": "lait chocolaté à boire",
+          "totalQuantity": 1,
+          "unit": "pièce(s)",
+          "source": "manual",
+          "category": "Gouter/Sucrerie"
+        },
+        {
+          "name": "Gaufre au chocolat",
+          "totalQuantity": 1,
+          "unit": "pièce(s)",
+          "source": "manual",
+          "category": "Brioche/pain"
+        },
+        {
+          "name": "brioche chocolat",
+          "totalQuantity": 1,
+          "unit": "pièce(s)",
+          "source": "manual",
+          "category": "Petit déj"
+        },
+        {
+          "name": "chocolat en poudre",
+          "totalQuantity": 1,
+          "unit": "pièce(s)",
+          "source": "manual",
+          "category": "Petit déj"
+        },
+        {
+          "name": "brioche",
+          "totalQuantity": 1,
+          "unit": "pièce(s)",
+          "source": "manual",
+          "category": "Petit déj"
         }
       ]
+    },
+    "fRmXzP68joUd3NV1ZvZo": {
+      "manualItems": [],
+      "defaultNumPeople": 1,
+      "weeks": {
+        "1": {
+          "menuData": {
+            "3-dinner-1": [
+              {
+                "id": "G4cXBt8KGhZ4ucf6JCoO",
+                "imageUrl": "",
+                "name": "croque monsieur",
+                "category": "PLAT",
+                "prepTime": 0,
+                "difficulty": "Moyen",
+                "servings": 1,
+                "ingredients": [
+                  {
+                    "id": "FjLQzNkeafZOETYENBCS",
+                    "quantity": "6",
+                    "name": "pain de mie",
+                    "unit": "pièce(s)"
+                  },
+                  {
+                    "name": "fromage croque monsieur",
+                    "unit": "pièce(s)",
+                    "quantity": "6",
+                    "id": "1G36sJGhREwEAqYbarqP"
+                  },
+                  {
+                    "unit": "pièce(s)",
+                    "name": "jambon",
+                    "id": "P5I2eMgaHtwarPqWcvhG",
+                    "quantity": "2"
+                  },
+                  {
+                    "name": "emmental rapé",
+                    "unit": "g",
+                    "id": "Qe4rqGw6FTGzplXwVDOu",
+                    "quantity": "200"
+                  }
+                ],
+                "steps": ""
+              }
+            ],
+            "1-dinner-1": [
+              {
+                "id": "ireZsvtb0JwLzPmcqwtx",
+                "category": "PLAT",
+                "prepTime": 0,
+                "imageUrl": "",
+                "steps": "",
+                "name": "Blanquette veau + riz",
+                "ingredients": [],
+                "servings": 1,
+                "difficulty": ""
+              }
+            ]
+          }
+        }
+      },
+      "name": "Copie de \"PERSO\" (de Jean-Philippe JOLLY)",
+      "startDay": "Lundi",
+      "userId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
+      "isShared": true,
+      "originalOwnerId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "sharedAt": {
+        "_seconds": 1760435934,
+        "_nanoseconds": 613000000
+      },
+      "collaborators": []
     }
   },
   "recipes": {
@@ -3081,15 +3247,45 @@
       "servings": 1
     },
     "787xJsSwr1a7MoSkHkHv": {
-      "id": "787xJsSwr1a7MoSkHkHv",
       "name": "Quiche Thon, tomates et mozarella",
       "category": "PLAT",
-      "ingredients": [],
-      "steps": "",
-      "difficulty": "",
+      "servings": 3,
       "prepTime": 0,
-      "imageUrl": "",
-      "servings": 1
+      "difficulty": "Moyen",
+      "steps": "",
+      "ingredients": [
+        {
+          "quantity": "1",
+          "unit": "pièce(s)",
+          "id": "HzMosfUzV1C3pZZeshTr",
+          "name": "Mozarella"
+        },
+        {
+          "quantity": "300",
+          "id": "W7J5m5awPvWI9Vf4Pit5",
+          "unit": "g",
+          "name": "farine"
+        },
+        {
+          "quantity": "90",
+          "name": "beurre",
+          "id": "cwjX4oKVpqtIyBxwERQF",
+          "unit": "g"
+        },
+        {
+          "name": "Tomate cerise",
+          "unit": "pièce(s)",
+          "id": "xCfr5PifKlxKJ9xig63X",
+          "quantity": "10"
+        },
+        {
+          "name": "Thon en boite",
+          "id": "jI9fxWdmzGUzZglj7Kp5",
+          "quantity": "1",
+          "unit": "pièce(s)"
+        }
+      ],
+      "imageUrl": ""
     },
     "7DdamOtFQCZWDlwzAyEl": {
       "id": "7DdamOtFQCZWDlwzAyEl",
@@ -6569,6 +6765,47 @@
       "imageUrl": "",
       "servings": 1
     },
+    "yqk7jVUKw6mgtHssHIJa": {
+      "name": "Haricot blanc carotte",
+      "category": "ACCOMPAGNEMENT",
+      "servings": 2,
+      "prepTime": 0,
+      "difficulty": "Facile",
+      "steps": "",
+      "ingredients": [
+        {
+          "name": "Haricot blanc",
+          "quantity": "100",
+          "unit": "g",
+          "id": "cs0Eu0qtueYUrIDeyfsG"
+        },
+        {
+          "id": "DE3U8SsmAiPyefZ5Ib1X",
+          "unit": "pièce(s)",
+          "quantity": "2",
+          "name": "Carotte"
+        },
+        {
+          "id": "RxcqkP66Wg9eXEjOUtEd",
+          "name": "Cube bouquet garni",
+          "unit": "pièce(s)",
+          "quantity": "1"
+        },
+        {
+          "id": "qZ5Nm1L3wcxl5nh5xR8V",
+          "unit": "pièce(s)",
+          "name": "Oignon",
+          "quantity": "1"
+        },
+        {
+          "name": "Bouillon de légumes",
+          "quantity": "1",
+          "id": "M3KINToHgGcwMs1CEcEq",
+          "unit": "pièce(s)"
+        }
+      ],
+      "imageUrl": ""
+    },
     "z8G0rAVN8rzIun1bab19": {
       "id": "z8G0rAVN8rzIun1bab19",
       "name": "nuggets poulets",
@@ -6638,6 +6875,18 @@
       "receiverId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
       "status": "accepted"
     },
+    "3KjBKUeujrjaKE8eLPrT": {
+      "senderId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "createdAt": {
+        "_seconds": 1760423857,
+        "_nanoseconds": 502000000
+      },
+      "type": "collaborative_plan_invite",
+      "planId": "Sjql4DSPeVYeqoZZHiJM",
+      "planName": "du 16 au 23 octobre 2025",
+      "receiverId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
+      "status": "accepted"
+    },
     "4nfd0qy6FPSHwKylGKpn": {
       "senderId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
       "createdAt": {
@@ -6681,6 +6930,18 @@
       "receiverId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
       "status": "accepted"
     },
+    "4y67xPlPlFlBirfAc7Uz": {
+      "senderId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "createdAt": {
+        "_seconds": 1760115210,
+        "_nanoseconds": 596000000
+      },
+      "type": "collaborative_plan_invite",
+      "planId": "Sjql4DSPeVYeqoZZHiJM",
+      "planName": "du 16 au 23 octobre 2025",
+      "receiverId": "mWN4krlYiDhkvWZ6yTFBGa3fihR2",
+      "status": "accepted"
+    },
     "MB9LGb8qkIZd05MmJ0dk": {
       "senderId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
       "createdAt": {
@@ -6722,6 +6983,79 @@
       "receiverId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
       "status": "accepted"
     },
+    "cEkLW4bSB0iNyDuQh2JS": {
+      "senderId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "createdAt": {
+        "_seconds": 1760435926,
+        "_nanoseconds": 385000000
+      },
+      "type": "share",
+      "plan": {
+        "name": "PERSO",
+        "weeks": {
+          "1": {
+            "menuData": {
+              "1-dinner-1": [
+                {
+                  "id": "ireZsvtb0JwLzPmcqwtx",
+                  "category": "PLAT",
+                  "imageUrl": "",
+                  "prepTime": 0,
+                  "steps": "",
+                  "difficulty": "",
+                  "name": "Blanquette veau + riz",
+                  "ingredients": [],
+                  "servings": 1
+                }
+              ],
+              "3-dinner-1": [
+                {
+                  "id": "G4cXBt8KGhZ4ucf6JCoO",
+                  "category": "PLAT",
+                  "servings": 1,
+                  "prepTime": 0,
+                  "imageUrl": "",
+                  "difficulty": "Moyen",
+                  "name": "croque monsieur",
+                  "steps": "",
+                  "ingredients": [
+                    {
+                      "quantity": "6",
+                      "name": "pain de mie",
+                      "unit": "pièce(s)",
+                      "id": "FjLQzNkeafZOETYENBCS"
+                    },
+                    {
+                      "id": "1G36sJGhREwEAqYbarqP",
+                      "quantity": "6",
+                      "unit": "pièce(s)",
+                      "name": "fromage croque monsieur"
+                    },
+                    {
+                      "unit": "pièce(s)",
+                      "name": "jambon",
+                      "quantity": "2",
+                      "id": "P5I2eMgaHtwarPqWcvhG"
+                    },
+                    {
+                      "quantity": "200",
+                      "unit": "g",
+                      "id": "Qe4rqGw6FTGzplXwVDOu",
+                      "name": "emmental rapé"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "manualItems": [],
+        "defaultNumPeople": 1,
+        "startDay": "Lundi"
+      },
+      "receiverId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
+      "status": "accepted"
+    },
     "eecFe8PZGzKX9vGH97Oq": {
       "senderId": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
       "createdAt": {
@@ -6732,6 +7066,121 @@
       "planId": "3H3qn4S8CBBv6C2etmRS",
       "planName": "TEST PERSO",
       "receiverId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "status": "accepted"
+    },
+    "fYaXhA35jq4jpvrv9V77": {
+      "senderId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "createdAt": {
+        "_seconds": 1760114689,
+        "_nanoseconds": 969000000
+      },
+      "type": "collaborative_plan_invite",
+      "planId": "LQovQt91qmktMNvsbc15",
+      "planName": "DU 10 au 17 octobre 2025",
+      "receiverId": "mWN4krlYiDhkvWZ6yTFBGa3fihR2",
+      "status": "accepted"
+    },
+    "hMMH0NjhNdQyOlGihNen": {
+      "senderId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
+      "createdAt": {
+        "_seconds": 1760115008,
+        "_nanoseconds": 830000000
+      },
+      "type": "share",
+      "plan": {
+        "name": "TEST COPIE PLAN",
+        "weeks": {
+          "1": {
+            "menuData": {
+              "1-dinner-1": [
+                {
+                  "name": "Bouchées à la reine",
+                  "ingredients": [],
+                  "id": "tqXVwCmlvudnopGyYtH1",
+                  "difficulty": "",
+                  "steps": "",
+                  "prepTime": 0,
+                  "category": "PLAT",
+                  "imageUrl": "",
+                  "servings": 1
+                }
+              ],
+              "0-dinner-0": [
+                {
+                  "steps": "",
+                  "servings": 1,
+                  "difficulty": "Moyen",
+                  "id": "izauODn1WjVOzIxvhKkO",
+                  "category": "ENTREE",
+                  "ingredients": [
+                    {
+                      "name": "Betterave",
+                      "quantity": "12"
+                    }
+                  ],
+                  "name": "betterave",
+                  "imageUrl": "",
+                  "prepTime": 0
+                }
+              ],
+              "2-dinner-1": [
+                {
+                  "prepTime": 0,
+                  "ingredients": [
+                    {
+                      "id": "xTUuMN0NRR2h6TkkOFcU",
+                      "quantity": "500",
+                      "name": "Saucisse",
+                      "unit": "g"
+                    },
+                    {
+                      "name": "Aligot",
+                      "unit": "pièce(s)",
+                      "quantity": "1",
+                      "id": "lN2j28RxKNwD8ZepK49M"
+                    }
+                  ],
+                  "category": "PLAT",
+                  "steps": "",
+                  "imageUrl": "",
+                  "difficulty": "Moyen",
+                  "id": "bZXLWQNTi0bToIrTgKQz",
+                  "name": "Aligot + saucisse",
+                  "servings": 2
+                }
+              ]
+            }
+          },
+          "2": {
+            "menuData": {
+              "3-dinner-1": [
+                {
+                  "id": "R5XCd8uWXgb4cn3q4qpA",
+                  "servings": 1,
+                  "prepTime": 0,
+                  "category": "PLAT",
+                  "steps": "",
+                  "imageUrl": "",
+                  "name": "viande rouge",
+                  "difficulty": "Moyen",
+                  "ingredients": [
+                    {
+                      "unit": "",
+                      "id": "dpgwakD1jDSBQG1upjcZ",
+                      "quantity": "1",
+                      "name": "viande rouge"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "manualItems": [],
+        "defaultNumPeople": 2,
+        "startDay": "Lundi"
+      },
+      "receiverId": "mWN4krlYiDhkvWZ6yTFBGa3fihR2",
       "status": "accepted"
     },
     "lwLd8lDqtGCDixsCasfv": {
@@ -6748,20 +7197,80 @@
     }
   },
   "shopping_lists": {
+    "6e5aZLIw8D2FH9eV0jnZ": {
+      "name": "GOUTER",
+      "ingredients": [
+        {
+          "quantity": "1",
+          "name": "Gaufre",
+          "unit": "pièce(s)",
+          "id": "LieBZAf0okDl2uySSb1T"
+        },
+        {
+          "quantity": "1",
+          "name": "Gaufre au chocolat",
+          "unit": "pièce(s)",
+          "id": "cQj37cbnhOPpTlcLwIk8"
+        },
+        {
+          "quantity": "1",
+          "name": "lait chocolaté à boire",
+          "unit": "pièce(s)",
+          "id": "y64i4u78KggwEDxRYeWj"
+        }
+      ],
+      "userId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2"
+    },
     "lQqVXkWcm0aNBkjyVJ1v": {
       "name": "PETIT DEJ",
       "ingredients": [
         {
-          "quantity": "200",
-          "name": "farine",
-          "unit": "g",
-          "id": "W7J5m5awPvWI9Vf4Pit5"
+          "unit": "pièce(s)",
+          "quantity": "1",
+          "id": "PDNKmth7RGweW03b3QkT",
+          "name": "brioche chocolat"
+        },
+        {
+          "id": "uLGzBQRJncpg67eNLPPX",
+          "name": "brioche",
+          "unit": "pièce(s)",
+          "quantity": "1"
         },
         {
           "quantity": "1",
-          "name": "brioche",
+          "name": "chocolat en poudre",
           "unit": "pièce(s)",
-          "id": "uLGzBQRJncpg67eNLPPX"
+          "id": "xWfgZqzsYuAQUOeOeUOV"
+        }
+      ],
+      "userId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2"
+    },
+    "v1zgnyuSVWiQb1caNRqq": {
+      "name": "LEGUMES - JANVIER",
+      "ingredients": [
+        {
+          "quantity": "1",
+          "name": "Ail",
+          "unit": "pièce(s)",
+          "id": "80kMmWUooal8ep61ORyQ"
+        },
+        {
+          "quantity": "1",
+          "name": "Betterave",
+          "unit": "pièce(s)",
+          "id": "HrGXD2QPJcLc5cq0K6KG"
+        },
+        {
+          "quantity": "1",
+          "name": "Carotte",
+          "unit": "pièce(s)",
+          "id": "DE3U8SsmAiPyefZ5Ib1X"
+        },
+        {
+          "quantity": "1",
+          "name": "Branche de cèleri",
+          "unit": "pièce(s)",
+          "id": "tbPyoWhAcdADwHwJM1I8"
         }
       ],
       "userId": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2"
@@ -6781,22 +7290,70 @@
     "N3xsPHL9pwR2MeLlhYbSycQHVVQ2": {
       "displayName": "Jean-Philippe JOLLY",
       "email": "janfijolly@gmail.com",
-      "friends": [
-        "k24QBJQ1xBUsPaYrLP5sVn8awBk1"
-      ],
       "photoURL": "https://lh3.googleusercontent.com/a/ACg8ocKbnLjRrTC7KB_4YtttzCqA3w153TN863rPDAd_bTJ_Y-6TZ_aStQ=s96-c",
       "uid": "N3xsPHL9pwR2MeLlhYbSycQHVVQ2",
-      "displayName_lowercase": "jean-philippe jolly"
+      "displayName_lowercase": "jean-philippe jolly",
+      "keywords": [
+        "j",
+        "je",
+        "jea",
+        "jean",
+        "jean-",
+        "jean-p",
+        "jean-ph",
+        "jean-phi",
+        "jean-phil",
+        "jean-phili",
+        "jean-philip",
+        "jean-philipp",
+        "jean-philippe",
+        "jean-philippe ",
+        "jean-philippe j",
+        "jean-philippe jo",
+        "jean-philippe jol",
+        "jean-philippe joll",
+        "jean-philippe jolly"
+      ],
+      "friends": [
+        "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
+        "mWN4krlYiDhkvWZ6yTFBGa3fihR2"
+      ]
     },
     "k24QBJQ1xBUsPaYrLP5sVn8awBk1": {
       "displayName": "Pierre Fourain",
       "email": "kilou.bilou@gmail.com",
       "photoURL": "https://lh3.googleusercontent.com/a/ACg8ocIMl1E3FP_JHTBpzGJZAmjh_vgjJcq_5oDVbSN5nTlcRGDctw=s96-c",
       "uid": "k24QBJQ1xBUsPaYrLP5sVn8awBk1",
+      "displayName_lowercase": "pierre fourain",
+      "keywords": [
+        "p",
+        "pi",
+        "pie",
+        "pier",
+        "pierr",
+        "pierre",
+        "pierre ",
+        "pierre f",
+        "pierre fo",
+        "pierre fou",
+        "pierre four",
+        "pierre foura",
+        "pierre fourai",
+        "pierre fourain"
+      ],
       "friends": [
         "N3xsPHL9pwR2MeLlhYbSycQHVVQ2"
-      ],
-      "displayName_lowercase": "pierre fourain"
+      ]
+    },
+    "mWN4krlYiDhkvWZ6yTFBGa3fihR2": {
+      "uid": "mWN4krlYiDhkvWZ6yTFBGa3fihR2",
+      "email": "severine.capelli81@gmail.com",
+      "displayName_lowercase": "severine capelli",
+      "photoURL": "https://lh3.googleusercontent.com/a/ACg8ocLJxG4GLQudwGdYucGf121qHPQKifr_uzs2wXjr5XFLvodJPQ=s96-c",
+      "displayName": "SEVERINE CAPELLI",
+      "friends": [
+        "N3xsPHL9pwR2MeLlhYbSycQHVVQ2"
+      ]
     }
   }
 }

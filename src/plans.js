@@ -1,4 +1,4 @@
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { getCurrentUser } from './auth.js';
 
 const db = getFirestore();
@@ -234,76 +234,85 @@ export function initPlanManagement() {
     const leavePlanBtn = document.getElementById('leave-plan-btn');
     const deletePlanBtn = document.getElementById('delete-plan-btn');
 
-    if (createPlanBtn) {
-        createPlanBtn.addEventListener('click', openCreatePlanModal);
-    }
+    // --- Event Handlers ---
+    const handleCreatePlanSubmit = (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('plan-name');
+        if (nameInput && nameInput.value) {
+            createPlan(nameInput.value);
+        }
+    };
 
-    if (renamePlanBtn) {
-        renamePlanBtn.addEventListener('click', () => {
-            if (planSelect && planSelect.value) {
-                const selectedOption = planSelect.options[planSelect.selectedIndex];
-                openRenamePlanModal(planSelect.value, selectedOption.text);
-            } else {
-                alert("Veuillez sélectionner un plan à renommer.");
-            }
-        });
-    }
+    const handleRenamePlanSubmit = (e) => {
+        e.preventDefault();
+        if (planToRenameId && newPlanNameInput.value) {
+            renamePlan(planToRenameId, newPlanNameInput.value);
+        }
+    };
 
-    if (leavePlanBtn) {
-        leavePlanBtn.addEventListener('click', () => {
-            if (planSelect && planSelect.value) {
-                leavePlan(planSelect.value);
-            } else {
-                alert("Veuillez sélectionner un plan.");
-            }
-        });
-    }
+    const handleConfirmDelete = () => {
+        if (planToDeleteId) {
+            deletePlan(planToDeleteId).then(() => {
+                closeDeleteConfirmModal();
+            });
+        }
+    };
 
-    if (deletePlanBtn) {
-        deletePlanBtn.addEventListener('click', () => {
-            if (planSelect && planSelect.value) {
-                const selectedPlanName = planSelect.options[planSelect.selectedIndex].text;
-                openDeleteConfirmModal(planSelect.value, selectedPlanName);
-            } else {
-                alert("Veuillez sélectionner un plan à supprimer.");
-            }
-        });
-    }
+    const handleRenameClick = () => {
+        if (planSelect && planSelect.value) {
+            const selectedOption = planSelect.options[planSelect.selectedIndex];
+            openRenamePlanModal(planSelect.value, selectedOption.text);
+        } else {
+            alert("Veuillez sélectionner un plan à renommer.");
+        }
+    };
 
-    // Modal event listeners
-    if (closeCreatePlanModalBtn) closeCreatePlanModalBtn.addEventListener('click', closeCreatePlanModal);
-    if (cancelCreatePlanBtn) cancelCreatePlanBtn.addEventListener('click', closeCreatePlanModal);
-    if (createPlanForm) {
-        createPlanForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const nameInput = document.getElementById('plan-name');
-            if (nameInput && nameInput.value) {
-                createPlan(nameInput.value);
-            }
-        });
-    }
+    const handleLeaveClick = () => {
+        if (planSelect && planSelect.value) {
+            leavePlan(planSelect.value);
+        } else {
+            alert("Veuillez sélectionner un plan.");
+        }
+    };
 
-    if (closeRenamePlanModalBtn) closeRenamePlanModalBtn.addEventListener('click', closeRenamePlanModal);
-    if (cancelRenamePlanBtn) cancelRenamePlanBtn.addEventListener('click', closeRenamePlanModal);
-    if (renamePlanForm) {
-        renamePlanForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (planToRenameId && newPlanNameInput.value) {
-                renamePlan(planToRenameId, newPlanNameInput.value);
-            }
-        });
-    }
+    const handleDeleteClick = () => {
+        if (planSelect && planSelect.value) {
+            const selectedPlanName = planSelect.options[planSelect.selectedIndex].text;
+            openDeleteConfirmModal(planSelect.value, selectedPlanName);
+        } else {
+            alert("Veuillez sélectionner un plan à supprimer.");
+        }
+    };
 
-    if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', () => {
-            if (planToDeleteId) {
-                deletePlan(planToDeleteId).then(() => {
-                    closeDeleteConfirmModal();
-                });
-            }
-        });
-    }
+    // --- Attach Listeners ---
+    createPlanBtn?.addEventListener('click', openCreatePlanModal);
+    renamePlanBtn?.addEventListener('click', handleRenameClick);
+    leavePlanBtn?.addEventListener('click', handleLeaveClick);
+    deletePlanBtn?.addEventListener('click', handleDeleteClick);
+    closeCreatePlanModalBtn?.addEventListener('click', closeCreatePlanModal);
+    cancelCreatePlanBtn?.addEventListener('click', closeCreatePlanModal);
+    createPlanForm?.addEventListener('submit', handleCreatePlanSubmit);
+    closeRenamePlanModalBtn?.addEventListener('click', closeRenamePlanModal);
+    cancelRenamePlanBtn?.addEventListener('click', closeRenamePlanModal);
+    renamePlanForm?.addEventListener('submit', handleRenamePlanSubmit);
+    cancelDeleteBtn?.addEventListener('click', closeDeleteConfirmModal);
+    confirmDeleteBtn?.addEventListener('click', handleConfirmDelete);
+
+    // --- Return Cleanup Function ---
+    return () => {
+        createPlanBtn?.removeEventListener('click', openCreatePlanModal);
+        renamePlanBtn?.removeEventListener('click', handleRenameClick);
+        leavePlanBtn?.removeEventListener('click', handleLeaveClick);
+        deletePlanBtn?.removeEventListener('click', handleDeleteClick);
+        closeCreatePlanModalBtn?.removeEventListener('click', closeCreatePlanModal);
+        cancelCreatePlanBtn?.removeEventListener('click', closeCreatePlanModal);
+        createPlanForm?.removeEventListener('submit', handleCreatePlanSubmit);
+        closeRenamePlanModalBtn?.removeEventListener('click', closeRenamePlanModal);
+        cancelRenamePlanBtn?.removeEventListener('click', closeRenamePlanModal);
+        renamePlanForm?.removeEventListener('submit', handleRenamePlanSubmit);
+        cancelDeleteBtn?.removeEventListener('click', closeDeleteConfirmModal);
+        confirmDeleteBtn?.removeEventListener('click', handleConfirmDelete);
+    };
 }
 
 export { getUserPlans, populatePlanSelector };
@@ -319,5 +328,28 @@ export async function addCollaborator(planId, userId) {
     } catch (error) {
         console.error("Error adding collaborator: ", error);
         // Handle the error appropriately
+    }
+}
+
+export async function saveHistory(planId, planObject, description = 'Modification diverse') {
+    if (!planId || !planObject) return;
+
+    const user = getCurrentUser();
+    if (!user) return;
+
+    try {
+        const historyRef = collection(db, 'plans', planId, 'history');
+        // Create a deep copy to avoid saving proxies or complex objects
+        const planStateToSave = JSON.parse(JSON.stringify(planObject));
+
+        await addDoc(historyRef, {
+            planState: planStateToSave,
+            timestamp: serverTimestamp(),
+            modifiedBy: user.uid,
+            modifiedByName: user.displayName || user.email,
+            description: description
+        });
+    } catch (error) {
+        console.error("Error saving history:", error);
     }
 }

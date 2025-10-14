@@ -426,3 +426,8 @@ h1, h2, h3, h4, h5, h6 {
 #num-people-input {
     -moz-appearance: textfield; /* Pour Firefox */
 }
+
+.ingredient-search-item:hover {
+    background-color: var(--tomato);
+    color: white;
+}

@@ -1,4 +1,4 @@
-import { getDatabase, ref, onValue, set, remove, onDisconnect, serverTimestamp } from "firebase/database";
+import { getDatabase, ref, onValue, set, remove, onDisconnect, serverTimestamp, update } from "firebase/database";
 import { getCurrentUser } from "./auth.js";
 import { rtdb } from "./firebase-config.js";
 
@@ -25,7 +25,7 @@ export function connectToPresenceChannel(planId, callback) {
     const status = {
         displayName: user.displayName || user.email,
         photoURL: user.photoURL,
-        status: 'idle', // idle, editing_recipe, etc.
+        status: 'idle', // idle, { type: 'editing_remark', fieldId: '...' }
         last_seen: serverTimestamp()
     };
 
@@ -62,11 +62,11 @@ export function disconnectFromPresenceChannel() {
 }
 
 // Met à jour le statut de l'action de l'utilisateur
-export function updateUserActivity(activityStatus) {
+export function updateUserActivity(newStatus) {
     if (userStatusRef) {
-        const updates = {};
-        updates['status'] = activityStatus;
-        updates['last_seen'] = serverTimestamp();
-        set(userStatusRef, { ...updates }); // Utiliser set pour écraser le statut précédent mais garder les autres infos
+        update(userStatusRef, {
+            status: newStatus,
+            last_seen: serverTimestamp()
+        });
     }
 }

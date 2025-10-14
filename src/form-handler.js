@@ -163,7 +163,7 @@ class RecipeFormHandler {
 
             filtered.forEach(item => {
                 const resultItem = document.createElement('div');
-                resultItem.className = 'p-2 hover:bg-tomato hover:text-white cursor-pointer';
+                resultItem.className = 'p-2 ingredient-search-item cursor-pointer';
                 resultItem.textContent = item.name;
                 resultItem.addEventListener('click', () => {
                     nameInput.value = item.name;

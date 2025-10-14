@@ -449,5 +449,18 @@
             </div>
         </div>
     </div>
+
+    <!-- Plan History Modal -->
+    <div id="plan-history-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
+        <div class="bg-white rounded-xl p-6 w-11/12 max-w-2xl relative max-h-[80vh] flex flex-col">
+            <button id="close-plan-history-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-lg font-bold mb-4">Historique des modifications</h3>
+            <div id="plan-history-list" class="flex-grow overflow-y-auto border-t pt-4">
+                <!-- History items will be generated here -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>

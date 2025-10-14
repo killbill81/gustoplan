@@ -1,10 +1,10 @@
 // Importe les fonctions Firebase
 import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, where, updateDoc, runTransaction, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, where, updateDoc, runTransaction, onSnapshot, orderBy } from "firebase/firestore";
 import { RecipeFormHandler } from './form-handler.js';
 import { getCurrentUserId } from './auth.js';
 import { openShareModal, openInviteParticipantModal } from './sharing.js';
-import { initPlanManagement, getUserPlans, populatePlanSelector } from './plans.js';
+import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory } from './plans.js';
 import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
 
 let editRecipeFormHandler = null;
@@ -42,6 +42,10 @@ export default function init() {
         sharePlanBtn: document.getElementById('share-plan-btn'),
         planSelect: document.getElementById('plan-select'),
         inviteParticipantBtn: document.getElementById('invite-participant-btn'),
+        historyPlanBtn: document.getElementById('history-plan-btn'),
+        planHistoryModal: document.getElementById('plan-history-modal'),
+        closePlanHistoryModalBtn: document.getElementById('close-plan-history-modal'),
+        planHistoryList: document.getElementById('plan-history-list'),
     };
 
     // --- New UI Component Functions ---
@@ -179,6 +183,8 @@ export default function init() {
     let allPlans = [];
     let currentPlan = null;
 
+    const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
     // --- Helper Functions ---
     function normalizeString(str) {
         if (!str) return '';
@@ -253,8 +259,7 @@ export default function init() {
             const defaultServingsComponent = createServingsControl(defaultNumPeople, async (newValue) => {
                 defaultNumPeople = newValue;
                 if (currentPlan) {
-                    const planRef = doc(db, "plans", currentPlan.id);
-                    await updateDoc(planRef, { defaultNumPeople: newValue, lastUpdated: new Date() });
+                    await updateCurrentPlan({ defaultNumPeople: newValue }, `a changé le nombre de personnes par défaut à ${newValue}`);
                 }
             });
             elements.defaultServingsControl.appendChild(defaultServingsComponent);
@@ -263,6 +268,19 @@ export default function init() {
         updateWeekDisplay();
         renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
         generateShoppingListFromPlan();
+    }
+
+    async function updateCurrentPlan(updateData, description) {
+        if (!currentPlan) return;
+        // Save history BEFORE the update
+        await saveHistory(currentPlan.id, currentPlan, description);
+        const planRef = doc(db, "plans", currentPlan.id);
+        try {
+            await updateDoc(planRef, { ...updateData, lastUpdated: new Date() });
+        } catch (error) {
+            console.error("Error updating plan:", error);
+            alert("Une erreur de sauvegarde est survenue.");
+        }
     }
 
     async function loadAndRenderSharedPlans(week) {
@@ -430,6 +448,117 @@ export default function init() {
         elements.sharedPlansModal.classList.add('hidden');
     }
 
+    function closePlanHistoryModal() {
+        elements.planHistoryModal.classList.add('hidden');
+    }
+
+    async function rollbackPlan(historyId) {
+        if (!currentPlan) return;
+        if (!confirm("Voulez-vous vraiment restaurer cette version ? L'état actuel sera sauvegardé dans l'historique avant la restauration.")) return;
+
+        try {
+            const historyRef = doc(db, 'plans', currentPlan.id, 'history', historyId);
+            const historySnap = await getDoc(historyRef);
+
+            if (!historySnap.exists()) {
+                throw new Error("Version de l'historique non trouvée.");
+            }
+
+            const planStateToRestore = historySnap.data().planState;
+
+            // First, save the current state to history before rolling back
+            await saveHistory(currentPlan.id, currentPlan);
+
+            // Now, restore the old state
+            const planRef = doc(db, "plans", currentPlan.id);
+            await setDoc(planRef, planStateToRestore); // Use setDoc to overwrite the whole plan
+
+            closePlanHistoryModal();
+            // The onSnapshot listener for plans will automatically update the UI.
+
+        } catch (error) {
+            console.error("Erreur lors du rollback :", error);
+        }
+    }
+
+    async function deleteHistoryEntry(historyId, elementToRemove) {
+        if (!currentPlan) return;
+        if (!confirm("Êtes-vous sûr de vouloir supprimer définitivement cette entrée de l'historique ?")) return;
+
+        try {
+            const historyDocRef = doc(db, 'plans', currentPlan.id, 'history', historyId);
+            await deleteDoc(historyDocRef);
+            // Remove the element from the UI for immediate feedback
+            elementToRemove.remove();
+        } catch (error) {
+            console.error("Erreur lors de la suppression de l'historique :", error);
+            alert("Une erreur est survenue lors de la suppression.");
+        }
+    }
+
+    async function openHistoryModal() {
+        if (!currentPlan) return;
+
+        elements.planHistoryList.innerHTML = '<p>Chargement de l\'historique...</p>';
+        elements.planHistoryModal.classList.remove('hidden');
+
+        try {
+            const historyRef = collection(db, 'plans', currentPlan.id, 'history');
+            const q = query(historyRef, orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+
+            elements.planHistoryList.innerHTML = '';
+            if (querySnapshot.empty) {
+                elements.planHistoryList.innerHTML = '<p>Aucun historique pour ce plan.</p>';
+                return;
+            }
+
+            querySnapshot.forEach(docSnap => {
+                const historyData = docSnap.data();
+                const historyItem = document.createElement('div');
+                historyItem.className = 'p-3 border-b flex justify-between items-center';
+
+                const infoDiv = document.createElement('div');
+                const date = historyData.timestamp?.toDate().toLocaleString('fr-FR') || 'Date inconnue';
+                const description = historyData.description || 'Modification diverse';
+                const modifier = historyData.modifiedByName || 'Inconnu';
+
+                infoDiv.innerHTML = `
+                    <p class="font-medium">${modifier} ${description}</p>
+                    <p class="text-sm text-gray-500">${date}</p>
+                `;
+
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'flex items-center space-x-2';
+
+                const rollbackBtn = document.createElement('button');
+                rollbackBtn.className = 'btn btn-secondary btn-sm';
+                rollbackBtn.textContent = 'Revenir à cette version';
+                rollbackBtn.addEventListener('click', () => rollbackPlan(docSnap.id));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-ghost text-red-500 hover:bg-red-100 btn-sm';
+                deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+                deleteBtn.title = 'Supprimer cette version';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteHistoryEntry(docSnap.id, historyItem);
+                });
+
+                buttonsDiv.appendChild(rollbackBtn);
+                buttonsDiv.appendChild(deleteBtn);
+
+                historyItem.appendChild(infoDiv);
+                historyItem.appendChild(buttonsDiv);
+                elements.planHistoryList.appendChild(historyItem);
+            });
+
+        } catch (error) {
+            console.error("Erreur de chargement de l'historique:", error);
+            elements.planHistoryList.innerHTML = '<p class="text-red-500">Impossible de charger l\'historique.</p>';
+        }
+    }
+
 
     async function clearMenu() {
         if (!currentPlan) {
@@ -462,7 +591,6 @@ export default function init() {
         // The header for the planner grid is static in the HTML, so we only render the rows.
         const gridContent = document.createDocumentFragment();
 
-        const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
         const mealTypes = ['lunch', 'dinner'];
         const subSlotsCount = 5;
         const startDayIndex = allDays.indexOf(planStartDay);
@@ -1227,7 +1355,7 @@ export default function init() {
                 menuData[toSlotId] = fromMeal;
                 if (toMeal) menuData[fromSlotId] = toMeal; else delete menuData[fromSlotId];
                 renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
-                await saveCurrentPlan();
+                await updateCurrentPlan({ [`weeks.${currentWeek}.menuData`]: menuData }, 'a déplacé un plat');
                 await generateShoppingListFromPlan();
             }
         }
@@ -1403,11 +1531,28 @@ export default function init() {
         textArea.className = 'w-full h-full p-1 text-xs bg-transparent border-0 rounded focus:outline-none focus:ring-1 focus:ring-tomato resize-none';
         textArea.placeholder = 'Remarque...';
         textArea.value = remarksData[slotId] || '';
+        textArea.dataset.slotId = slotId; // Add slotId for easy selection
+
         textArea.addEventListener('change', (event) => {
             const value = event.target.value;
             if (value) { remarksData[slotId] = value; } else { delete remarksData[slotId]; }
-            saveCurrentPlan();
+
+            const [dayIndexStr, mealType] = slotId.split('-');
+            const dayName = allDays[parseInt(dayIndexStr, 10)];
+            const mealTypeName = mealType === 'lunch' ? 'midi' : 'soir';
+            const description = `a modifié la remarque pour ${dayName} ${mealTypeName}`;
+
+            updateCurrentPlan({ [`weeks.${currentWeek}.remarksData`]: remarksData }, description);
         });
+
+        textArea.addEventListener('focus', (event) => {
+            updateUserActivity({ type: 'editing_remark', fieldId: slotId });
+        });
+
+        textArea.addEventListener('blur', (event) => {
+            updateUserActivity('idle');
+        });
+
         return textArea;
     }
 
@@ -1434,24 +1579,21 @@ export default function init() {
         } else {
             newMenuData[slotId] = [meal];
         }
+
+        const [dayIndexStr, mealType] = slotId.split('-');
+        const dayName = allDays[parseInt(dayIndexStr, 10)];
+        const mealTypeName = mealType === 'lunch' ? 'midi' : 'soir';
+        const description = `a ajouté '${meal.name}' à ${dayName} ${mealTypeName}`;
         
-        const planRef = doc(db, "plans", currentPlan.id);
-        try {
-            await updateDoc(planRef, {
-                [`weeks.${currentWeek}.menuData`]: newMenuData,
-                lastUpdated: new Date()
-            });
-            // The onSnapshot listener will handle the UI update.
-            closeMealSelectModal();
-        } catch (error) {
-            console.error("Erreur lors de l'ajout de la recette: ", error);
-            alert("Une erreur est survenue.");
-        }
+        await updateCurrentPlan({ [`weeks.${currentWeek}.menuData`]: newMenuData }, description);
+        // The onSnapshot listener will handle the UI update.
+        closeMealSelectModal();
     }
 
     async function handleDeleteMeal(slotId, index) {
         if (!currentPlan || !menuData[slotId] || !Array.isArray(menuData[slotId])) return;
 
+        const mealToDelete = menuData[slotId][index];
         // Create a deep copy of the menu data to modify
         const newMenuData = JSON.parse(JSON.stringify(menuData));
         
@@ -1461,18 +1603,13 @@ export default function init() {
             delete newMenuData[slotId];
         }
 
-        // Update the database directly with the new state
-        const planRef = doc(db, "plans", currentPlan.id);
-        try {
-            await updateDoc(planRef, {
-                [`weeks.${currentWeek}.menuData`]: newMenuData,
-                lastUpdated: new Date()
-            });
-            // The onSnapshot listener will handle the UI update for everyone.
-        } catch (error) {
-            console.error("Erreur lors de la suppression de la recette: ", error);
-            alert("Une erreur est survenue.");
-        }
+        const [dayIndexStr, mealType] = slotId.split('-');
+        const dayName = allDays[parseInt(dayIndexStr, 10)];
+        const mealTypeName = mealType === 'lunch' ? 'midi' : 'soir';
+        const description = `a supprimé '${mealToDelete.name}' de ${dayName} ${mealTypeName}`;
+
+        await updateCurrentPlan({ [`weeks.${currentWeek}.menuData`]: newMenuData }, description);
+        // The onSnapshot listener will handle the UI update for everyone.
     }
 
     async function clearMenu() {
@@ -1500,9 +1637,11 @@ export default function init() {
             }
             
             // Sauvegarder le plan vidé dans Firebase
-            await saveCurrentPlan();
+            await updateCurrentPlan({ [`weeks.${currentWeek}`]: { menuData: {}, servingsData: {}, remarksData: {} } }, `a vidé le menu de la semaine ${currentWeek}`);
         }
-    }    function changeWeek(weekNumber) {
+    }
+
+    function changeWeek(weekNumber) {
         if (weekNumber >= 1 && weekNumber <= 52) {
             currentWeek = weekNumber;
             loadWeekDataFromPlan();
@@ -1521,8 +1660,7 @@ export default function init() {
         elements.startDaySelect?.addEventListener('change', async (event) => { 
             startDay = event.target.value; 
             if (currentPlan) {
-                const planRef = doc(db, "plans", currentPlan.id);
-                await updateDoc(planRef, { startDay: startDay, lastUpdated: new Date() });
+                await updateCurrentPlan({ startDay: startDay }, `a changé le premier jour de la semaine à '${startDay}'`);
             }
             // No need to re-render, the listener will catch the change
         });
@@ -1572,6 +1710,10 @@ export default function init() {
             }
             openInviteParticipantModal(currentPlan);
         });
+
+        elements.historyPlanBtn?.addEventListener('click', openHistoryModal);
+        elements.closePlanHistoryModalBtn?.addEventListener('click', closePlanHistoryModal);
+        elements.planHistoryModal?.addEventListener('click', (e) => { if (e.target === elements.planHistoryModal) closePlanHistoryModal(); });
     }
 
     function getInitials(name = '') {
@@ -1580,14 +1722,20 @@ export default function init() {
         return initials.substring(0, 2).toUpperCase();
     }
 
-    function updateCollaboratorsUI(allParticipants = [], presences = {}) {
+    function updatePresenceUI(allParticipants = [], presences = {}) {
         const avatarContainer = document.getElementById('collaborators-bar');
         const activityContainer = document.getElementById('activity-labels-container');
         const tooltip = document.getElementById('name-tooltip');
         if (!avatarContainer || !tooltip || !activityContainer) return;
 
+        // --- Reset UI state ---
         avatarContainer.innerHTML = '';
         activityContainer.innerHTML = '';
+        // Unlock all remark fields first
+        document.querySelectorAll('.remark-lock-overlay').forEach(overlay => overlay.remove());
+        document.querySelectorAll('textarea[data-slot-id]').forEach(textarea => {
+            textarea.disabled = false;
+        });
 
         if (allParticipants.length <= 1 && Object.keys(presences).length <= 1) {
             avatarContainer.classList.add('hidden');
@@ -1595,15 +1743,17 @@ export default function init() {
         }
 
         let activityHtml = '';
+        const currentUserId = getCurrentUserId();
+
         allParticipants.forEach(p => {
             if (!p) return;
 
             const isOnline = presences.hasOwnProperty(p.uid);
             const presenceInfo = presences[p.uid] || {};
 
+            // --- Avatar Logic ---
             const avatar = document.createElement('div');
             avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center bg-gray-300 text-white font-bold text-xs ring-2 ring-white cursor-pointer transition-all duration-300';
-            
             const statusText = isOnline ? '(présent)' : '(absent)';
             avatar.dataset.name = `${p.displayName || 'Inconnu'} ${statusText}`;
 
@@ -1631,17 +1781,33 @@ export default function init() {
 
             avatarContainer.appendChild(avatar);
 
-            // Gérer les labels d'activité uniquement pour les utilisateurs en ligne
-            if (isOnline && presenceInfo.status && presenceInfo.status !== 'idle') {
-                let actionText = '';
-                switch(presenceInfo.status) {
-                    case 'editing_recipe':
-                        actionText = 'modifie une recette...';
-                        break;
-                    // Ajouter d'autres cas ici
-                }
-                if (actionText) {
-                    activityHtml += `<span class="italic mr-4">${p.displayName} ${actionText}</span>`;
+            // --- Activity & Locking Logic ---
+            if (isOnline && p.uid !== currentUserId) { // Only check for other users' activities
+                const status = presenceInfo.status;
+                if (typeof status === 'object' && status.type === 'editing_remark') {
+                    // Lock the remark field
+                    const textarea = document.querySelector(`textarea[data-slot-id="${status.fieldId}"]`);
+                    if (textarea) {
+                        textarea.disabled = true;
+                        const overlay = document.createElement('div');
+                        overlay.className = 'remark-lock-overlay absolute inset-0 bg-gray-400 bg-opacity-25 flex items-center justify-center text-xs text-white font-bold';
+                        overlay.innerHTML = `<i class="fas fa-lock mr-1"></i> ${p.displayName} écrit...`;
+                        if (textarea.parentElement) {
+                            textarea.parentElement.classList.add('relative');
+                            textarea.parentElement.appendChild(overlay);
+                        }
+                    }
+                } else if (typeof status === 'string' && status !== 'idle') {
+                    // Handle simple string statuses like 'editing_recipe'
+                    let actionText = '';
+                    switch(status) {
+                        case 'editing_recipe':
+                            actionText = 'modifie une recette...';
+                            break;
+                    }
+                    if (actionText) {
+                        activityHtml += `<span class="italic mr-4">${p.displayName} ${actionText}</span>`;
+                    }
                 }
             }
         });
@@ -1662,9 +1828,11 @@ export default function init() {
         const renamePlanBtn = document.getElementById('rename-plan-btn');
         const leavePlanBtn = document.getElementById('leave-plan-btn');
         const inviteParticipantBtn = document.getElementById('invite-participant-btn');
+        const historyPlanBtn = document.getElementById('history-plan-btn');
 
         if (deletePlanBtn) deletePlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
         if (renamePlanBtn) renamePlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
+        if (historyPlanBtn) historyPlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
         if (leavePlanBtn) leavePlanBtn.style.display = currentPlan && !currentPlan.isOwner ? 'inline-flex' : 'none';
         if (inviteParticipantBtn) {
             const isCollaborative = currentPlan && (currentPlan.type === 'collaborative' || (currentPlan.collaborators && currentPlan.collaborators.length > 0));
@@ -1674,14 +1842,14 @@ export default function init() {
         // Gérer l'affichage des collaborateurs et la présence
         if (currentPlan && currentPlan.participants && currentPlan.participants.length > 1) {
             // Afficher immédiatement tous les participants comme étant hors ligne
-            updateCollaboratorsUI(currentPlan.participants, {});
+            updatePresenceUI(currentPlan.participants, {});
             // Se connecter pour recevoir les mises à jour de statut en temps réel
             connectToPresenceChannel(currentPlan.id, (presences) => {
-                updateCollaboratorsUI(currentPlan.participants, presences);
+                updatePresenceUI(currentPlan.participants, presences);
             });
         } else {
             // S'assurer que la barre est cachée si le plan n'est pas collaboratif
-            updateCollaboratorsUI([], {});
+            updatePresenceUI([], {});
         }
 
         if (currentPlan) {
@@ -1701,21 +1869,18 @@ export default function init() {
             newServingsData[servingsKey] = newValue;
         }
 
-        const planRef = doc(db, "plans", currentPlan.id);
-        try {
-            await updateDoc(planRef, {
-                [`weeks.${currentWeek}.servingsData`]: newServingsData,
-                lastUpdated: new Date()
-            });
-        } catch (error) {
-            console.error("Erreur lors de la mise à jour du nombre de personnes: ", error);
-        }
+        const [dayIndexStr, mealType] = servingsKey.split('-');
+        const dayName = allDays[parseInt(dayIndexStr, 10)];
+        const mealTypeName = mealType === 'lunch' ? 'midi' : 'soir';
+        const description = `a changé le nombre de personnes pour ${dayName} ${mealTypeName} à ${newValue}`;
+
+        await updateCurrentPlan({ [`weeks.${currentWeek}.servingsData`]: newServingsData }, description);
     }
 
     async function initializeApp() {
         if (!db) return;
         
-        initPlanManagement();
+        const cleanupPlanManagement = initPlanManagement();
         setupEventListeners();
         setupShoppingListAutocomplete();
 
@@ -1760,6 +1925,7 @@ export default function init() {
         return () => {
             unsubscribeFromPlans();
             unsubscribeFromRecipes();
+            cleanupPlanManagement();
         };
     }
     
