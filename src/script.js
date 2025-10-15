@@ -4,7 +4,8 @@ import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, whe
 import { RecipeFormHandler } from './form-handler.js';
 import { getCurrentUserId } from './auth.js';
 import { openShareModal, openInviteParticipantModal } from './sharing.js';
-import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory } from './plans.js';
+import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory, saveOrUpdatePlanSaveByName } from './plans.js';
+import { toggleFavoriteStatus } from './recipes.js';
 import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
 
 let editRecipeFormHandler = null;
@@ -46,6 +47,7 @@ export default function init() {
         planHistoryModal: document.getElementById('plan-history-modal'),
         closePlanHistoryModalBtn: document.getElementById('close-plan-history-modal'),
         planHistoryList: document.getElementById('plan-history-list'),
+        savePlanBtn: document.getElementById('save-plan-btn'),
     };
 
     // --- New UI Component Functions ---
@@ -639,8 +641,18 @@ export default function init() {
                     } else if (Array.isArray(mealsInSlot) && mealsInSlot.length > 0) {
                         const cardsContainer = document.createElement('div');
                         cardsContainer.className = 'w-full';
-                        mealsInSlot.forEach((meal, index) => {
-                            cardsContainer.appendChild(createMealCardElement(meal, slotId, index, isReadOnly));
+                        mealsInSlot.forEach((mealRef, index) => {
+                            // Find the full, up-to-date meal object from the reference ID
+                            const fullMeal = availableMeals.find(m => m.id === mealRef.id);
+                            if (fullMeal) {
+                                cardsContainer.appendChild(createMealCardElement(fullMeal, slotId, index, isReadOnly));
+                            } else {
+                                // Handle case where recipe was deleted but reference still exists in plan
+                                const deletedCard = document.createElement('div');
+                                deletedCard.className = 'p-1 bg-red-100 text-red-700 rounded shadow-sm text-center text-xs font-medium';
+                                deletedCard.textContent = 'Recette supprimée';
+                                cardsContainer.appendChild(deletedCard);
+                            }
                         });
                         mealSlotDiv.appendChild(cardsContainer);
                         if (!isReadOnly) {
@@ -1277,7 +1289,17 @@ export default function init() {
         searchInput.className = 'w-full p-2 mb-4 border border-gray-300 rounded-lg';
         elements.mealSelectList.appendChild(searchInput);
         const normalizedCategory = normalizeString(category);
-        const categoryMeals = availableMeals.filter(meal => normalizeString(meal.category) === normalizedCategory).sort((a, b) => a.name.localeCompare(b.name));
+        const categoryMeals = availableMeals.filter(meal => normalizeString(meal.category) === normalizedCategory)
+            .sort((a, b) => {
+                // Sort by favorite status first (true comes first), then by name
+                const favA = a.isFavorite ? 1 : 0;
+                const favB = b.isFavorite ? 1 : 0;
+                if (favB !== favA) {
+                    return favB - favA;
+                }
+                return a.name.localeCompare(b.name);
+            });
+
         const listContainer = document.createElement('div');
         listContainer.className = 'space-y-1 max-h-80 overflow-y-auto';
         elements.mealSelectList.appendChild(listContainer);
@@ -1293,7 +1315,13 @@ export default function init() {
                     mealButton.className = 'w-full text-left p-2 hover:bg-gray-100 rounded-lg transition-colors duration-150';
                     const nameP = document.createElement('p');
                     nameP.className = 'font-medium text-gray-800 text-sm';
-                    nameP.textContent = meal.name;
+                    
+                    if (meal.isFavorite) {
+                        nameP.innerHTML = `${meal.name} <i class="fas fa-heart text-red-500 ml-2"></i>`;
+                    } else {
+                        nameP.textContent = meal.name;
+                    }
+
                     mealButton.appendChild(nameP);
                     mealButton.addEventListener('click', () => { addMealToSlot(slotId, meal); closeMealSelectModal(); });
                     listContainer.appendChild(mealButton);
@@ -1379,6 +1407,24 @@ export default function init() {
         if (!isReadOnly) {
             card.classList.add('cursor-grab');
             card.draggable = true;
+        }
+
+        // Favorite Heart Icon
+        if (!isReadOnly) {
+            const heartBtn = document.createElement('button');
+            heartBtn.className = 'absolute -top-2 -right-1 text-base';
+            heartBtn.innerHTML = `<i class="fas fa-heart"></i>`;
+            if (meal.isFavorite) {
+                heartBtn.classList.add('text-red-500');
+            } else {
+                heartBtn.classList.add('text-gray-300', 'hover:text-red-400');
+            }
+            heartBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // The main onSnapshot listener will handle the UI update automatically
+                toggleFavoriteStatus(meal.id, meal.isFavorite);
+            });
+            card.appendChild(heartBtn);
         }
 
         const nameSpan = document.createElement('span');
@@ -1574,10 +1620,13 @@ export default function init() {
         const newMenuData = JSON.parse(JSON.stringify(menuData));
         const currentMeals = newMenuData[slotId];
 
+        // Store only a reference to the meal (its ID), not a full copy.
+        const mealReference = { id: meal.id };
+
         if (Array.isArray(currentMeals)) {
-            currentMeals.push({ ...meal });
+            currentMeals.push(mealReference);
         } else {
-            newMenuData[slotId] = [meal];
+            newMenuData[slotId] = [mealReference];
         }
 
         const [dayIndexStr, mealType] = slotId.split('-');
@@ -1714,6 +1763,52 @@ export default function init() {
         elements.historyPlanBtn?.addEventListener('click', openHistoryModal);
         elements.closePlanHistoryModalBtn?.addEventListener('click', closePlanHistoryModal);
         elements.planHistoryModal?.addEventListener('click', (e) => { if (e.target === elements.planHistoryModal) closePlanHistoryModal(); });
+
+        elements.savePlanBtn?.addEventListener('click', async () => {
+            if (!currentPlan) {
+                alert("Veuillez sélectionner un plan de travail avant de sauvegarder.");
+                return;
+            }
+            const saveModal = document.getElementById('save-plan-as-modal');
+            const saveForm = document.getElementById('save-plan-as-form');
+            const saveInput = document.getElementById('save-plan-name');
+            const cancelBtn = document.getElementById('cancel-save-plan-as-btn');
+            const closeBtn = document.getElementById('close-save-plan-as-modal');
+
+            // Pré-remplir le nom de la sauvegarde
+            const date = new Date().toLocaleDateString('fr-FR');
+            saveInput.value = `${currentPlan.name} - Semaine ${currentWeek} (${date})`;
+
+            saveModal.classList.remove('hidden');
+
+            const formSubmitHandler = async (e) => {
+                e.preventDefault();
+                const saveName = saveInput.value;
+                if (!saveName) return;
+
+                const weekData = {
+                    menuData: menuData,
+                    servingsData: servingsData,
+                    remarksData: remarksData,
+                    weekNumber: currentWeek,
+                    startDay: startDay,
+                    defaultNumPeople: defaultNumPeople
+                };
+
+                await saveOrUpdatePlanSaveByName(saveName, weekData);
+                saveModal.classList.add('hidden');
+                saveForm.removeEventListener('submit', formSubmitHandler);
+            };
+
+            const closeModalHandler = () => {
+                saveModal.classList.add('hidden');
+                saveForm.removeEventListener('submit', formSubmitHandler);
+            };
+
+            saveForm.addEventListener('submit', formSubmitHandler, { once: true });
+            cancelBtn.addEventListener('click', closeModalHandler, { once: true });
+            closeBtn.addEventListener('click', closeModalHandler, { once: true });
+        });
     }
 
     function getInitials(name = '') {
@@ -1918,6 +2013,14 @@ export default function init() {
         const unsubscribeFromPlans = getUserPlans((plans) => {
             allPlans = plans;
             populatePlanSelector(plans);
+
+            // Vérifier si un plan a été passé depuis la page 'Mes Plans'
+            const selectedPlanId = localStorage.getItem('selectedPlanId');
+            if (selectedPlanId && plans.some(p => p.id === selectedPlanId)) {
+                elements.planSelect.value = selectedPlanId;
+                localStorage.removeItem('selectedPlanId'); // Nettoyer après utilisation
+            }
+
             loadPlanFromSelection(); // Load data directly after populating
         });
 

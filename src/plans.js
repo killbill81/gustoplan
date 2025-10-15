@@ -1,4 +1,4 @@
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion, serverTimestamp, getDocs } from 'firebase/firestore';
 import { getCurrentUser } from './auth.js';
 
 const db = getFirestore();
@@ -11,8 +11,8 @@ let deleteConfirmModal, cancelDeleteBtn, confirmDeleteBtn, deleteConfirmTitle, d
 let planToDeleteId = null;
 let planToRenameId = null;
 
-// --- Modal Handling ---
-function openCreatePlanModal() {
+// --- Modal Handling (now exported) ---
+export function openCreatePlanModal() {
     if (createPlanModal) createPlanModal.classList.remove('hidden');
 }
 
@@ -21,7 +21,7 @@ function closeCreatePlanModal() {
     if (createPlanForm) createPlanForm.reset();
 }
 
-function openRenamePlanModal(planId, currentName) {
+export function openRenamePlanModal(planId, currentName) {
     planToRenameId = planId;
     if (newPlanNameInput) newPlanNameInput.value = currentName;
     if (renamePlanModal) renamePlanModal.classList.remove('hidden');
@@ -34,7 +34,7 @@ function closeRenamePlanModal() {
     if (renamePlanForm) renamePlanForm.reset();
 }
 
-function openDeleteConfirmModal(planId, planName) {
+export function openDeleteConfirmModal(planId, planName) {
     planToDeleteId = planId;
     if (deleteConfirmTitle) deleteConfirmTitle.textContent = 'Confirmer la suppression';
     if (deleteConfirmMessage) deleteConfirmMessage.textContent = `Êtes-vous sûr de vouloir supprimer le plan "${planName}" ? Cette action est irréversible.`;
@@ -351,5 +351,55 @@ export async function saveHistory(planId, planObject, description = 'Modificatio
         });
     } catch (error) {
         console.error("Error saving history:", error);
+    }
+}
+
+export async function saveOrUpdatePlanSaveByName(saveName, weekData) {
+    const user = getCurrentUser();
+    if (!user || !saveName || !weekData) return;
+
+    try {
+        const savesRef = collection(db, 'plan_saves');
+        const q = query(savesRef, where("userId", "==", user.uid), where("name", "==", saveName));
+        
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // Update existing save
+            const existingSaveId = querySnapshot.docs[0].id;
+            const saveRef = doc(db, 'plan_saves', existingSaveId);
+            await updateDoc(saveRef, {
+                weekData: weekData,
+                savedAt: serverTimestamp()
+            });
+        } else {
+            // Create new save
+            await addDoc(savesRef, {
+                userId: user.uid,
+                name: saveName,
+                savedAt: serverTimestamp(),
+                weekData: weekData
+            });
+        }
+    } catch (error) {
+        console.error("Error saving or updating plan save:", error);
+        alert("Erreur lors de la sauvegarde.");
+    }
+}
+
+export async function savePlanWeek(planId, weekNumber, weekData) {
+    if (!planId || !weekNumber || !weekData) return;
+
+    const planRef = doc(db, 'plans', planId);
+    try {
+        await updateDoc(planRef, {
+            [`weeks.${weekNumber}`]: weekData,
+            lastUpdated: new Date()
+        });
+        console.log(`Week ${weekNumber} of plan ${planId} saved successfully.`);
+        // On pourrait aussi appeler saveHistory ici si nécessaire
+    } catch (error) {
+        console.error("Error saving plan week:", error);
+        alert("Erreur lors de la sauvegarde du plan.");
     }
 }

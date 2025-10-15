@@ -1,9 +1,21 @@
 // GustoPlan - recipes.js
 import { db } from './firebase-config.js';
-import { collection, getDocs, doc, setDoc, addDoc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc, addDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { RecipeFormHandler } from './form-handler.js';
 
 let recipeFormHandler = null;
+
+export async function toggleFavoriteStatus(recipeId, currentStatus) {
+    if (!recipeId) return;
+    const recipeRef = doc(db, 'recipes', recipeId);
+    try {
+        await updateDoc(recipeRef, {
+            isFavorite: !currentStatus
+        });
+    } catch (error) {
+        console.error("Error toggling favorite status:", error);
+    }
+}
 
 export default function init() {
     // --- DOM Elements ---
@@ -35,7 +47,11 @@ export default function init() {
         'cancel-recipe-btn'   // Added cancelButtonId
     );
 
-    recipeFormHandler.setOnSaveCallback(fetchAllRecipes); // Set callback to refresh recipes after save
+    // The onSnapshot listener will handle updates, so the callback is less critical
+    // but we can keep it for an explicit refresh if needed after a form save.
+    recipeFormHandler.setOnSaveCallback(() => {
+        // The listener will catch the change, no manual refresh needed.
+    });
 
     
 
@@ -53,18 +69,19 @@ export default function init() {
     const defaultTextColor = 'text-gray-800';
 
     // --- Main Functions ---
-    async function fetchAllRecipes() {
-        console.log("fetchAllRecipes called.");
-        if (!db) return;
-        try {
-            const querySnapshot = await getDocs(collection(db, "recipes"));
-            allRecipes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log("Fetched recipes:", allRecipes);
+    function initRecipeListener() {
+        if (!db) return () => {}; // Return an empty unsubscribe function if db is not available
+        
+        const unsubscribe = onSnapshot(collection(db, "recipes"), (snapshot) => {
+            console.log("Recipe data updated on /recipes page from listener.");
+            allRecipes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             renderTabs();
             renderRecipes();
-        } catch (error) {
-            console.error("Erreur lors de la récupération des recettes: ", error);
-        }
+        }, (error) => {
+            console.error("Erreur lors de l\'écoute des recettes: ", error);
+        });
+
+        return unsubscribe; // Return the unsubscribe function for cleanup
     }
 
     function handleTabClick(category) {
@@ -146,11 +163,28 @@ export default function init() {
     function createRecipeCard(recipe) {
         let bgColor = defaultBgColor;
         if (recipe.category) {
-            const normalizedCategory = recipe.category.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+            const normalizedCategory = recipe.category.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
             bgColor = categoryBgColorMap[normalizedCategory] || defaultBgColor;
         }
         const card = document.createElement('div');
-        card.className = `rounded-lg shadow-sm flex flex-col p-2 ${bgColor}`;
+        card.className = `rounded-lg shadow-sm flex flex-col p-2 ${bgColor} relative`; // Added relative positioning
+
+        // Favorite Heart Icon
+        const heartBtn = document.createElement('button');
+        heartBtn.className = 'absolute top-2 right-2 text-lg';
+        heartBtn.innerHTML = `<i class="fas fa-heart"></i>`;
+        if (recipe.isFavorite) {
+            heartBtn.classList.add('text-red-500');
+        } else {
+            heartBtn.classList.add('text-gray-300', 'hover:text-red-400');
+        }
+        heartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Just update the database. The onSnapshot listener will handle the UI change.
+            toggleFavoriteStatus(recipe.id, recipe.isFavorite);
+        });
+        card.appendChild(heartBtn);
+
         const name = document.createElement('h4');
         name.className = 'text-sm font-bold text-gray-800 truncate';
         name.textContent = recipe.name;
@@ -222,6 +256,8 @@ export default function init() {
     });
 
     if (db) {
-        fetchAllRecipes();
+        const unsubscribe = initRecipeListener();
+        // The cleanup function for the router will be to unsubscribe
+        return unsubscribe;
     }
 }

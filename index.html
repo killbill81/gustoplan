@@ -56,6 +56,9 @@
                     <button id="menu-btn" data-path="menu" class="hidden md:inline-flex btn bg-tomato text-white rounded-full text-sm nav-btn">
                         Mon Menu
                     </button>
+                    <button id="plans-btn" data-path="plans" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
+                        Mes Plans
+                    </button>
                     <button id="recipes-btn" data-path="recipes" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
                         Mes Recettes
                     </button>
@@ -313,11 +316,30 @@
                 <button id="cancel-delete-btn" class="btn btn-ghost">Annuler</button>
                 <button id="confirm-delete-btn" class="btn bg-red-500 text-white hover:bg-red-600">Supprimer</button>
             </div>
-        </div>
-    </div>
-
-
-    <!-- Meal Selection Modal -->
+                </div>
+            </div>
+        
+            <!-- Save Plan As Modal -->
+            <div id="save-plan-as-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
+                <div class="bg-white rounded-xl p-6 w-11/12 max-w-md relative">
+                    <button id="close-save-plan-as-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                    <h3 class="text-lg font-bold mb-4">Nommer la sauvegarde</h3>
+                    <form id="save-plan-as-form">
+                        <div>
+                            <label for="save-plan-name" class="block text-sm font-medium text-gray-700">Nom de la sauvegarde</label>
+                            <input type="text" id="save-plan-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" required>
+                        </div>
+                        <div class="flex justify-end space-x-4 mt-6">
+                            <button type="button" id="cancel-save-plan-as-btn" class="btn btn-ghost">Annuler</button>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        
+            <!-- Meal Selection Modal -->
     <div id="meal-select-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
         <div class="bg-white rounded-xl p-6 w-11/12 max-w-lg relative">
             <button id="close-meal-select-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">

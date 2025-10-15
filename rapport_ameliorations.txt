@@ -1,0 +1,83 @@
+# Rapport d'Améliorations pour l'Application GustoPlan
+
+## Introduction
+
+GustoPlan est une application déjà très complète et puissante, notamment grâce à ses fonctionnalités collaboratives en temps réel. Ce rapport vise à proposer des pistes d'amélioration sur quatre axes (visuel, ergonomique, fonctionnel, et options supplémentaires) pour la rendre encore plus intuitive, attrayante et utile au quotidien.
+
+---
+
+## 1. Améliorations Visuelles et d'Interface (UI)
+
+L'objectif est de rendre l'application plus moderne et agréable à utiliser.
+
+*   **Thème Sombre (Dark Mode) :**
+    Proposer un thème sombre est devenu un standard. C'est plus reposant pour les yeux, surtout en soirée, et l'architecture actuelle avec des variables CSS (`:root`) rend cette modification relativement simple à implémenter.
+
+*   **Micro-interactions et Animations :**
+    Ajouter des animations subtiles (feedback visuel lors d'un clic sur un bouton, transitions douces à l'ouverture des fenêtres modales, apparition progressive des éléments) pour donner une sensation de fluidité et de réactivité à l'interface.
+
+*   **Amélioration des "États Vides" :**
+    Les écrans affichant "Aucune recette" ou "Aucun plan" pourraient être rendus plus accueillants avec des illustrations ou des graphiques sympathiques, accompagnés d'un bouton d'action clair (ex: "Créez votre première recette !").
+
+*   **Gestion des Images de Recettes :**
+    L'application prévoit un emplacement pour les images de recettes. L'implémentation de l'upload d'images (via Firebase Storage) et leur affichage dans les listes et le planning transformerait radicalement l'attrait visuel de l'application.
+
+---
+
+## 2. Améliorations Ergonomiques (UX)
+
+L'objectif est de simplifier le parcours de l'utilisateur et de réduire les frictions.
+
+*   **Aide au Démarrage (Onboarding) :**
+    Un nouvel utilisateur peut se sentir perdu. Un tutoriel guidé lors de la première connexion ("Créez votre premier plan", "Ajoutez une recette", "Planifiez un repas") améliorerait grandement la prise en main.
+
+*   **Glisser-Déposer Amélioré :**
+    Permettre de glisser une recette directement depuis la page "Mes Recettes" et de la déposer sur un créneau du planning rendrait la planification beaucoup plus rapide et intuitive.
+
+*   **Gestion de la Liste de Courses :**
+    - **Cocher les articles :** Au lieu de supprimer un article, permettre de le "cocher". L'article coché serait alors grisé et déplacé en bas de la liste, ce qui est plus pratique lors des courses en magasin.
+    - **Organisation personnalisée :** Permettre à l'utilisateur de réorganiser l'ordre des catégories de la liste de courses pour correspondre à l'agencement de son supermarché habituel.
+
+*   **Importateur de Recettes depuis une URL :**
+    La saisie manuelle des recettes est fastidieuse. Une fonctionnalité permettant de coller l'URL d'une recette depuis un site populaire (ex: Marmiton, 750g) et qui remplirait automatiquement les champs (nom, ingrédients, étapes) serait un gain de temps considérable et une plus-value énorme.
+
+*   **Vue Mobile Optimisée :**
+    Bien que l'application soit responsive, la grille du planning peut être dense sur un petit écran. Proposer une vue mobile alternative qui affiche les jours verticalement (un jour à la fois) améliorerait l'ergonomie sur smartphone.
+
+---
+
+## 3. Améliorations Fonctionnelles et Nouvelles Fonctionnalités
+
+L'objectif est d'étendre les capacités de l'application pour couvrir plus de besoins.
+
+*   **Gestion du Garde-Manger (Inventaire) :**
+    Créer une nouvelle section "Mon Garde-Manger" où l'utilisateur peut lister les ingrédients qu'il possède déjà. La liste de courses pourrait alors automatiquement soustraire ces quantités, évitant les achats en double.
+
+*   **Suivi Budgétaire :**
+    Permettre d'associer un prix aux ingrédients. L'application pourrait alors fournir une estimation du coût total du plan de repas de la semaine, aidant à mieux maîtriser son budget.
+
+*   **Analyse Nutritionnelle :**
+    L'interface affiche déjà un "nutri-score" placeholder. Cette fonctionnalité pourrait être implémentée en se connectant à une API de nutrition (comme Edamam ou OpenFoodFacts) ou en permettant aux utilisateurs de saisir les informations nutritionnelles de leurs ingrédients.
+
+*   **Développement des Fonctionnalités IA :**
+    Le bouton "IA Semaine" est une excellente idée. Il pourrait permettre de :
+    - Générer un menu équilibré pour la semaine en fonction de préférences (végétarien, rapide, économique).
+    - Suggérer des recettes pour utiliser les ingrédients restants dans le garde-manger et ainsi lutter contre le gaspillage.
+
+*   **Tags et Collections de Recettes :**
+    Permettre aux utilisateurs d'ajouter des mots-clés (tags) à leurs recettes (#vegan, #rapide, #pourlesenfants, #été). Ils pourraient également créer des "collections" ou "livres de cuisine" personnalisés (ex: "Recettes de Noël", "BBQ entre amis").
+
+---
+
+## 4. Ajout d'Options et de Paramètres
+
+L'objectif est de donner plus de contrôle à l'utilisateur pour adapter l'application à ses besoins spécifiques.
+
+*   **Préférences Alimentaires et Allergies :**
+    Ajouter une section dans le profil utilisateur pour spécifier des régimes (sans gluten, sans lactose...) ou des allergies. L'application pourrait alors afficher des avertissements sur les recettes concernées.
+
+*   **Notifications Avancées :**
+    Permettre de configurer les notifications : recevoir un rappel la veille pour sortir des ingrédients du congélateur, recevoir la liste de courses par email chaque week-end, être notifié seulement pour certaines actions des collaborateurs, etc.
+
+*   **Conversion d'Unités :**
+    Intégrer un convertisseur automatique entre les unités de mesure (ex: grammes en onces, litres en tasses), particulièrement utile pour les recettes provenant de différents pays.

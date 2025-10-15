@@ -1,0 +1,174 @@
+PROMPT DIRECTEUR IA POUR GUSTOPLAN
+
+Objectif global
+Implémenter progressivement une IA de planification intelligente capable :
+	d’analyser les habitudes et préférences de l’utilisateur,
+	de générer des menus hebdomadaires équilibrés et personnalisés,
+	et d’offrir des conseils nutritionnels et économiques cohérents.
+
+Chaque étape est pensée pour être indépendante, avec sauvegarde et test local avant de passer à la suivante.
+
+
+⚙️ Étape 1 – Mise en place de la base IA
+
+Objectif :
+Créer la structure de données et les endpoints nécessaires pour accueillir l’IA.
+
+Actions :
+Créer une collection Firebase “userPreferences” avec :
+	habitudesAlimentaires (végétarien, omnivore, etc.)
+	allergies
+	budgetHebdo
+	tempsCuisineMoyen
+	objectifs (santé, perte de poids, sport, etc.)
+
+Créer un bouton “Analyser mes habitudes” → déclenche une sauvegarde des données utilisateur.
+Préparer un module iaUtils.js où tu centraliseras toutes les futures fonctions IA.
+
+Test : afficher dans la console les préférences stockées.
+
+Prompt local (à copier pour cette étape) :
+"Crée la structure Firebase pour sauvegarder les préférences utilisateur, et un module iaUtils.js qui récupère et affiche ces données. Teste avec un utilisateur fictif."
+
+
+🧩 Étape 2 – Génération simple de menus automatiques
+Objectif :
+
+Faire un premier prototype de génération automatique de menus à partir de recettes existantes.
+
+Actions :
+
+Récupérer toutes les recettes de la base Firebase.
+
+Créer une fonction generateMenuSimple(preferences) dans iaUtils.js.
+
+Utiliser un modèle IA léger (OpenAI, Gemini, Ollama local, etc.) pour proposer :
+
+7 déjeuners + 7 dîners,
+
+en respectant les préférences et restrictions.
+
+Sauvegarder le plan généré dans Firebase sous plansAuto/uid.
+
+Prompt local :
+
+"À partir de mes recettes Firebase et des préférences utilisateur, génère automatiquement un plan de repas de 7 jours (midi/soir). Retourne les noms des recettes et leurs IDs pour intégration dans la grille."
+
+🧠 Étape 3 – Analyse des habitudes et feedback
+Objectif :
+
+Permettre à l’IA d’apprendre des choix passés.
+
+Actions :
+
+Ajouter un champ historiquePlans dans le profil utilisateur.
+
+Créer une fonction analyzeHistory() qui :
+
+compte la fréquence des recettes,
+
+détecte les catégories les plus choisies,
+
+identifie les jours “vides” (oubli, désintérêt).
+
+Générer un petit résumé en texte (“Tu choisis souvent des plats rapides à base de pâtes, tu pourrais essayer X ou Y la semaine prochaine”).
+
+Prompt local :
+
+"Analyse les plans précédents de l’utilisateur pour déterminer ses tendances (recettes récurrentes, manques de diversité, équilibre nutritionnel de base). Fournis un résumé lisible et 3 suggestions."
+
+🥦 Étape 4 – Intégration de conseils nutritionnels et économiques
+Objectif :
+
+Donner des astuces dynamiques adaptées au plan de la semaine.
+
+Actions :
+
+Ajouter une fonction getSmartTips(menu) qui :
+
+vérifie la présence de fruits/légumes, sources de protéines, etc.
+
+estime le coût moyen du panier (en se basant sur une table de prix moyens par ingrédient).
+
+L’IA produit un petit encadré “Conseil de la semaine”.
+
+Exemple : “Ton menu manque de fibres — ajoute une salade ou un fruit le midi.”
+
+Exemple : “Tu peux économiser ~12€ en remplaçant le saumon par du thon ou des œufs.”
+
+Prompt local :
+
+"Analyse le plan de repas actuel et génère des conseils nutritionnels et économiques personnalisés, basés sur les ingrédients et les types de repas."
+
+🤝 Étape 5 – Amélioration continue par feedback utilisateur
+Objectif :
+
+Rendre l’IA plus pertinente au fil du temps.
+
+Actions :
+
+Ajouter un bouton “J’aime / Je n’aime pas ce menu”.
+
+Stocker ce feedback dans Firebase (userFeedback).
+
+Lors des prochaines générations, pondérer les recettes selon ce feedback.
+
+Mettre à jour le module IA pour ajuster la pondération.
+
+Prompt local :
+
+"Utilise les retours utilisateur sur les menus précédents pour ajuster la sélection des prochaines recettes, en favorisant celles aimées et en évitant celles rejetées."
+
+🔄 Étape 6 – Interaction naturelle et multimodale (IA vocale)
+Objectif :
+
+Rendre l’application fluide et accessible par la voix.
+
+Actions :
+
+Intégrer la reconnaissance vocale (Web Speech API).
+
+Créer des commandes simples :
+
+“Planifie ma semaine”,
+
+“Ajoute du poisson mardi soir”,
+
+“Montre-moi mes conseils nutritionnels”.
+
+Appeler les fonctions IA correspondantes selon la commande.
+
+Prompt local :
+
+"Ajoute une interface vocale capable d’interpréter les commandes liées à la planification et aux conseils IA, en utilisant la Web Speech API."
+
+💾 Étape 7 – Sauvegarde et itération continue
+Objectif :
+
+Stabiliser le projet avant d’aller plus loin.
+
+Actions :
+
+Créer des checkpoints de sauvegarde à chaque étape majeure :
+
+v1.0_preferences
+
+v1.1_generation_auto
+
+v1.2_feedback
+
+etc.
+
+Faire des tests unitaires simples (simulation utilisateur).
+
+Documenter les fonctions IA et leurs entrées/sorties.
+
+🚀 Étape 8 – Amélioration continue et modèle avancé
+
+Quand tout fonctionne localement :
+
+envisager une vraie intégration IA serveur (Cloud Functions ou API externe),
+
+créer un profil nutritionnel complet (calories, macros),
+
+connecter un analyseur de tickets de caisse pour ajuster les conseils réels.
