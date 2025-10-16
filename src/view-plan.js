@@ -34,12 +34,15 @@ export default function initViewPlanPage() {
             }
 
             const saveData = saveSnap.data();
-            const weekData = saveData.weekData;
-            const weekNumber = weekData.weekNumber || 'N/A';
+            const planData = saveData.planData;
+
+            if (!planData) {
+                throw new Error("Les données du plan sauvegardé sont corrompues ou manquantes.");
+            }
 
             if (planViewName) planViewName.textContent = `Vue de : ${saveData.name}`;
             
-            renderPlannerForWeek(mealPlanGrid, weekData, weekData.startDay, weekData.defaultNumPeople);
+            renderFullPlanner(mealPlanGrid, planData);
 
         } catch (error) {
             console.error("Error fetching save:", error);

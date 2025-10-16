@@ -354,9 +354,9 @@ export async function saveHistory(planId, planObject, description = 'Modificatio
     }
 }
 
-export async function saveOrUpdatePlanSaveByName(saveName, weekData) {
+export async function saveOrUpdatePlanSaveByName(saveName, planData) {
     const user = getCurrentUser();
-    if (!user || !saveName || !weekData) return;
+    if (!user || !saveName || !planData) return;
 
     try {
         const savesRef = collection(db, 'plan_saves');
@@ -369,7 +369,7 @@ export async function saveOrUpdatePlanSaveByName(saveName, weekData) {
             const existingSaveId = querySnapshot.docs[0].id;
             const saveRef = doc(db, 'plan_saves', existingSaveId);
             await updateDoc(saveRef, {
-                weekData: weekData,
+                planData: planData,
                 savedAt: serverTimestamp()
             });
         } else {
@@ -378,7 +378,7 @@ export async function saveOrUpdatePlanSaveByName(saveName, weekData) {
                 userId: user.uid,
                 name: saveName,
                 savedAt: serverTimestamp(),
-                weekData: weekData
+                planData: planData
             });
         }
     } catch (error) {

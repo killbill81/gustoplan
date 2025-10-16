@@ -53,6 +53,9 @@ const routes = {
                                             <button id="rename-plan-btn" class="btn btn-ghost text-blue-500 hover:bg-blue-100 btn-sm" title="Renommer le plan sélectionné">
                                                 <i class="fas fa-pencil-alt"></i>
                                             </button>
+                                            <button id="history-plan-btn" class="btn btn-ghost text-purple-500 hover:bg-purple-100 btn-sm" title="Historique des modifications">
+                                                <i class="fas fa-history"></i>
+                                            </button>
                                             <button id="leave-plan-btn" class="btn btn-ghost text-yellow-600 hover:bg-yellow-100 btn-sm" title="Quitter le plan collaboratif">
                                                 <i class="fas fa-door-open"></i>
                                             </button>

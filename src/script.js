@@ -1777,7 +1777,9 @@ export default function init() {
 
             // Pré-remplir le nom de la sauvegarde
             const date = new Date().toLocaleDateString('fr-FR');
-            saveInput.value = `${currentPlan.name} - Semaine ${currentWeek} (${date})`;
+            const weekCount = currentPlan.weeks ? Object.keys(currentPlan.weeks).filter(w => currentPlan.weeks[w] && Object.keys(currentPlan.weeks[w].menuData || {}).length > 0).length : 0;
+            const weekText = weekCount > 1 ? `${weekCount} semaines` : `${weekCount} semaine`;
+            saveInput.value = `${currentPlan.name} (${weekText}) - ${date}`;
 
             saveModal.classList.remove('hidden');
 
@@ -1786,16 +1788,41 @@ export default function init() {
                 const saveName = saveInput.value;
                 if (!saveName) return;
 
-                const weekData = {
+                // Ensure the current week's data is fresh in the plan object before saving
+                if (!currentPlan.weeks) {
+                    currentPlan.weeks = {};
+                }
+                currentPlan.weeks[currentWeek] = {
                     menuData: menuData,
                     servingsData: servingsData,
-                    remarksData: remarksData,
-                    weekNumber: currentWeek,
-                    startDay: startDay,
-                    defaultNumPeople: defaultNumPeople
+                    remarksData: remarksData
                 };
+                currentPlan.startDay = startDay;
+                currentPlan.defaultNumPeople = defaultNumPeople;
 
-                await saveOrUpdatePlanSaveByName(saveName, weekData);
+                // Deep copy the plan object and resolve meal references to save a complete, self-contained snapshot.
+                const planToSave = JSON.parse(JSON.stringify(currentPlan));
+                if (planToSave.weeks) {
+                    for (const weekNumber in planToSave.weeks) {
+                        const weekData = planToSave.weeks[weekNumber];
+                        if (weekData && weekData.menuData) {
+                            for (const slotId in weekData.menuData) {
+                                const mealsInSlot = weekData.menuData[slotId];
+                                if (Array.isArray(mealsInSlot)) {
+                                    weekData.menuData[slotId] = mealsInSlot.map(mealRef => {
+                                        if (mealRef && mealRef.id) {
+                                            const fullMeal = availableMeals.find(m => m.id === mealRef.id);
+                                            return fullMeal || mealRef; // Fallback to ref if not found
+                                        }
+                                        return mealRef;
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                await saveOrUpdatePlanSaveByName(saveName, planToSave);
                 saveModal.classList.add('hidden');
                 saveForm.removeEventListener('submit', formSubmitHandler);
             };

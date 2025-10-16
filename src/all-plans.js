@@ -79,10 +79,20 @@ export default function initAllPlansPage() {
 
             const saveDate = save.savedAt?.toDate().toLocaleString('fr-FR') || 'Date inconnue';
 
+            const planData = save.planData;
+            let weeksInfo = 'Plan vide ou sans données.';
+            if (planData && planData.weeks) {
+                const weekCount = Object.keys(planData.weeks).length;
+                if (weekCount > 0) {
+                    weeksInfo = `Contient ${weekCount} semaine(s).`;
+                }
+            }
+
             const info = document.createElement('div');
             info.innerHTML = `
                 <h3 class="text-lg font-bold text-gray-800 mb-2">${save.name}</h3>
                 <p class="text-sm text-gray-500">Sauvegardé le : ${saveDate}</p>
+                <p class="text-sm text-gray-600 mt-2">${weeksInfo}</p>
             `;
 
             const footer = document.createElement('div');
@@ -100,6 +110,7 @@ export default function initAllPlansPage() {
             loadBtn.className = 'btn btn-primary btn-sm';
             loadBtn.textContent = 'Charger';
             loadBtn.addEventListener('click', () => loadSaveIntoActivePlan(save.id));
+            loadBtn.style.display = 'none'; // Temporarily hide the button as logic needs rework for multi-week plans
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'btn btn-ghost text-red-500 hover:bg-red-100 btn-sm';
