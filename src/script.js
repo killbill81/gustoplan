@@ -1036,7 +1036,7 @@ export default function init() {
                         totalQuantity: quantity,
                         unit: unit,
                         source: 'manual',
-                        category: masterIngredient ? masterIngredient.category : 'Inconnue'
+                        category: (masterIngredient === null || masterIngredient === void 0 ? void 0 : masterIngredient.category) || 'Inconnue'
                     });
                 }
                 
