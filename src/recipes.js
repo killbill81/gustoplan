@@ -161,57 +161,66 @@ export default function init() {
     }
 
     function createRecipeCard(recipe) {
-        let bgColor = defaultBgColor;
-        if (recipe.category) {
-            const normalizedCategory = recipe.category.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-            bgColor = categoryBgColorMap[normalizedCategory] || defaultBgColor;
-        }
         const card = document.createElement('div');
-        card.className = `rounded-lg shadow-sm flex flex-col p-2 ${bgColor} relative`; // Added relative positioning
+        // Use the standard white card style, consistent with other pages
+        card.className = 'bg-white dark:bg-gray-800 shadow-md rounded-lg flex flex-col p-3';
 
-        // Favorite Heart Icon
+        // --- Header Section ---
+        const header = document.createElement('div');
+        header.className = 'w-full flex justify-between items-start';
+
+        const name = document.createElement('h4');
+        name.className = 'font-bold text-gray-800 dark:text-gray-200 pr-2'; // Added padding-right
+        name.textContent = recipe.name;
+        name.title = recipe.name;
+        header.appendChild(name);
+
         const heartBtn = document.createElement('button');
-        heartBtn.className = 'absolute top-2 right-2 text-lg';
+        heartBtn.className = 'text-lg flex-shrink-0'; // Prevent button from shrinking
         heartBtn.innerHTML = `<i class="fas fa-heart"></i>`;
         if (recipe.isFavorite) {
             heartBtn.classList.add('text-red-500');
         } else {
-            heartBtn.classList.add('text-gray-300', 'hover:text-red-400');
+            heartBtn.classList.add('text-gray-300', 'dark:text-gray-500', 'hover:text-red-400');
         }
         heartBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Just update the database. The onSnapshot listener will handle the UI change.
             toggleFavoriteStatus(recipe.id, recipe.isFavorite);
         });
-        card.appendChild(heartBtn);
+        header.appendChild(heartBtn);
+        card.appendChild(header);
 
-        const name = document.createElement('h4');
-        name.className = 'text-sm font-bold text-gray-800 truncate';
-        name.textContent = recipe.name;
-        name.title = recipe.name;
-        card.appendChild(name);
+        // --- Details Section ---
         const details = document.createElement('p');
-        details.className = 'text-xs text-gray-600 mt-1';
-        details.textContent = `${recipe.difficulty || ''} - Pour ${recipe.servings || '?'} pers.`
+        details.className = 'text-sm text-gray-600 dark:text-gray-400 mt-1 w-full';
+        details.textContent = `${recipe.difficulty || ''} - Pour ${recipe.servings || '?'} pers.`;
         card.appendChild(details);
+
+        // --- Spacer ---
         const flexGrow = document.createElement('div');
         flexGrow.className = 'flex-grow';
         card.appendChild(flexGrow);
+
+        // --- Actions Section ---
         const actions = document.createElement('div');
-        actions.className = 'flex justify-end space-x-2 mt-2';
+        actions.className = 'w-full flex justify-end items-center space-x-2 border-t dark:border-gray-700 pt-2 mt-2';
+
         const editButton = document.createElement('button');
-        editButton.className = 'btn btn-outline btn-xs border-gray-400 hover:bg-gray-200';
+        editButton.className = 'btn btn-ghost btn-sm text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/50';
         editButton.innerHTML = '<i class="fas fa-edit"></i>';
         editButton.title = 'Modifier';
         editButton.addEventListener('click', () => recipeFormHandler.openForm(recipe, 'Modifier la recette'));
         actions.appendChild(editButton);
+
         const deleteButton = document.createElement('button');
-        deleteButton.className = 'btn btn-ghost text-red-700 hover:bg-red-100 btn-xs';
+        deleteButton.className = 'btn btn-ghost btn-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50';
         deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteButton.title = 'Supprimer';
         deleteButton.addEventListener('click', () => handleDeleteRecipe(recipe.id, recipe.name));
         actions.appendChild(deleteButton);
+        
         card.appendChild(actions);
+
         return card;
     }
 

@@ -38,4 +38,85 @@ document.addEventListener('DOMContentLoaded', () => {
             startApp();
         }
     });
+
+    // Profile dropdown
+    const profileBtn = document.getElementById('profile-btn');
+    const profileMenu = document.getElementById('profile-menu');
+
+    if (profileBtn && profileMenu) {
+        profileBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            profileMenu.classList.toggle('hidden');
+            const isExpanded = !profileMenu.classList.contains('hidden');
+            profileBtn.setAttribute('aria-expanded', isExpanded);
+        });
+
+        document.addEventListener('click', (event) => {
+            const isClickInside = profileMenu.contains(event.target) || profileBtn.contains(event.target);
+            if (!isClickInside && !profileMenu.classList.contains('hidden')) {
+                profileMenu.classList.add('hidden');
+                profileBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    // Settings Modal & Dark Mode
+    const settingsLink = document.getElementById('settings-link');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsModalBtn = document.getElementById('close-settings-modal');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+    // Function to apply theme
+    const applyTheme = (theme) => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            if(darkModeToggle) darkModeToggle.checked = true;
+        } else {
+            document.documentElement.classList.remove('dark');
+            if(darkModeToggle) darkModeToggle.checked = false;
+        }
+    };
+
+    // Check for saved theme on load and apply it
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        applyTheme(savedTheme);
+    } else {
+        // Optional: Check for user's system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            applyTheme('dark');
+        } else {
+            applyTheme('light');
+        }
+    }
+    
+    if (settingsLink && settingsModal) {
+        settingsLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            settingsModal.classList.remove('hidden');
+        });
+    }
+
+    if (closeSettingsModalBtn && settingsModal) {
+        closeSettingsModalBtn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+        });
+    }
+    
+    // Also close modal on outside click
+    if (settingsModal) {
+        settingsModal.addEventListener('click', (event) => {
+            if (event.target === settingsModal) {
+                settingsModal.classList.add('hidden');
+            }
+        });
+    }
+
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('change', () => {
+            const theme = darkModeToggle.checked ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+            applyTheme(theme);
+        });
+    }
 });
