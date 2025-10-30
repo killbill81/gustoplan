@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>GustoPlan - Planificateur Intelligent</title>
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -54,31 +55,33 @@
                     <i class="fas fa-utensils text-2xl"></i>
                     <h1 class="text-xl md:text-2xl font-bold">GustoPlan</h1>
                 </div>
-                <div class="flex items-center space-x-3">
+
+                <!-- Hamburger Menu for Mobile -->
+                <div class="md:hidden flex items-center space-x-4">
+                    <!-- Notifications Bell for Mobile -->
+                    <div class="relative">
+                        <button id="notifications-btn-mobile" class="btn btn-icon text-white" aria-label="Notifications">
+                            <i class="fas fa-envelope text-2xl"></i>
+                            <span id="notifications-badge-mobile" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
+                        </button>
+                    </div>
+                    <button id="mobile-menu-btn" class="text-white focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-3">
                     <button id="voice-btn" class="btn btn-icon bg-white text-tomato rounded-full hover:bg-gray-100" aria-label="Commande vocale">
                         <i class="fas fa-microphone"></i>
                     </button>
-                    <button id="menu-btn" data-path="menu" class="hidden md:inline-flex btn bg-tomato text-white rounded-full text-sm nav-btn">
-                        Mon Menu
-                    </button>
-                    <button id="plans-btn" data-path="plans" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
-                        Mes Plans
-                    </button>
-                    <button id="recipes-btn" data-path="recipes" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
-                        Mes Recettes
-                    </button>
-                    <button id="ingredients-btn" data-path="ingredients" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
-                        Mes Ingrédients
-                    </button>
-                    <button id="lists-btn" data-path="lists" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
-                        Mes Listes
-                    </button>
-                    <button id="friends-btn" data-path="friends" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
-                        Amis
-                    </button>
-                    <button id="shared-btn" data-path="shared" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">
-                        Contenus partagés
-                    </button>
+                    <button id="menu-btn" data-path="menu" class="btn bg-tomato text-white rounded-full text-sm nav-btn">Mon Menu</button>
+                    <button id="plans-btn" data-path="plans" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Plans</button>
+                    <button id="recipes-btn" data-path="recipes" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Recettes</button>
+                    <button id="ingredients-btn" data-path="ingredients" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Ingrédients</button>
+                    <button id="lists-btn" data-path="lists" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Listes</button>
+                    <button id="friends-btn" data-path="friends" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Amis</button>
+                    <button id="shared-btn" data-path="shared" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Contenus partagés</button>
 
                     <!-- Notifications Bell -->
                     <div class="relative">
@@ -98,7 +101,7 @@
                     <!-- Profile Dropdown -->
                     <div class="relative inline-block text-left">
                         <div>
-                            <button type="button" id="profile-btn" class="hidden md:inline-flex btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm" aria-expanded="true" aria-haspopup="true">
+                            <button type="button" id="profile-btn" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm" aria-expanded="true" aria-haspopup="true">
                                 <i class="fas fa-user mr-2"></i> Mon Profil
                             </button>
                         </div>
@@ -110,10 +113,23 @@
                             </div>
                         </div>
                     </div>
-                    <button id="logout-btn" class="hidden md:inline-flex btn bg-red-500 text-white rounded-full hover:bg-red-600 text-sm">
+                    <button id="logout-btn" class="btn bg-red-500 text-white rounded-full hover:bg-red-600 text-sm">
                         <i class="fas fa-sign-out-alt mr-2"></i> Déconnexion
                     </button>
+                </div>
+            </div>
 
+            <!-- Mobile Menu Panel -->
+            <div id="mobile-menu" class="hidden md:hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <button data-path="menu" class="nav-btn-mobile text-white hover:bg-tomato-dark block w-full text-left rounded-md px-3 py-2 font-medium">Mon Menu</button>
+                    <button data-path="plans" class="nav-btn-mobile text-white hover:bg-tomato-dark block w-full text-left rounded-md px-3 py-2 font-medium">Mes Plans</button>
+                    <button data-path="recipes" class="nav-btn-mobile text-white hover:bg-tomato-dark block w-full text-left rounded-md px-3 py-2 font-medium">Mes Recettes</button>
+                    <button data-path="ingredients" class="nav-btn-mobile text-white hover:bg-tomato-dark block w-full text-left rounded-md px-3 py-2 font-medium">Mes Ingrédients</button>
+                    <button data-path="lists" class="nav-btn-mobile text-white hover:bg-tomato-dark block w-full text-left rounded-md px-3 py-2 font-medium">Mes Listes</button>
+                    <button data-path="friends" class="nav-btn-mobile text-white hover:bg-tomato-dark block w-full text-left rounded-md px-3 py-2 font-medium">Amis</button>
+                    <button data-path="shared" class="nav-btn-mobile text-white hover:bg-tomato-dark block w-full text-left rounded-md px-3 py-2 font-medium">Contenus partagés</button>
+                    <button id="logout-btn-mobile" class="text-white bg-red-500 hover:bg-red-600 block w-full text-left rounded-md px-3 py-2 font-medium">Déconnexion</button>
                 </div>
             </div>
         </div>

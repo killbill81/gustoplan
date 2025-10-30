@@ -14,6 +14,7 @@ let unsubscribeFriendRequests = () => {};
 const ui = {
     btn: null,
     badge: null,
+    badgeMobile: null, // Added for mobile
     dropdown: null,
     list: null,
 };
@@ -115,13 +116,21 @@ function renderAllNotifications() {
     const allNotifications = [...pendingShares, ...pendingFriendRequests];
     allNotifications.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
 
-    // Update badge
-    if (allNotifications.length > 0) {
-        ui.badge.textContent = allNotifications.length;
-        ui.badge.classList.remove('hidden');
-    } else {
-        ui.badge.classList.add('hidden');
-    }
+    // Update badges
+    const updateBadge = (badgeElement) => {
+        if (badgeElement) {
+            if (allNotifications.length > 0) {
+                badgeElement.textContent = allNotifications.length;
+                badgeElement.classList.remove('hidden');
+            } else {
+                badgeElement.classList.add('hidden');
+            }
+        }
+    };
+
+    updateBadge(ui.badge);
+    updateBadge(ui.badgeMobile);
+
 
     // Populate dropdown
     ui.list.innerHTML = '';
@@ -271,6 +280,7 @@ function listenForFriendRequests(userId) {
 export function initNotifications() {
     ui.btn = document.getElementById('notifications-btn');
     ui.badge = document.getElementById('notifications-badge');
+    ui.badgeMobile = document.getElementById('notifications-badge-mobile'); // Added
     ui.dropdown = document.getElementById('notifications-dropdown');
     ui.list = document.getElementById('notifications-list');
 

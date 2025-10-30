@@ -13,14 +13,42 @@
     --body-bg: #FDF5E6; /* Old Lace */
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Quicksand:wght@400;500;700&display=swap');
+
 body {
-    font-family: 'Nunito', sans-serif;
-    background-color: var(--body-bg);
+    font-family: 'Open Sans', sans-serif;
+    line-height: 1.6;
     color: var(--primary-text);
+    background-color: var(--body-bg);
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Raleway', sans-serif;
+    font-family: 'Quicksand', sans-serif;
+    color: #2c3e50; /* Exemple de couleur de titre */
+    margin-bottom: 0.5em;
+    line-height: 1.2;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Quicksand', sans-serif;
+    color: #2c3e50; /* Exemple de couleur de titre */
+    margin-bottom: 0.5em;
+    line-height: 1.2;
+}
+
+h1 {
+    font-size: 2.8em;
+    font-weight: 700;
+}
+
+h2 {
+    font-size: 2.2em;
+    font-weight: 700;
+}
+
+h3 {
+    font-size: 1.8em;
+    font-weight: 500;
 }
 
 .gradient-bg {
@@ -518,4 +546,15 @@ html.dark select {
 html.dark input::placeholder,
 html.dark textarea::placeholder {
     color: #9CA3AF !important; /* gray-400 */
+}
+@media (max-width: 767px) {
+    .plan-actions {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+
+    #meal-plan-grid-layout {
+        min-width: 0 !important;
+    }
 }

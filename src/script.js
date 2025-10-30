@@ -269,6 +269,7 @@ export default function init() {
 
         updateWeekDisplay();
         renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+        renderMobilePlanner(document.getElementById('mobile-meal-plan'), { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
         generateShoppingListFromPlan();
     }
 
@@ -578,6 +579,100 @@ export default function init() {
             // Save the cleared week
             await saveCurrentPlan();
             await generateShoppingListFromPlan();
+        }
+    }
+
+    function renderMobilePlanner(container, plan, isReadOnly = false) {
+        if (!container) return;
+
+        const planMenuData = plan.menuData || {};
+        const planServingsData = plan.servingsData || {};
+        const planRemarksData = plan.remarksData || {};
+        const planDefaultNumPeople = plan.defaultNumPeople || 1;
+        const planStartDay = plan.startDay || 'Lundi';
+
+        container.innerHTML = ''; // Clear previous content
+        const mobileContent = document.createDocumentFragment();
+
+        const startDayIndex = allDays.indexOf(planStartDay);
+        const weekDays = [...allDays.slice(startDayIndex), ...allDays.slice(0, startDayIndex)];
+
+        weekDays.forEach(dayName => {
+            const dayOriginalIndex = allDays.indexOf(dayName);
+            
+            const dayWrapper = document.createElement('div');
+            dayWrapper.className = 'border rounded-lg overflow-hidden';
+
+            const dayButton = document.createElement('button');
+            dayButton.className = 'w-full p-3 text-left bg-gray-100 hover:bg-gray-200 flex justify-between items-center';
+            dayButton.innerHTML = `<span class="font-bold text-gray-800">${dayName.toUpperCase()}</span><i class="fas fa-chevron-down transition-transform"></i>`;
+            
+            const dayContent = document.createElement('div');
+            dayContent.className = 'hidden p-2 space-y-4';
+
+            dayButton.addEventListener('click', () => {
+                dayContent.classList.toggle('hidden');
+                dayButton.querySelector('i').classList.toggle('rotate-180');
+            });
+
+            ['lunch', 'dinner'].forEach(mealType => {
+                const mealSection = document.createElement('div');
+                const mealTitle = document.createElement('h4');
+                mealTitle.className = 'font-bold text-lg mb-2 border-b pb-1';
+                mealTitle.textContent = mealType === 'lunch' ? 'Midi' : 'Soir';
+                mealSection.appendChild(mealTitle);
+
+                const mealSlotsContainer = document.createElement('div');
+                mealSlotsContainer.className = 'space-y-3';
+
+                for (let i = 0; i < 5; i++) { // 5 slots: Entrée, Plat, Accomp, Dessert, Remarque
+                    const slotId = `${dayOriginalIndex}-${mealType}-${i}`;
+                    const category = getCategoryFromSlotId(slotId);
+
+                    const slotWrapper = document.createElement('div');
+                    const slotLabel = document.createElement('label');
+                    slotLabel.className = 'text-sm font-semibold text-gray-600';
+                    slotLabel.textContent = category;
+                    slotWrapper.appendChild(slotLabel);
+
+                    const mealSlotDiv = document.createElement('div');
+                    mealSlotDiv.className = 'meal-slot p-2 min-h-[50px] bg-gray-50 rounded-md';
+                    mealSlotDiv.dataset.slotId = slotId;
+
+                    if (category === 'Remarque') {
+                        mealSlotDiv.appendChild(createRemarkElement(slotId, planRemarksData, isReadOnly));
+                    } else {
+                        const mealsInSlot = planMenuData[slotId];
+                        if (Array.isArray(mealsInSlot) && mealsInSlot.length > 0) {
+                            const cardsContainer = document.createElement('div');
+                            cardsContainer.className = 'space-y-2';
+                            mealsInSlot.forEach((mealRef, index) => {
+                                const fullMeal = availableMeals.find(m => m.id === mealRef.id);
+                                if (fullMeal) {
+                                    cardsContainer.appendChild(createMealCardElement(fullMeal, slotId, index, isReadOnly));
+                                }
+                            });
+                            mealSlotDiv.appendChild(cardsContainer);
+                        }
+                        if (!isReadOnly) {
+                            mealSlotDiv.appendChild(createAddElement(slotId, false));
+                        }
+                    }
+                    slotWrapper.appendChild(mealSlotDiv);
+                    mealSlotsContainer.appendChild(slotWrapper);
+                }
+                mealSection.appendChild(mealSlotsContainer);
+                dayContent.appendChild(mealSection);
+            });
+
+            dayWrapper.appendChild(dayButton);
+            dayWrapper.appendChild(dayContent);
+            mobileContent.appendChild(dayWrapper);
+        });
+
+        container.appendChild(mobileContent);
+        if (!isReadOnly) {
+            attachPlannerListeners();
         }
     }
 
