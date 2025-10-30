@@ -141,6 +141,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const profileBtnMobile = document.getElementById('profile-btn-mobile');
+    if (profileBtnMobile && settingsModal) {
+        profileBtnMobile.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+            if (mobileMenu) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    }
+
     mobileNavButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const path = e.currentTarget.dataset.path;

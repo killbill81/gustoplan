@@ -181,6 +181,7 @@ export default function init() {
     let masterIngredientList = [];
     let defaultNumPeople = 1;
     let tooltipTimer = null;
+    let currentlyOpenTooltipButton = null;
     
     let allPlans = [];
     let currentPlan = null;
@@ -584,96 +585,120 @@ export default function init() {
 
     function renderMobilePlanner(container, plan, isReadOnly = false) {
         if (!container) return;
-
+    
         const planMenuData = plan.menuData || {};
         const planServingsData = plan.servingsData || {};
         const planRemarksData = plan.remarksData || {};
         const planDefaultNumPeople = plan.defaultNumPeople || 1;
         const planStartDay = plan.startDay || 'Lundi';
-
+    
         container.innerHTML = ''; // Clear previous content
         const mobileContent = document.createDocumentFragment();
-
+    
         const startDayIndex = allDays.indexOf(planStartDay);
         const weekDays = [...allDays.slice(startDayIndex), ...allDays.slice(0, startDayIndex)];
-
+    
         weekDays.forEach(dayName => {
             const dayOriginalIndex = allDays.indexOf(dayName);
             
-            const dayWrapper = document.createElement('div');
-            dayWrapper.className = 'border rounded-lg overflow-hidden';
-
-            const dayButton = document.createElement('button');
-            dayButton.className = 'w-full p-3 text-left bg-gray-100 hover:bg-gray-200 flex justify-between items-center';
-            dayButton.innerHTML = `<span class="font-bold text-gray-800">${dayName.toUpperCase()}</span><i class="fas fa-chevron-down transition-transform"></i>`;
-            
-            const dayContent = document.createElement('div');
-            dayContent.className = 'hidden p-2 space-y-4';
-
-            dayButton.addEventListener('click', () => {
-                dayContent.classList.toggle('hidden');
-                dayButton.querySelector('i').classList.toggle('rotate-180');
-            });
-
+            // Card for each day
+            const dayCard = document.createElement('div');
+            dayCard.className = 'bg-blue-100 border border-blue-300 rounded-xl shadow-md p-4 mb-4';
+    
+            // Day title
+            const dayTitle = document.createElement('h3');
+            dayTitle.className = 'text-xl font-bold text-gray-800 mb-3';
+            dayTitle.textContent = dayName.toUpperCase();
+            dayCard.appendChild(dayTitle);
+    
+            const mealsContainer = document.createElement('div');
+            mealsContainer.className = 'space-y-4';
+    
             ['lunch', 'dinner'].forEach(mealType => {
                 const mealSection = document.createElement('div');
+                mealSection.className = 'border-t pt-3';
+
+                const mealHeader = document.createElement('div');
+                mealHeader.className = 'flex justify-between items-center mb-2';
+    
                 const mealTitle = document.createElement('h4');
-                mealTitle.className = 'font-bold text-lg mb-2 border-b pb-1';
+                mealTitle.className = 'text-lg font-semibold text-tomato';
                 mealTitle.textContent = mealType === 'lunch' ? 'Midi' : 'Soir';
-                mealSection.appendChild(mealTitle);
+                mealHeader.appendChild(mealTitle);
 
-                const mealSlotsContainer = document.createElement('div');
-                mealSlotsContainer.className = 'space-y-3';
-
-                for (let i = 0; i < 5; i++) { // 5 slots: Entrée, Plat, Accomp, Dessert, Remarque
-                    const slotId = `${dayOriginalIndex}-${mealType}-${i}`;
-                    const category = getCategoryFromSlotId(slotId);
-
-                    const slotWrapper = document.createElement('div');
-                    const slotLabel = document.createElement('label');
-                    slotLabel.className = 'text-sm font-semibold text-gray-600';
-                    slotLabel.textContent = category;
-                    slotWrapper.appendChild(slotLabel);
-
-                    const mealSlotDiv = document.createElement('div');
-                    mealSlotDiv.className = 'meal-slot p-2 min-h-[50px] bg-gray-50 rounded-md';
-                    mealSlotDiv.dataset.slotId = slotId;
-
-                    if (category === 'Remarque') {
-                        mealSlotDiv.appendChild(createRemarkElement(slotId, planRemarksData, isReadOnly));
-                    } else {
-                        const mealsInSlot = planMenuData[slotId];
-                        if (Array.isArray(mealsInSlot) && mealsInSlot.length > 0) {
-                            const cardsContainer = document.createElement('div');
-                            cardsContainer.className = 'space-y-2';
-                            mealsInSlot.forEach((mealRef, index) => {
-                                const fullMeal = availableMeals.find(m => m.id === mealRef.id);
-                                if (fullMeal) {
-                                    cardsContainer.appendChild(createMealCardElement(fullMeal, slotId, index, isReadOnly));
-                                }
-                            });
-                            mealSlotDiv.appendChild(cardsContainer);
-                        }
-                        if (!isReadOnly) {
-                            mealSlotDiv.appendChild(createAddElement(slotId, false));
-                        }
-                    }
-                    slotWrapper.appendChild(mealSlotDiv);
-                    mealSlotsContainer.appendChild(slotWrapper);
+                if (!isReadOnly) {
+                    const servingsKey = `${dayOriginalIndex}-${mealType}`;
+                    const currentValue = planServingsData[servingsKey] || planDefaultNumPeople;
+                    const servingsControl = createServingsControl(currentValue, (newValue) => {
+                        handleServingsChange(servingsKey, newValue);
+                    });
+                    mealHeader.appendChild(servingsControl);
                 }
+                
+                mealSection.appendChild(mealHeader);
+    
+                const mealSlotsContainer = document.createElement('div');
+                mealSlotsContainer.className = 'space-y-2';
+    
+                let hasContent = false;
+    
+                // Display existing meals
+                for (let i = 0; i < 4; i++) { // Entrée, Plat, Accomp, Dessert
+                    const slotId = `${dayOriginalIndex}-${mealType}-${i}`;
+                    const mealsInSlot = planMenuData[slotId];
+                    if (Array.isArray(mealsInSlot) && mealsInSlot.length > 0) {
+                        hasContent = true;
+                        mealsInSlot.forEach((mealRef, index) => {
+                            const fullMeal = availableMeals.find(m => m.id === mealRef.id);
+                            if (fullMeal) {
+                                // Use the existing card creation function to get all features
+                                const mealCard = createMealCardElement(fullMeal, slotId, index, isReadOnly);
+                                
+                                // Apply mobile-specific styling for visibility
+                                mealCard.classList.remove('bg-white', 'shadow-sm');
+                                mealCard.classList.add('bg-emerald-200', 'border', 'border-emerald-400');
+    
+                                // Make action buttons visible by default on mobile (no hover)
+                                if (!isReadOnly) {
+                                    const editButton = mealCard.querySelector('.edit-meal-btn');
+                                    const deleteButton = mealCard.querySelector('.delete-meal-btn');
+                                    if(editButton) editButton.classList.remove('hidden');
+                                    if(deleteButton) deleteButton.classList.remove('hidden');
+                                }
+                                
+                                mealSlotsContainer.appendChild(mealCard);
+                            }
+                        });
+                    }
+                }
+    
+                // Add Meal Button
+                if (!isReadOnly) {
+                    const addMealButton = document.createElement('button');
+                    addMealButton.className = 'btn btn-outline btn-sm w-full mt-2';
+                    addMealButton.innerHTML = '<i class="fas fa-plus mr-2"></i> Ajouter un plat';
+                    addMealButton.addEventListener('click', () => {
+                        // Simplified: opens modal for the "Plat" category by default for this meal type
+                        const platSlotId = `${dayOriginalIndex}-${mealType}-1`;
+                        openMealSelectModal(platSlotId);
+                    });
+                    mealSlotsContainer.appendChild(addMealButton);
+                }
+    
+                if (!hasContent && isReadOnly) {
+                    mealSlotsContainer.innerHTML = '<p class="text-sm text-gray-500 italic">Aucun plat prévu.</p>';
+                }
+    
                 mealSection.appendChild(mealSlotsContainer);
-                dayContent.appendChild(mealSection);
+                mealsContainer.appendChild(mealSection);
             });
-
-            dayWrapper.appendChild(dayButton);
-            dayWrapper.appendChild(dayContent);
-            mobileContent.appendChild(dayWrapper);
+    
+            dayCard.appendChild(mealsContainer);
+            mobileContent.appendChild(dayCard);
         });
-
+    
         container.appendChild(mobileContent);
-        if (!isReadOnly) {
-            attachPlannerListeners();
-        }
+        // No need for attachPlannerListeners here as we handle clicks directly
     }
 
     function renderPlanner(container, plan, isReadOnly = false) {
@@ -1519,6 +1544,7 @@ export default function init() {
                 // The main onSnapshot listener will handle the UI update automatically
                 toggleFavoriteStatus(meal.id, meal.isFavorite);
             });
+            heartBtn.addEventListener('mousedown', e => e.stopPropagation());
             card.appendChild(heartBtn);
         }
 
@@ -1540,6 +1566,7 @@ export default function init() {
                 const latestMeal = availableMeals.find(m => m.id === meal.id);
                 editRecipeFormHandler.openForm(latestMeal || meal, 'Modifier la recette');
             });
+            editButton.addEventListener('mousedown', e => e.stopPropagation());
             hoverButtonsDiv.appendChild(editButton);
 
             const deleteButton = document.createElement('button');
@@ -1550,6 +1577,7 @@ export default function init() {
                 e.stopPropagation(); 
                 handleDeleteMeal(slotId, index);
             });
+            deleteButton.addEventListener('mousedown', e => e.stopPropagation());
             hoverButtonsDiv.appendChild(deleteButton);
             card.appendChild(hoverButtonsDiv);
 
@@ -1574,6 +1602,7 @@ export default function init() {
 
         infoButton.dataset.slotId = slotId;
         infoButton.dataset.mealIndex = index;
+        infoButton.addEventListener('mousedown', e => e.stopPropagation());
 
         infoButtonContainer.appendChild(infoButton);
         card.appendChild(infoButtonContainer);
@@ -1582,48 +1611,76 @@ export default function init() {
     }
 
     function toggleIngredientsTooltip(button, meal) {
-        const wasOpen = button.classList.contains('info-open');
-
+        // First, remove any existing tooltips from the DOM.
         document.querySelectorAll('.planner-ingredient-tooltip').forEach(tt => tt.remove());
-        document.querySelectorAll('.info-meal-btn').forEach(btn => {
-            btn.classList.remove('info-open');
-            btn.innerHTML = '<i class="fas fa-plus fa-xs"></i>';
-        });
 
-        if (!wasOpen) {
-            button.innerHTML = '<i class="fas fa-times fa-xs"></i>';
-            button.classList.add('info-open');
+        // If the button we just clicked is the one that was open, we're done closing it.
+        if (currentlyOpenTooltipButton === button) {
+            button.classList.remove('info-open');
+            button.innerHTML = '<i class="fas fa-plus fa-xs"></i>';
+            currentlyOpenTooltipButton = null;
+            return;
+        }
 
-            const tooltip = document.createElement('div');
-            tooltip.className = 'planner-ingredient-tooltip z-50 w-64 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-left text-sm';
-            
-            if (meal.ingredients && meal.ingredients.length > 0) {
-                if (meal.servings && meal.servings > 0) {
-                    const servingsInfo = document.createElement('p');
-                    servingsInfo.className = 'mb-2 text-sm text-gray-600 flex items-center';
-                    servingsInfo.innerHTML = `<i class="fas fa-users mr-2"></i> Pour ${meal.servings} ${meal.servings > 1 ? 'personnes' : 'personne'}`;
-                    tooltip.appendChild(servingsInfo);
-                }
-                const title = document.createElement('h4');
-                title.className = 'font-bold mb-2 text-gray-800';
-                title.textContent = 'Ingrédients :';
-                tooltip.appendChild(title);
-                const list = document.createElement('ul');
-                list.className = 'space-y-1 text-gray-600';
-                meal.ingredients.forEach(ing => {
-                    const li = document.createElement('li');
-                    li.textContent = `• ${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim();
-                    list.appendChild(li);
-                });
-                tooltip.appendChild(list);
-            } else {
-                tooltip.textContent = 'Aucun ingrédient spécifié pour cette recette.';
+        // If another button was open, reset it to its closed state.
+        if (currentlyOpenTooltipButton) {
+            currentlyOpenTooltipButton.classList.remove('info-open');
+            currentlyOpenTooltipButton.innerHTML = '<i class="fas fa-plus fa-xs"></i>';
+        }
+
+        // Now, open the new tooltip for the clicked button.
+        button.classList.add('info-open');
+        button.innerHTML = '<i class="fas fa-times fa-xs"></i>';
+        currentlyOpenTooltipButton = button;
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'planner-ingredient-tooltip z-50 w-64 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-left text-sm';
+        
+        if (meal.ingredients && meal.ingredients.length > 0) {
+            if (meal.servings && meal.servings > 0) {
+                const servingsInfo = document.createElement('p');
+                servingsInfo.className = 'mb-2 text-sm text-gray-600 flex items-center';
+                servingsInfo.innerHTML = `<i class="fas fa-users mr-2"></i> Pour ${meal.servings} ${meal.servings > 1 ? 'personnes' : 'personne'}`;
+                tooltip.appendChild(servingsInfo);
             }
+            const title = document.createElement('h4');
+            title.className = 'font-bold mb-2 text-gray-800';
+            title.textContent = 'Ingrédients :';
+            tooltip.appendChild(title);
+            const list = document.createElement('ul');
+            list.className = 'space-y-1 text-gray-600';
+            meal.ingredients.forEach(ing => {
+                const li = document.createElement('li');
+                li.textContent = `• ${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim();
+                list.appendChild(li);
+            });
+            tooltip.appendChild(list);
+        } else {
+            tooltip.textContent = 'Aucun ingrédient spécifié pour cette recette.';
+        }
 
-            document.body.appendChild(tooltip);
-            
-            const cardRect = button.closest('.meal-card').getBoundingClientRect();
-            const tooltipRect = tooltip.getBoundingClientRect();
+        document.body.appendChild(tooltip);
+        
+        const cardRect = button.closest('.meal-card').getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const isMobile = window.innerWidth < 768;
+
+        if (isMobile) {
+            // On mobile, center it and place it below the card
+            tooltip.style.width = '90vw';
+            tooltip.style.maxWidth = '320px';
+            const newTooltipRect = tooltip.getBoundingClientRect();
+            let top = cardRect.bottom + 10;
+            let left = (window.innerWidth - newTooltipRect.width) / 2;
+
+            if (top + newTooltipRect.height > window.innerHeight) {
+                top = cardRect.top - newTooltipRect.height - 10;
+            }
+            tooltip.style.top = `${top}px`;
+            tooltip.style.left = `${left}px`;
+
+        } else {
+            // Original desktop logic
             let left = cardRect.right + 10;
             if (left + tooltipRect.width > window.innerWidth) {
                 left = cardRect.left - tooltipRect.width - 10;
@@ -1635,10 +1692,11 @@ export default function init() {
             if (top < 10) {
                 top = 10;
             }
-            tooltip.style.position = 'fixed';
             tooltip.style.left = `${left}px`;
             tooltip.style.top = `${top}px`;
         }
+        
+        tooltip.style.position = 'fixed';
     }
 
     function createAddElement(slotId, isSmall = false) {
@@ -1824,20 +1882,29 @@ export default function init() {
         elements.exportPdfBtn?.addEventListener('click', exportToPdf);
         elements.exportPlanPdfBtn?.addEventListener('click', exportPlanToPDF);
 
-        elements.mealPlanGrid?.addEventListener('click', (e) => {
+        const handlePlannerClick = (e) => {
             const infoButton = e.target.closest('.info-meal-btn');
             if (infoButton) {
                 const slotId = infoButton.dataset.slotId;
                 const mealIndex = parseInt(infoButton.dataset.mealIndex, 10);
                 
                 if (slotId && !isNaN(mealIndex)) {
-                    const meal = menuData[slotId]?.[mealIndex];
-                    if (meal) {
-                        toggleIngredientsTooltip(infoButton, meal);
+                    const mealRef = menuData[slotId]?.[mealIndex];
+                    // Ensure we have a reference with an ID
+                    if (mealRef && mealRef.id) {
+                        // Find the full, up-to-date meal data from the master list
+                        const fullMeal = availableMeals.find(m => m.id === mealRef.id);
+                        if (fullMeal) {
+                            toggleIngredientsTooltip(infoButton, fullMeal);
+                        }
                     }
                 }
             }
-        });
+        };
+
+        elements.mealPlanGrid?.addEventListener('click', handlePlannerClick);
+        const mobilePlanContainer = document.getElementById('mobile-meal-plan');
+        mobilePlanContainer?.addEventListener('click', handlePlannerClick);
 
         elements.sharePlanBtn?.addEventListener('click', () => {
             if (!currentPlan) {
@@ -2124,10 +2191,12 @@ export default function init() {
                         menuData[slotId] = updatedMealsInSlot;
                     }
                 }
-                // Re-render the planner to update meal cards, tooltips, etc.
-                renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
-                // Re-generate the shopping list which is the core of the fix.
-                generateShoppingListFromPlan();
+            // Re-render the planner to reflect potential changes (like favorite status)
+            renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+            renderMobilePlanner(document.getElementById('mobile-meal-plan'), { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+            
+            // Also, regenerate the shopping list if a recipe's content changed
+            generateShoppingListFromPlan();
             }
         });
 
