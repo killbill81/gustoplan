@@ -26,6 +26,16 @@ export function protectPage() {
                     });
                     logoutButton.setAttribute('data-listener-attached', 'true');
                 }
+
+                const logoutButtonMobile = document.getElementById('logout-btn-mobile');
+                if (logoutButtonMobile && !logoutButtonMobile.hasAttribute('data-listener-attached')) {
+                    logoutButtonMobile.addEventListener('click', () => {
+                        signOut(auth).catch((error) => {
+                            console.error('Sign Out Error', error);
+                        });
+                    });
+                    logoutButtonMobile.setAttribute('data-listener-attached', 'true');
+                }
                 resolve(user);
 
             } else {
