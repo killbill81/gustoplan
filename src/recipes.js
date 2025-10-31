@@ -30,21 +30,21 @@ export default function init() {
     }
     recipeFormHandler = new RecipeFormHandler(
         db,
-        'recipe-form-modal',
-        'recipe-form',
-        'recipe-modal-title',
-        'recipe-id',
-        'recipe-name',
-        'recipe-category',
-        'recipe-servings',
-        'recipe-prep-time',
-        'recipe-difficulty',
-        'recipe-steps',
-        'ingredients-list',
-        'add-ingredient-btn',
-        'save-recipe-btn',
-        'close-recipe-modal', // Added closeButtonId
-        'cancel-recipe-btn'   // Added cancelButtonId
+        'edit-recipe-form-modal', // Correct modal ID
+        'edit-recipe-form',       // Correct form ID
+        'edit-recipe-modal-title',
+        'edit-recipe-id',
+        'edit-recipe-name',
+        'edit-recipe-category',
+        'edit-recipe-servings',
+        'edit-recipe-prep-time',
+        'edit-recipe-difficulty',
+        'edit-recipe-steps',
+        'edit-ingredients-list',
+        'edit-add-ingredient-btn',
+        'edit-save-recipe-btn',
+        'close-edit-recipe-modal',
+        'edit-cancel-recipe-btn'
     );
 
     // The onSnapshot listener will handle updates, so the callback is less critical
@@ -164,6 +164,15 @@ export default function init() {
         const card = document.createElement('div');
         // Use the standard white card style, consistent with other pages
         card.className = 'bg-white dark:bg-gray-800 shadow-md rounded-lg flex flex-col p-3';
+
+        // --- Image Section ---
+        if (recipe.imageUrl) {
+            const image = document.createElement('img');
+            image.src = recipe.imageUrl;
+            image.alt = recipe.name;
+            image.className = 'w-full h-24 object-cover rounded-md mb-2';
+            card.appendChild(image);
+        }
 
         // --- Header Section ---
         const header = document.createElement('div');

@@ -616,7 +616,7 @@ export default function init() {
     
             ['lunch', 'dinner'].forEach(mealType => {
                 const mealSection = document.createElement('div');
-                mealSection.className = 'border-t pt-3';
+                mealSection.className = `border-t pt-3 ${mealType === 'lunch' ? 'bg-amber-50' : 'bg-stone-100'} rounded-lg p-2`;
 
                 const mealHeader = document.createElement('div');
                 mealHeader.className = 'flex justify-between items-center mb-2';
@@ -641,52 +641,61 @@ export default function init() {
                 mealSlotsContainer.className = 'space-y-2';
     
                 let hasContent = false;
+                const categories = ['Entrée', 'Plat', 'Accompagnement', 'Dessert', 'Remarque'];
     
-                // Display existing meals
-                for (let i = 0; i < 4; i++) { // Entrée, Plat, Accomp, Dessert
+                for (let i = 0; i < categories.length; i++) {
+                    const categoryName = categories[i];
                     const slotId = `${dayOriginalIndex}-${mealType}-${i}`;
                     const mealsInSlot = planMenuData[slotId];
-                    if (Array.isArray(mealsInSlot) && mealsInSlot.length > 0) {
-                        hasContent = true;
-                        mealsInSlot.forEach((mealRef, index) => {
-                            const fullMeal = availableMeals.find(m => m.id === mealRef.id);
-                            if (fullMeal) {
-                                // Use the existing card creation function to get all features
-                                const mealCard = createMealCardElement(fullMeal, slotId, index, isReadOnly);
-                                
-                                // Apply mobile-specific styling for visibility
-                                mealCard.classList.remove('bg-white', 'shadow-sm');
-                                mealCard.classList.add('bg-emerald-200', 'border', 'border-emerald-400');
     
-                                // Make action buttons visible by default on mobile (no hover)
-                                if (!isReadOnly) {
-                                    const editButton = mealCard.querySelector('.edit-meal-btn');
-                                    const deleteButton = mealCard.querySelector('.delete-meal-btn');
-                                    if(editButton) editButton.classList.remove('hidden');
-                                    if(deleteButton) deleteButton.classList.remove('hidden');
+                    const categoryWrapper = document.createElement('div');
+                    categoryWrapper.className = 'mb-2';
+    
+                    const categoryHeader = document.createElement('h5');
+                    categoryHeader.className = 'text-md font-semibold text-gray-700 mb-1';
+                    categoryHeader.textContent = categoryName;
+                    categoryWrapper.appendChild(categoryHeader);
+    
+                    if (categoryName === 'Remarque') {
+                        categoryWrapper.appendChild(createRemarkElement(slotId, planRemarksData, isReadOnly));
+                    } else {
+                        const mealsList = document.createElement('div');
+                        mealsList.className = 'space-y-1';
+    
+                        if (Array.isArray(mealsInSlot) && mealsInSlot.length > 0) {
+                            hasContent = true;
+                            mealsInSlot.forEach((mealRef, index) => {
+                                const fullMeal = availableMeals.find(m => m.id === mealRef.id);
+                                if (fullMeal) {
+                                    const mealCard = createMealCardElement(fullMeal, slotId, index, isReadOnly);
+                                    mealCard.classList.remove('bg-white', 'shadow-sm');
+                                    mealCard.classList.add('bg-emerald-200', 'border', 'border-emerald-400');
+    
+                                    if (!isReadOnly) {
+                                        const editButton = mealCard.querySelector('.edit-meal-btn');
+                                        const deleteButton = mealCard.querySelector('.delete-meal-btn');
+                                        if(editButton) editButton.classList.remove('hidden');
+                                        if(deleteButton) deleteButton.classList.remove('hidden');
+                                    }
+                                    mealsList.appendChild(mealCard);
                                 }
-                                
-                                mealSlotsContainer.appendChild(mealCard);
-                            }
-                        });
+                            });
+                        }
+    
+                        if (!isReadOnly) {
+                            const addMealButton = document.createElement('button');
+                            addMealButton.className = 'btn btn-outline btn-sm w-full mt-2';
+                            addMealButton.innerHTML = `<i class="fas fa-plus mr-2"></i> Ajouter une ${categoryName.toLowerCase()}`;
+                            addMealButton.addEventListener('click', () => {
+                                openMealSelectModal(slotId);
+                            });
+                            mealsList.appendChild(addMealButton);
+                        } else if (!hasContent) {
+                            mealsList.innerHTML = '<p class="text-sm text-gray-500 italic">Aucun plat prévu.</p>';
+                        }
+                        categoryWrapper.appendChild(mealsList);
                     }
-                }
-    
-                // Add Meal Button
-                if (!isReadOnly) {
-                    const addMealButton = document.createElement('button');
-                    addMealButton.className = 'btn btn-outline btn-sm w-full mt-2';
-                    addMealButton.innerHTML = '<i class="fas fa-plus mr-2"></i> Ajouter un plat';
-                    addMealButton.addEventListener('click', () => {
-                        // Simplified: opens modal for the "Plat" category by default for this meal type
-                        const platSlotId = `${dayOriginalIndex}-${mealType}-1`;
-                        openMealSelectModal(platSlotId);
-                    });
-                    mealSlotsContainer.appendChild(addMealButton);
-                }
-    
-                if (!hasContent && isReadOnly) {
-                    mealSlotsContainer.innerHTML = '<p class="text-sm text-gray-500 italic">Aucun plat prévu.</p>';
+                    mealSlotsContainer.appendChild(categoryWrapper);
                 }
     
                 mealSection.appendChild(mealSlotsContainer);
@@ -1551,6 +1560,15 @@ export default function init() {
         const nameSpan = document.createElement('span');
         nameSpan.className = 'text-xs font-medium p-1 break-words w-full';
         nameSpan.textContent = meal.name;
+
+        if (meal.imageUrl) {
+            const image = document.createElement('img');
+            image.src = meal.imageUrl;
+            image.alt = meal.name;
+            image.className = 'w-16 h-12 object-cover rounded-md mx-auto'; // Style pour une petite image
+            card.appendChild(image);
+        }
+
         card.appendChild(nameSpan);
 
         if (!isReadOnly) {
@@ -1727,7 +1745,7 @@ export default function init() {
             return remarkDisplay;
         }
         const textArea = document.createElement('textarea');
-        textArea.className = 'w-full h-full p-1 text-xs bg-transparent border-0 rounded focus:outline-none focus:ring-1 focus:ring-tomato resize-none';
+        textArea.className = 'w-full h-full p-1 text-xs bg-white border-0 rounded focus:outline-none focus:ring-1 focus:ring-tomato resize-none';
         textArea.placeholder = 'Remarque...';
         textArea.value = remarksData[slotId] || '';
         textArea.dataset.slotId = slotId; // Add slotId for easy selection
@@ -2173,7 +2191,7 @@ export default function init() {
         // Set up a real-time listener for recipes
         const unsubscribeFromRecipes = onSnapshot(collection(db, "recipes"), (snapshot) => {
             console.log("Recipe data updated from listener.");
-            availableMeals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            availableMeals = snapshot.docs.map(doc => { const data = doc.data(); return { id: doc.id, ...data, imageUrl: data.imageUrl || '' }; });
 
             // If a plan is currently loaded, refresh the UI that depends on recipe data.
             if (currentPlan) {

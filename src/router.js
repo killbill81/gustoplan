@@ -341,6 +341,10 @@ const routes = {
                         <label for="ingredient-category" class="block text-sm font-medium text-gray-700">Catégorie</label>
                         <select id="ingredient-category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required></select>
                     </div>
+                    <div>
+                        <label for="ingredient-image-url" class="block text-sm font-medium text-gray-700">URL de l'image</label>
+                        <input type="text" id="ingredient-image-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Laisser vide pour une image aléatoire">
+                    </div>
                     <div class="flex justify-end space-x-4 pt-2">
                         <button type="button" id="cancel-ingredient-btn" class="btn btn-ghost">Annuler</button>
                         <button type="submit" id="save-ingredient-btn" class="btn btn-primary">Sauvegarder</button>

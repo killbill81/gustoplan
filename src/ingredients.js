@@ -99,6 +99,7 @@ export default function init() {
             ingredientNameInput.value = ingredient.name;
             ingredientUnitSelect.value = ingredient.unit || ''; // Set to empty if no unit
             ingredientCategorySelect.value = ingredient.category || (allAvailableCategories.length > 0 ? allAvailableCategories[0] : '');
+            document.getElementById('ingredient-image-url').value = ingredient.imageUrl || '';
         } else {
             ingredientModalTitle.textContent = "Ajouter un ingrédient";
             ingredientIdInput.value = '';
@@ -118,7 +119,8 @@ export default function init() {
         const ingredientData = {
             name: ingredientNameInput.value,
             unit: ingredientUnitSelect.value,
-            category: ingredientCategorySelect.value
+            category: ingredientCategorySelect.value,
+            imageUrl: document.getElementById('ingredient-image-url').value || `https://loremflickr.com/400/300/${encodeURIComponent(ingredientNameInput.value)}`
         };
 
         if (!ingredientData.name || !ingredientData.category) { // Unit is optional now
@@ -306,6 +308,15 @@ export default function init() {
         ingredientsForCategory.forEach(ing => {
             const card = document.createElement('div');
             card.className = 'p-3 bg-white shadow-sm rounded-lg flex flex-col items-start space-y-2';
+
+            if (ing.imageUrl) {
+                const image = document.createElement('img');
+                image.src = ing.imageUrl;
+                image.alt = ing.name;
+                image.className = 'w-full h-24 object-cover rounded-md mb-2'; // Style pour une petite image
+                card.appendChild(image);
+            }
+
             const infoDiv = document.createElement('div');
             infoDiv.className = 'flex-grow w-full flex justify-between items-center';
             const nameSpan = document.createElement('span');

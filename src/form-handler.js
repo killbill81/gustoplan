@@ -13,6 +13,7 @@ class RecipeFormHandler {
         this.recipeServingsInput = document.getElementById(recipeServingsInputId);
         this.recipePrepTimeInput = document.getElementById(recipePrepTimeInputId);
         this.recipeDifficultyInput = document.getElementById(recipeDifficultyInputId);
+        this.recipeImageUrlInput = document.getElementById('edit-recipe-image-url'); // Ajout de l'input pour l'URL de l'image
         this.recipeStepsTextarea = document.getElementById(recipeStepsTextareaId);
         this.ingredientsListDiv = document.getElementById(ingredientsListDivId);
         this.addIngredientBtn = document.getElementById(addIngredientBtnId);
@@ -74,6 +75,7 @@ class RecipeFormHandler {
             this.recipeServingsInput.value = parseInt(recipe.servings) || '';
             this.recipePrepTimeInput.value = parseInt(recipe.prepTime) || '';
             this.recipeDifficultyInput.value = recipe.difficulty || 'Moyen';
+            this.recipeImageUrlInput.value = recipe.imageUrl || ''; // Ajout de la gestion de l'URL de l'image
             this.recipeStepsTextarea.value = recipe.steps || '';
             if (recipe.ingredients && recipe.ingredients.length > 0) {
                 // Pass a copy of each ingredient to addIngredientInput
@@ -238,7 +240,7 @@ class RecipeFormHandler {
             difficulty: this.recipeDifficultyInput.value,
             steps: this.recipeStepsTextarea.value,
             ingredients: ingredients,
-            imageUrl: '' // Assuming imageUrl is always empty or handled elsewhere
+            imageUrl: this.recipeImageUrlInput.value || `https://loremflickr.com/400/300/${encodeURIComponent(this.recipeNameInput.value)}`
         };
         console.log("Recipe data being sent to Firebase:", recipeData); // New log
 
