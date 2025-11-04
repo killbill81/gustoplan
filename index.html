@@ -89,12 +89,6 @@
                             <i class="fas fa-envelope"></i>
                             <span id="notifications-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
                         </button>
-                        <div id="notifications-dropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg z-50 hidden origin-top-right">
-                            <div class="p-4 font-bold border-b text-gray-800">Nouveaux Partages</div>
-                            <div id="notifications-list" class="p-2 max-h-96 overflow-y-auto">
-                                <!-- Notifications will be loaded here -->
-                            </div>
-                        </div>
                     </div>
 
                     <span id="user-display-name" class="text-sm font-medium hidden md:inline-block mr-4"></span>
@@ -511,6 +505,14 @@
                     </label>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Notifications Dropdown -->
+    <div id="notifications-dropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg z-50 hidden origin-top-right">
+        <div class="p-4 font-bold border-b text-gray-800">Nouveaux Partages</div>
+        <div id="notifications-list" class="p-2 max-h-96 overflow-y-auto">
+            <!-- Notifications will be loaded here -->
         </div>
     </div>
 

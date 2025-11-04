@@ -124,15 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
     const mobileNavButtons = document.querySelectorAll('.nav-btn-mobile');
-    const notificationsBtnMobile = document.getElementById('notifications-btn-mobile');
-    const notificationsDropdown = document.getElementById('notifications-dropdown');
-
-    if (notificationsBtnMobile && notificationsDropdown) {
-        notificationsBtnMobile.addEventListener('click', (event) => {
-            event.stopPropagation();
-            notificationsDropdown.classList.toggle('hidden');
-        });
-    }
 
 
     if (mobileMenuBtn && mobileMenu) {

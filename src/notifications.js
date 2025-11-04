@@ -13,8 +13,9 @@ let unsubscribeFriendRequests = () => {};
 // --- UI Elements ---
 const ui = {
     btn: null,
+    btnMobile: null, // Added for mobile button
     badge: null,
-    badgeMobile: null, // Added for mobile
+    badgeMobile: null,
     dropdown: null,
     list: null,
 };
@@ -104,7 +105,8 @@ async function handleAcceptFriendRequest(notificationId) {
 async function handleDeclineFriendRequest(notificationId) {
     try {
         await declineFriendRequest(notificationId);
-    } catch {
+    }
+    catch {
         alert("Erreur lors du refus.");
     }
 }
@@ -279,12 +281,13 @@ function listenForFriendRequests(userId) {
 // --- Main Initialization ---
 export function initNotifications() {
     ui.btn = document.getElementById('notifications-btn');
+    ui.btnMobile = document.getElementById('notifications-btn-mobile'); // Get mobile button
     ui.badge = document.getElementById('notifications-badge');
-    ui.badgeMobile = document.getElementById('notifications-badge-mobile'); // Added
+    ui.badgeMobile = document.getElementById('notifications-badge-mobile');
     ui.dropdown = document.getElementById('notifications-dropdown');
     ui.list = document.getElementById('notifications-list');
 
-    if (!ui.btn) return;
+    if (!ui.btn || !ui.dropdown) return; // Check for dropdown as well
 
     const currentUserId = getCurrentUserId();
     if (!currentUserId) return;
@@ -297,15 +300,48 @@ export function initNotifications() {
     listenForShares(currentUserId);
     listenForFriendRequests(currentUserId);
 
-    // Setup event listeners for UI
-    ui.btn.addEventListener('click', (e) => {
+    const toggleDropdown = (e) => {
         e.stopPropagation();
-        ui.dropdown.classList.toggle('hidden');
-    });
+        const isHidden = ui.dropdown.classList.toggle('hidden');
+        
+        if (!isHidden) {
+            const isMobile = window.innerWidth < 768;
+            const button = isMobile ? ui.btnMobile : ui.btn;
+            if (!button) return; // Safety check
+            
+            const btnRect = button.getBoundingClientRect();
+
+            // Positionne le dropdown par rapport au bouton
+            ui.dropdown.style.position = 'fixed'; // Use fixed positioning
+            if (isMobile) {
+                ui.dropdown.style.top = `${btnRect.bottom + 8}px`;
+                ui.dropdown.style.left = '50%';
+                ui.dropdown.style.transform = 'translateX(-50%)';
+                ui.dropdown.style.width = '95vw';
+                ui.dropdown.style.right = 'auto';
+            } else {
+                // Desktop positioning
+                ui.dropdown.style.top = `${btnRect.bottom + 8}px`;
+                ui.dropdown.style.left = 'auto';
+                ui.dropdown.style.right = `${window.innerWidth - btnRect.right}px`;
+                ui.dropdown.style.transform = 'none';
+                ui.dropdown.style.width = '20rem'; // w-80
+            }
+        }
+    };
+
+    // Setup event listeners for UI
+    ui.btn.addEventListener('click', toggleDropdown);
+    if (ui.btnMobile) {
+        ui.btnMobile.addEventListener('click', toggleDropdown);
+    }
 
     document.addEventListener('click', (event) => {
         if (ui.dropdown && !ui.dropdown.classList.contains('hidden')) {
-            if (!ui.btn.contains(event.target) && !ui.dropdown.contains(event.target)) {
+            const isClickInside = ui.btn.contains(event.target) || 
+                                  (ui.btnMobile && ui.btnMobile.contains(event.target)) || 
+                                  ui.dropdown.contains(event.target);
+            if (!isClickInside) {
                 ui.dropdown.classList.add('hidden');
             }
         }
