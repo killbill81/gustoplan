@@ -48,6 +48,12 @@ export default function init() {
         closePlanHistoryModalBtn: document.getElementById('close-plan-history-modal'),
         planHistoryList: document.getElementById('plan-history-list'),
         savePlanBtn: document.getElementById('save-plan-btn'),
+        openTrashBtn: document.getElementById('open-trash-btn'),
+        trashCount: document.getElementById('trash-count'),
+        trashModal: document.getElementById('trash-modal'),
+        closeTrashModalBtn: document.getElementById('close-trash-modal'),
+        trashListContainer: document.getElementById('trash-list-container'),
+        emptyTrashBtn: document.getElementById('empty-trash-btn'),
     };
 
     // --- New UI Component Functions ---
@@ -1188,11 +1194,11 @@ export default function init() {
         return 1;
     }
 
-    function renderShoppingList() {
+    function renderShoppingList(deletedItems = []) {
         const container = elements.shoppingListContainer;
         if (!container) return;
         container.innerHTML = '';
-        if (shoppingList.length === 0) {
+        if (shoppingList.length === 0 && deletedItems.length === 0) {
             container.innerHTML = '<p class="text-center text-gray-500 italic py-4">Votre liste de courses est vide.</p>';
             return;
         }
@@ -1330,6 +1336,124 @@ export default function init() {
             });
             container.appendChild(ul);
         });
+
+        // --- Update Trash Button & Modal ---
+        if (elements.openTrashBtn) {
+            elements.openTrashBtn.classList.remove('hidden'); // Always visible now
+            if (elements.trashCount) {
+                elements.trashCount.textContent = deletedItems.length;
+                if (deletedItems.length > 0) {
+                    elements.trashCount.classList.remove('bg-gray-200');
+                    elements.trashCount.classList.add('bg-red-500', 'text-white');
+                } else {
+                    elements.trashCount.classList.add('bg-gray-200');
+                    elements.trashCount.classList.remove('bg-red-500', 'text-white');
+                }
+            }
+        }
+        
+        if (deletedItems && deletedItems.length > 0) {
+            
+            if (elements.emptyTrashBtn) {
+                elements.emptyTrashBtn.classList.remove('hidden');
+                // Clone to remove old listeners if any
+                const newEmptyBtn = elements.emptyTrashBtn.cloneNode(true);
+                elements.emptyTrashBtn.parentNode.replaceChild(newEmptyBtn, elements.emptyTrashBtn);
+                elements.emptyTrashBtn = newEmptyBtn;
+
+                elements.emptyTrashBtn.addEventListener('click', async () => {
+                    if (!currentPlan || !confirm("Voulez-vous supprimer définitivement tous les éléments de la corbeille ?")) return;
+                    const planRef = doc(db, "plans", currentPlan.id);
+                    const itemsToHide = deletedItems.map(i => `${i.name}_${i.unit || ''}`);
+                    
+                    try {
+                        await import('firebase/firestore').then(module => {
+                            module.updateDoc(planRef, {
+                                hiddenTrashItems: module.arrayUnion(...itemsToHide),
+                                lastUpdated: new Date()
+                            });
+                        });
+                        elements.trashModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Erreur vidage corbeille:", error);
+                    }
+                });
+            }
+
+            if (elements.trashListContainer) {
+                elements.trashListContainer.innerHTML = '';
+                const deletedUl = document.createElement('ul');
+                deletedUl.className = 'space-y-2';
+
+                deletedItems.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'p-2 rounded bg-gray-100 flex justify-between items-center group';
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'text-sm text-gray-500 line-through';
+                    nameSpan.textContent = item.name;
+                    li.appendChild(nameSpan);
+
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'flex items-center space-x-2';
+
+                    const restoreBtn = document.createElement('button');
+                    restoreBtn.className = 'btn btn-xs btn-outline text-blue-600 hover:bg-blue-50 border-blue-300';
+                    restoreBtn.innerHTML = '<i class="fas fa-undo mr-1"></i> Restaurer';
+                    restoreBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        try {
+                            await runTransaction(db, async (transaction) => {
+                                const planDoc = await transaction.get(planRef);
+                                if (!planDoc.exists()) return;
+
+                                const currentItems = planDoc.data().manualItems || [];
+                                const finalItems = currentItems.filter(i => !(i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit));
+                                
+                                transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
+                            });
+                            // If it was the last item, close modal
+                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
+                        } catch (error) {
+                            console.error("Erreur lors de la restauration :", error);
+                        }
+                    });
+
+                    const deleteForeverBtn = document.createElement('button');
+                    deleteForeverBtn.className = 'btn btn-xs btn-ghost text-gray-400 hover:text-red-600';
+                    deleteForeverBtn.title = "Supprimer définitivement";
+                    deleteForeverBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    deleteForeverBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        const key = `${item.name}_${item.unit || ''}`;
+                        try {
+                             await import('firebase/firestore').then(module => {
+                                module.updateDoc(planRef, {
+                                    hiddenTrashItems: module.arrayUnion(key),
+                                    lastUpdated: new Date()
+                                });
+                            });
+                             // If it was the last item, close modal
+                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
+                        } catch (error) {
+                            console.error("Erreur suppression définitive:", error);
+                        }
+                    });
+
+                    actionsDiv.appendChild(restoreBtn);
+                    actionsDiv.appendChild(deleteForeverBtn);
+                    li.appendChild(actionsDiv);
+                    deletedUl.appendChild(li);
+                });
+                elements.trashListContainer.appendChild(deletedUl);
+            }
+        } else {
+            // When no deleted items, still show trash button, but clear modal content and hide empty trash button
+            if (elements.trashListContainer) elements.trashListContainer.innerHTML = '<p class="text-center text-gray-500 italic py-4">La corbeille est vide.</p>';
+            if (elements.emptyTrashBtn) elements.emptyTrashBtn.classList.add('hidden');
+        }
     }
 
     async function generateShoppingListFromPlan() {
@@ -1423,12 +1547,25 @@ export default function init() {
             }
         }
 
-        const finalIngredients = Array.from(combinedIngredients.values()).filter(item => item.totalQuantity > 0);
+        const finalIngredients = Array.from(combinedIngredients.values());
+        const hiddenTrashItems = currentPlan.hiddenTrashItems || [];
+        
+        const activeIngredients = finalIngredients.filter(item => item.totalQuantity > 0).sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Filter deleted ingredients: quantity <= 0, has source, AND NOT in hidden list
+        const deletedIngredients = finalIngredients.filter(item => {
+            const key = `${item.name}_${item.unit || ''}`;
+            return item.totalQuantity <= 0 && 
+                   item.sources && 
+                   item.sources.length > 0 && 
+                   !hiddenTrashItems.includes(key);
+        }).sort((a, b) => a.name.localeCompare(b.name));
 
         shoppingList.length = 0;
-        shoppingList.push(...finalIngredients.sort((a, b) => a.name.localeCompare(b.name)));
+        shoppingList.push(...activeIngredients);
         
-        renderShoppingList();
+        // Pass deleted ingredients to render function (we'll store them in a property of shoppingList for convenience or a global var)
+        renderShoppingList(deletedIngredients);
     }
 
     function openMealSelectModal(slotId) {
@@ -1584,14 +1721,6 @@ export default function init() {
         const nameSpan = document.createElement('span');
         nameSpan.className = 'text-xs font-medium p-1 break-words w-full';
         nameSpan.textContent = meal.name;
-
-        if (meal.imageUrl) {
-            const image = document.createElement('img');
-            image.src = meal.imageUrl;
-            image.alt = meal.name;
-            image.className = 'w-16 h-12 object-cover rounded-md mx-auto'; // Style pour une petite image
-            card.appendChild(image);
-        }
 
         card.appendChild(nameSpan);
 
@@ -1967,6 +2096,16 @@ export default function init() {
         elements.historyPlanBtn?.addEventListener('click', openHistoryModal);
         elements.closePlanHistoryModalBtn?.addEventListener('click', closePlanHistoryModal);
         elements.planHistoryModal?.addEventListener('click', (e) => { if (e.target === elements.planHistoryModal) closePlanHistoryModal(); });
+
+        elements.openTrashBtn?.addEventListener('click', () => {
+            elements.trashModal.classList.remove('hidden');
+        });
+        elements.closeTrashModalBtn?.addEventListener('click', () => {
+            elements.trashModal.classList.add('hidden');
+        });
+        elements.trashModal?.addEventListener('click', (e) => {
+            if (e.target === elements.trashModal) elements.trashModal.classList.add('hidden');
+        });
 
         elements.savePlanBtn?.addEventListener('click', async () => {
             if (!currentPlan) {

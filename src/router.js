@@ -144,11 +144,13 @@ const routes = {
                                     <section id="shopping-list-section" aria-labelledby="shopping-list-heading" class="mb-8 md:mb-12 md:sticky md:top-24">
                                         <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
                                             <div class="flex justify-between items-center mb-4">
-                                                <h2 id="shopping-list-heading" class="text-xl md:text-2xl font-bold text-gray-800">Liste de courses</h2>
-
-                                            </div>
-                                            <div class="flex justify-end space-x-2 mb-4">
-                                                <button id="import-list-btn" class="btn btn-secondary btn-sm">
+                                        <h2 class="text-2xl font-bold text-gray-800">Liste de courses</h2>
+                                        <button id="open-trash-btn" class="btn btn-ghost btn-sm text-gray-500 hover:text-gray-700 ml-2">
+                                            <i class="fas fa-trash-alt text-lg"></i> <span id="trash-count" class="bg-gray-200 text-xs px-1.5 py-0.5 rounded-full ml-1">0</span>
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-end space-x-2 mb-4">
+                                        <button id="import-list-btn" class="btn btn-secondary btn-sm">
                                                     <i class="fas fa-download mr-2"></i>Importer une liste
                                                 </button>
                                                 <div id="export-buttons-container" class="flex space-x-2">
@@ -546,19 +548,48 @@ const routes = {
     },
     'shopping-mode': {
         html: `
-        <div class="max-w-2xl mx-auto bg-white min-h-screen pb-20 md:pb-0">
-            <div class="sticky top-0 bg-white z-20 border-b border-gray-200 shadow-sm px-4 py-3 flex justify-between items-center">
-                <button id="shopping-mode-back-btn" class="text-gray-600 hover:text-tomato">
-                    <i class="fas fa-arrow-left text-xl"></i>
-                </button>
-                <h2 class="text-xl font-bold text-gray-800">Faire les courses</h2>
-                <select id="shopping-mode-plan-select" class="text-sm border-none focus:ring-0 font-medium text-tomato bg-transparent text-right w-32 md:w-auto overflow-hidden text-ellipsis">
-                    <option>Chargement...</option>
-                </select>
+        <div class="max-w-4xl mx-auto min-h-screen pb-20 md:pb-0 relative px-4">
+            <div class="sticky top-0 bg-white z-20 pt-4 pb-3">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center space-x-3">
+                        <button id="shopping-mode-back-btn" class="text-gray-600 hover:text-tomato">
+                            <i class="fas fa-arrow-left text-xl"></i>
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-800">Faire les courses</h2>
+                    </div>
+                    <button id="shopping-mode-trash-btn" class="text-gray-500 hover:text-gray-700 relative hidden p-2">
+                        <i class="fas fa-trash-alt text-lg"></i>
+                        <span id="shopping-mode-trash-count" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1 rounded-full">0</span>
+                    </button>
+                </div>
+                <div class="flex justify-start items-center mb-4">
+                    <label for="shopping-mode-plan-select" class="text-sm font-medium text-gray-700 mr-2">Plan:</label>
+                    <select id="shopping-mode-plan-select" class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-tomato focus:border-tomato font-medium text-gray-700 bg-white pr-8">
+                        <option>Chargement...</option>
+                    </select>
+                </div>
             </div>
             
-            <div id="shopping-mode-container" class="p-4">
+            <div id="shopping-mode-container" class="p-4 -mt-4">
                 <p class="text-center text-gray-500 mt-10">Chargement de la liste...</p>
+            </div>
+
+            <!-- Shopping Mode Trash Modal -->
+            <div id="shopping-trash-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden" role="dialog">
+                <div class="bg-white rounded-xl p-5 w-11/12 max-w-md relative max-h-[80vh] flex flex-col">
+                    <button id="close-shopping-trash-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-2">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                    <div class="flex justify-between items-center mb-4 pr-8">
+                        <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-trash-alt mr-2"></i> Corbeille</h3>
+                        <button id="shopping-empty-trash-btn" class="text-sm text-red-500 hover:text-red-700 font-medium hover:underline hidden">
+                            Vider
+                        </button>
+                    </div>
+                    <div id="shopping-trash-list" class="flex-grow overflow-y-auto pr-1">
+                        <!-- Deleted items will be generated here -->
+                    </div>
+                </div>
             </div>
         </div>
         `,

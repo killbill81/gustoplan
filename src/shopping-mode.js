@@ -101,11 +101,11 @@ export default function init() {
     function renderShoppingList() {
         if (!currentPlan || !container) return;
 
-        const shoppingList = generateList(currentPlan);
+        const { active: shoppingList, deleted: deletedItems } = generateList(currentPlan);
         
         container.innerHTML = '';
         
-        if (shoppingList.length === 0) {
+        if (shoppingList.length === 0 && deletedItems.length === 0) {
             container.innerHTML = '<p class="text-center p-10 text-gray-500">Votre liste de courses est vide pour ce plan.</p>';
             return;
         }
@@ -210,6 +210,133 @@ export default function init() {
             });
             container.appendChild(ul);
         });
+
+        // --- Update Trash Button & Modal ---
+        const trashBtn = document.getElementById('shopping-mode-trash-btn');
+        const trashCount = document.getElementById('shopping-mode-trash-count');
+        const trashModal = document.getElementById('shopping-trash-modal');
+        const trashList = document.getElementById('shopping-trash-list');
+        const closeTrashBtn = document.getElementById('close-shopping-trash-modal');
+        const emptyTrashBtn = document.getElementById('shopping-empty-trash-btn');
+
+        // Ensure trash button is hidden
+        if (trashBtn) {
+            trashBtn.classList.add('hidden');
+        }
+
+        if (trashModal && closeTrashBtn) {
+             closeTrashBtn.onclick = () => trashModal.classList.add('hidden');
+             trashModal.addEventListener('click', (e) => {
+                if (e.target === trashModal) trashModal.classList.add('hidden');
+            });
+        }
+
+        if (deletedItems && deletedItems.length > 0) {
+            if (emptyTrashBtn) {
+                emptyTrashBtn.classList.remove('hidden');
+                // Replace to clear old listeners
+                const newEmptyBtn = emptyTrashBtn.cloneNode(true);
+                emptyTrashBtn.parentNode.replaceChild(newEmptyBtn, emptyTrashBtn);
+                
+                newEmptyBtn.addEventListener('click', async () => {
+                    if (!currentPlan || !confirm("Tout supprimer définitivement ?")) return;
+                    const planRef = doc(db, "plans", currentPlan.id);
+                    const itemsToHide = deletedItems.map(i => `${i.name}_${i.unit || ''}`);
+                    
+                    try {
+                        await import('firebase/firestore').then(module => {
+                            module.updateDoc(planRef, {
+                                hiddenTrashItems: module.arrayUnion(...itemsToHide),
+                                lastUpdated: new Date()
+                            });
+                        });
+                         trashModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Erreur vidage corbeille:", error);
+                    }
+                });
+            }
+
+            if (trashList) {
+                trashList.innerHTML = '';
+                const deletedUl = document.createElement('ul');
+                deletedUl.className = 'space-y-3';
+
+                deletedItems.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-center p-3 rounded-lg bg-gray-100 shadow-inner justify-between';
+                    
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'flex-grow ml-2 overflow-hidden';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'font-medium text-base text-gray-500 line-through block truncate';
+                    nameSpan.textContent = item.name;
+                    
+                    textDiv.appendChild(nameSpan);
+
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'flex items-center space-x-2 flex-shrink-0';
+
+                    const restoreBtn = document.createElement('button');
+                    restoreBtn.className = 'text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1 border border-blue-300 rounded-full hover:bg-blue-50 transition-colors';
+                    restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
+                    restoreBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        try {
+                            await import('firebase/firestore').then(async module => {
+                                await module.runTransaction(db, async (transaction) => {
+                                    const planDoc = await transaction.get(planRef);
+                                    if (!planDoc.exists()) return;
+
+                                    const currentItems = planDoc.data().manualItems || [];
+                                    const finalItems = currentItems.filter(i => !(i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit));
+                                    
+                                    transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
+                                });
+                                // If last item, close modal
+                                if (deletedItems.length <= 1) trashModal.classList.add('hidden');
+                            });
+                        } catch (error) {
+                            console.error("Erreur lors de la restauration :", error);
+                        }
+                    });
+
+                    const deleteForeverBtn = document.createElement('button');
+                    deleteForeverBtn.className = 'text-gray-400 hover:text-red-600 font-medium text-sm px-2 py-1';
+                    deleteForeverBtn.innerHTML = '<i class="fas fa-times text-lg"></i>';
+                    deleteForeverBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        const key = `${item.name}_${item.unit || ''}`;
+                        try {
+                             await import('firebase/firestore').then(module => {
+                                module.updateDoc(planRef, {
+                                    hiddenTrashItems: module.arrayUnion(key),
+                                    lastUpdated: new Date()
+                                });
+                            });
+                             // If last item, close modal
+                            if (deletedItems.length <= 1) trashModal.classList.add('hidden');
+                        } catch (error) {
+                            console.error("Erreur suppression définitive:", error);
+                        }
+                    });
+
+                    actionsDiv.appendChild(restoreBtn);
+                    actionsDiv.appendChild(deleteForeverBtn);
+
+                    li.appendChild(textDiv);
+                    li.appendChild(actionsDiv);
+                    deletedUl.appendChild(li);
+                });
+                trashList.appendChild(deletedUl);
+            }
+        } else {
+             if (trashList) trashList.innerHTML = '<p class="text-center text-gray-500 italic py-4">La corbeille est vide.</p>';
+             if (emptyTrashBtn) emptyTrashBtn.classList.add('hidden');
+        }
     }
 
     function updateItemState(key, isChecked, li, checkbox, nameSpan, qtySpan) {
@@ -327,13 +454,22 @@ export default function init() {
             }
         }
 
+        const activeList = [];
+        const deletedList = [];
+        const hiddenTrashItems = plan.hiddenTrashItems || [];
+
         combinedIngredients.forEach(item => {
             if (item.totalQuantity > 0) {
-                list.push(item);
+                activeList.push(item);
+            } else if (item.totalQuantity <= 0 && item.sources && item.sources.length > 0) {
+                const key = `${item.name}_${item.unit || ''}`;
+                if (!hiddenTrashItems.includes(key)) {
+                    deletedList.push(item);
+                }
             }
         });
 
-        return list;
+        return { active: activeList, deleted: deletedList };
     }
 
     fetchData();
