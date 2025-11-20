@@ -1197,6 +1197,9 @@ export default function init() {
             return;
         }
 
+        // Use checked items from the current plan (synced via Firestore)
+        const checkedItems = currentPlan ? (currentPlan.checkedItems || {}) : {};
+
         const groupedList = shoppingList.reduce((acc, item) => {
             const category = item.category || 'Inconnue';
             if (!acc[category]) {
@@ -1223,6 +1226,9 @@ export default function init() {
             const itemsInCategory = groupedList[category].sort((a, b) => a.name.localeCompare(b.name));
 
             itemsInCategory.forEach(item => {
+                const key = `${item.name}_${item.unit || ''}`;
+                const isChecked = checkedItems[key];
+
                 const li = document.createElement('li');
                 let liClasses = 'p-2 rounded';
                 li.className = liClasses + (item.source === 'manual' ? ' bg-lemon' : ' bg-gray-50');
@@ -1230,16 +1236,34 @@ export default function init() {
                 const mainRow = document.createElement('div');
                 mainRow.className = 'flex justify-between items-center';
 
+                // Item Name (with checkmark if applicable)
+                const nameContainer = document.createElement('div');
+                nameContainer.className = 'flex-grow flex items-center';
+                
+                if (isChecked) {
+                    const checkIcon = document.createElement('i');
+                    checkIcon.className = 'fas fa-check mr-2 bg-green-500 text-white rounded-full p-1 flex items-center justify-center w-5 h-5';
+                    nameContainer.appendChild(checkIcon);
+                }
+
                 const nameSpan = document.createElement('span');
-                nameSpan.className = 'flex-grow text-sm font-medium'; // Slightly larger text
+                nameSpan.className = 'text-sm font-medium transition-all duration-200'; // Slightly larger text
+                if (isChecked) {
+                    nameSpan.classList.add('line-through', 'text-gray-400');
+                }
                 nameSpan.textContent = item.name;
-                mainRow.appendChild(nameSpan);
+                nameContainer.appendChild(nameSpan);
+                
+                mainRow.appendChild(nameContainer);
 
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'flex items-center space-x-2 mx-2';
 
                 const quantitySpan = document.createElement('span');
                 quantitySpan.className = 'font-medium w-20 text-center text-sm'; // Slightly larger text
+                if (isChecked) {
+                    quantitySpan.classList.add('text-gray-400');
+                }
                 const formattedQuantity = Number.isInteger(item.totalQuantity) ? item.totalQuantity : parseFloat(item.totalQuantity.toFixed(2));
                 quantitySpan.textContent = `${formattedQuantity} ${item.unit || ''}`.trim();
 
@@ -2123,6 +2147,9 @@ export default function init() {
         disconnectFromPresenceChannel();
 
         const selectedPlanId = elements.planSelect.value;
+        if (selectedPlanId) {
+            localStorage.setItem('lastActivePlanId', selectedPlanId);
+        }
         currentPlan = allPlans.find(p => p.id === selectedPlanId) || null;
         
         // Afficher/cacher les boutons d'action en fonction de la propriété
@@ -2225,9 +2252,13 @@ export default function init() {
 
             // Vérifier si un plan a été passé depuis la page 'Mes Plans'
             const selectedPlanId = localStorage.getItem('selectedPlanId');
+            const lastActivePlanId = localStorage.getItem('lastActivePlanId');
+            
             if (selectedPlanId && plans.some(p => p.id === selectedPlanId)) {
                 elements.planSelect.value = selectedPlanId;
                 localStorage.removeItem('selectedPlanId'); // Nettoyer après utilisation
+            } else if (lastActivePlanId && plans.some(p => p.id === lastActivePlanId)) {
+                elements.planSelect.value = lastActivePlanId;
             }
 
             loadPlanFromSelection(); // Load data directly after populating

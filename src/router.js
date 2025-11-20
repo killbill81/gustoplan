@@ -143,7 +143,10 @@ const routes = {
                                 <div class="w-full md:w-1/6">
                                     <section id="shopping-list-section" aria-labelledby="shopping-list-heading" class="mb-8 md:mb-12 md:sticky md:top-24">
                                         <div class="bg-white rounded-xl shadow-md p-4 md:p-6">
-                                            <h2 id="shopping-list-heading" class="text-xl md:text-2xl font-bold text-gray-800 mb-4">Liste de courses</h2>
+                                            <div class="flex justify-between items-center mb-4">
+                                                <h2 id="shopping-list-heading" class="text-xl md:text-2xl font-bold text-gray-800">Liste de courses</h2>
+
+                                            </div>
                                             <div class="flex justify-end space-x-2 mb-4">
                                                 <button id="import-list-btn" class="btn btn-secondary btn-sm">
                                                     <i class="fas fa-download mr-2"></i>Importer une liste
@@ -540,6 +543,26 @@ const routes = {
         </section>
         `,
         script: './view-plan.js'
+    },
+    'shopping-mode': {
+        html: `
+        <div class="max-w-2xl mx-auto bg-white min-h-screen pb-20 md:pb-0">
+            <div class="sticky top-0 bg-white z-20 border-b border-gray-200 shadow-sm px-4 py-3 flex justify-between items-center">
+                <button id="shopping-mode-back-btn" class="text-gray-600 hover:text-tomato">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </button>
+                <h2 class="text-xl font-bold text-gray-800">Faire les courses</h2>
+                <select id="shopping-mode-plan-select" class="text-sm border-none focus:ring-0 font-medium text-tomato bg-transparent text-right w-32 md:w-auto overflow-hidden text-ellipsis">
+                    <option>Chargement...</option>
+                </select>
+            </div>
+            
+            <div id="shopping-mode-container" class="p-4">
+                <p class="text-center text-gray-500 mt-10">Chargement de la liste...</p>
+            </div>
+        </div>
+        `,
+        script: './shopping-mode.js'
     }
 };
 

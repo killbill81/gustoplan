@@ -58,6 +58,7 @@ async function createPlan(name) {
             type: 'personal',
             weeks: {},
             manualItems: [],
+            checkedItems: {},
             defaultNumPeople: 1,
             startDay: 'Lundi',
             lastUpdated: new Date()
