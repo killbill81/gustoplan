@@ -240,7 +240,7 @@ class RecipeFormHandler {
             difficulty: this.recipeDifficultyInput.value,
             steps: this.recipeStepsTextarea.value,
             ingredients: ingredients,
-            imageUrl: this.recipeImageUrlInput.value || `https://source.unsplash.com/400x300/?food,${encodeURIComponent(this.recipeNameInput.value)}`
+            imageUrl: this.recipeImageUrlInput.value || `https://tse2.mm.bing.net/th?q=${encodeURIComponent(this.recipeNameInput.value)}%20recette&w=400&h=300&c=7&rs=1&p=0`
         };
         console.log("Recipe data being sent to Firebase:", recipeData); // New log
 
