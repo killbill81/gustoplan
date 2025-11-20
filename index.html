@@ -10,6 +10,25 @@
     <script>
       tailwind.config = {
         darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              tomato: {
+                DEFAULT: '#E07A5F',   // Corail / Terre Cuite (anciennement tomato)
+                light: '#F2CC8F',     // Plus clair pour les fonds
+                dark: '#C45D42'       // Plus foncé pour le hover
+              },
+              eggplant: '#3D405B',    // Bleu Nuit Profond (anciennement eggplant)
+              sage: '#81B29A',        // Vert Sauge
+              cream: '#F4F1DE',       // Blanc Cassé / Crème d'Avoine (pour le fond de page)
+              'lunch-bg': '#FEFAE0',  // Jaune Miel très pâle pour Midi
+              'dinner-bg': '#EDF2F4', // Bleu Ardoise très pâle pour Soir
+            },
+            fontFamily: {
+              sans: ['Nunito', 'sans-serif'], // Garde ta police Nunito
+            }
+          }
+        }
       }
     </script>
     <!-- Font Awesome pour les icônes -->
