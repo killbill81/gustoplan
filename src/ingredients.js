@@ -120,7 +120,7 @@ export default function init() {
             name: ingredientNameInput.value,
             unit: ingredientUnitSelect.value,
             category: ingredientCategorySelect.value,
-            imageUrl: document.getElementById('ingredient-image-url').value || `https://loremflickr.com/400/300/${encodeURIComponent(ingredientNameInput.value)}`
+            imageUrl: document.getElementById('ingredient-image-url').value || `https://source.unsplash.com/400x300/?food,${encodeURIComponent(ingredientNameInput.value)}`
         };
 
         if (!ingredientData.name || !ingredientData.category) { // Unit is optional now
