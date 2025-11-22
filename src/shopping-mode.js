@@ -21,7 +21,7 @@ export default function init() {
     // --- Scroll to Top Button Logic ---
     const scrollTopBtn = document.createElement('button');
     scrollTopBtn.id = 'scroll-to-top-btn';
-    scrollTopBtn.className = 'hidden fixed bottom-5 right-5 bg-tomato text-white rounded-full w-12 h-12 shadow-lg z-30';
+    scrollTopBtn.className = 'hidden fixed bottom-20 right-5 bg-tomato text-white rounded-full w-12 h-12 shadow-lg z-50';
     scrollTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
     document.body.appendChild(scrollTopBtn);
 
