@@ -200,6 +200,11 @@ export default function init() {
         return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     }
 
+    function sanitizeForFirebaseKey(str) {
+        if (!str) return '';
+        return str.replace(/\./g, '_');
+    }
+
     async function promptForUnit(ingredientName) {
         const unitModal = document.getElementById('unit-select-modal');
         const title = document.getElementById('unit-modal-title');
@@ -1232,8 +1237,9 @@ export default function init() {
             const itemsInCategory = groupedList[category].sort((a, b) => a.name.localeCompare(b.name));
 
             itemsInCategory.forEach(item => {
-                const key = `${item.name}_${item.unit || ''}`;
-                const isChecked = checkedItems[key];
+                const unsanitizedKey = `${item.name}_${item.unit || ''}`;
+                const key = sanitizeForFirebaseKey(unsanitizedKey);
+                const isChecked = checkedItems.hasOwnProperty(key) ? checkedItems[key] : (checkedItems[unsanitizedKey] || false);
 
                 const li = document.createElement('li');
                 let liClasses = 'p-2 rounded';

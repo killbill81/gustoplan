@@ -9,6 +9,11 @@ let availableMeals = [];
 let masterIngredientList = [];
 let checkedItems = {}; // Key: itemName_unit, Value: boolean
 
+function sanitizeForFirebaseKey(str) {
+    if (!str) return '';
+    return str.replace(/\./g, '_');
+}
+
 export default function init() {
     const container = document.getElementById('shopping-mode-container');
     const planSelect = document.getElementById('shopping-mode-plan-select');
@@ -137,8 +142,9 @@ export default function init() {
                 // The key logic needs to match how we access it.
                 // In generateList we don't have plan ID in the item key, but we need a unique key for storage.
                 // Let's use "itemName_unit" as the key within the checkedItems object of THIS plan.
-                const key = `${item.name}_${item.unit || ''}`;
-                const isChecked = checkedItems[key] || false;
+                const unsanitizedKey = `${item.name}_${item.unit || ''}`;
+                const key = sanitizeForFirebaseKey(unsanitizedKey);
+                const isChecked = checkedItems.hasOwnProperty(key) ? checkedItems[key] : (checkedItems[unsanitizedKey] || false);
 
                 const li = document.createElement('li');
                 li.className = `flex flex-col p-3 rounded-lg transition-colors duration-200 ${isChecked ? 'bg-gray-100' : 'bg-white shadow-sm border border-gray-100'}`;
@@ -241,7 +247,7 @@ export default function init() {
                 newEmptyBtn.addEventListener('click', async () => {
                     if (!currentPlan || !confirm("Tout supprimer définitivement ?")) return;
                     const planRef = doc(db, "plans", currentPlan.id);
-                    const itemsToHide = deletedItems.map(i => `${i.name}_${i.unit || ''}`);
+                    const itemsToHide = deletedItems.map(i => sanitizeForFirebaseKey(`${i.name}_${i.unit || ''}`));
                     
                     try {
                         await import('firebase/firestore').then(module => {
@@ -309,7 +315,7 @@ export default function init() {
                     deleteForeverBtn.addEventListener('click', async () => {
                         if (!currentPlan) return;
                         const planRef = doc(db, "plans", currentPlan.id);
-                        const key = `${item.name}_${item.unit || ''}`;
+                        const key = sanitizeForFirebaseKey(`${item.name}_${item.unit || ''}`);
                         try {
                              await import('firebase/firestore').then(module => {
                                 module.updateDoc(planRef, {
@@ -462,8 +468,9 @@ export default function init() {
             if (item.totalQuantity > 0) {
                 activeList.push(item);
             } else if (item.totalQuantity <= 0 && item.sources && item.sources.length > 0) {
-                const key = `${item.name}_${item.unit || ''}`;
-                if (!hiddenTrashItems.includes(key)) {
+                const unsanitizedKey = `${item.name}_${item.unit || ''}`;
+                const key = sanitizeForFirebaseKey(unsanitizedKey);
+                if (!hiddenTrashItems.includes(key) && !hiddenTrashItems.includes(unsanitizedKey)) {
                     deletedList.push(item);
                 }
             }
