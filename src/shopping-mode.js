@@ -17,19 +17,28 @@ function sanitizeForFirebaseKey(str) {
 export default function init() {
     const container = document.getElementById('shopping-mode-container');
     const planSelect = document.getElementById('shopping-mode-plan-select');
-    const backBtn = document.getElementById('shopping-mode-back-btn');
+
+    // --- Scroll to Top Button Logic ---
+    const scrollTopBtn = document.createElement('button');
+    scrollTopBtn.id = 'scroll-to-top-btn';
+    scrollTopBtn.className = 'hidden fixed bottom-5 right-5 bg-tomato text-white rounded-full w-12 h-12 shadow-lg z-30';
+    scrollTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+    document.body.appendChild(scrollTopBtn);
+
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 200) {
+            scrollTopBtn.classList.remove('hidden');
+        } else {
+            scrollTopBtn.classList.add('hidden');
+        }
+    });
+
+    scrollTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 
     // Load checked items from Plan Data (Firestore)
     // No need to load from LocalStorage anymore, data comes via onSnapshot
-
-    // Back button logic (simple history back or nav to menu)
-    if (backBtn) {
-        backBtn.addEventListener('click', () => {
-            window.location.hash = '#menu'; // Or use router navigateTo if available globally or dispatch event
-            const menuBtn = document.querySelector('button[data-path="menu"]');
-            if (menuBtn) menuBtn.click();
-        });
-    }
 
     async function fetchData() {
         // 1. Fetch Master Ingredients
@@ -109,14 +118,28 @@ export default function init() {
         const { active: shoppingList, deleted: deletedItems } = generateList(currentPlan);
         
         container.innerHTML = '';
+
+        // --- Split items into checked and unchecked lists ---
+        const uncheckedItems = [];
+        const checkedItemsList = [];
+        shoppingList.forEach(item => {
+            const unsanitizedKey = `${item.name}_${item.unit || ''}`;
+            const key = sanitizeForFirebaseKey(unsanitizedKey);
+            const isChecked = checkedItems.hasOwnProperty(key) ? checkedItems[key] : (checkedItems[unsanitizedKey] || false);
+            if (isChecked) {
+                checkedItemsList.push(item);
+            } else {
+                uncheckedItems.push(item);
+            }
+        });
         
-        if (shoppingList.length === 0 && deletedItems.length === 0) {
+        if (uncheckedItems.length === 0 && checkedItemsList.length === 0) {
             container.innerHTML = '<p class="text-center p-10 text-gray-500">Votre liste de courses est vide pour ce plan.</p>';
             return;
         }
 
-        // Group by category
-        const grouped = shoppingList.reduce((acc, item) => {
+        // Group by category for UNCHECKED items
+        const grouped = uncheckedItems.reduce((acc, item) => {
             const cat = item.category || 'Inconnue';
             if (!acc[cat]) acc[cat] = [];
             acc[cat].push(item);
@@ -129,10 +152,41 @@ export default function init() {
              return a.localeCompare(b);
         });
 
+        // Create and inject the tabs container at the top of the main list container
+        const tabsContainer = document.createElement('div');
+        tabsContainer.id = 'shopping-category-tabs';
+        tabsContainer.className = 'flex overflow-x-auto space-x-2 py-2 bg-white z-20 mb-4';
+        container.appendChild(tabsContainer);
+
+        const sanitizeForId = (text) => 'category-' + text.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+
+        // --- Create and add category tabs ---
+        categories.forEach(cat => {
+            const tab = document.createElement('button');
+            tab.className = 'btn btn-sm btn-outline flex-shrink-0';
+            tab.textContent = cat;
+            tab.onclick = () => {
+                const headerElement = document.getElementById(sanitizeForId(cat));
+                if (headerElement) {
+                    const mainHeader = document.querySelector('header');
+                    const headerOffset = mainHeader ? mainHeader.offsetHeight : 0;
+                    const elementPosition = headerElement.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 40; // 40px for extra padding
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            };
+            tabsContainer.appendChild(tab);
+        });
+
         categories.forEach(cat => {
             const catHeader = document.createElement('h3');
             catHeader.className = 'font-bold text-lg text-gray-700 mt-6 mb-3 border-b border-gray-200 pb-1 sticky top-0 bg-white z-10';
             catHeader.textContent = cat;
+            catHeader.id = sanitizeForId(cat); // Assign ID for anchor link
             container.appendChild(catHeader);
 
             const ul = document.createElement('ul');
@@ -216,6 +270,91 @@ export default function init() {
             });
             container.appendChild(ul);
         });
+
+        // --- Render separator and CHECKED items ---
+        if (checkedItemsList.length > 0) {
+            const separator = document.createElement('div');
+            separator.className = 'my-8 border-t-2 border-dashed border-gray-300 pt-4 text-center';
+            const separatorTitle = document.createElement('h3');
+            separatorTitle.className = 'text-lg font-semibold text-gray-500';
+            separatorTitle.textContent = 'Articles cochés';
+            separator.appendChild(separatorTitle);
+            container.appendChild(separator);
+
+            const groupedChecked = checkedItemsList.reduce((acc, item) => {
+                const cat = item.category || 'Inconnue';
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(item);
+                return acc;
+            }, {});
+
+            const checkedCategories = Object.keys(groupedChecked).sort((a, b) => {
+                if (a === 'Inconnue') return 1;
+                if (b === 'Inconnue') return -1;
+                return a.localeCompare(b);
+            });
+
+            checkedCategories.forEach(cat => {
+                const catHeader = document.createElement('h3');
+                catHeader.className = 'font-bold text-lg text-gray-700 mt-6 mb-3 border-b border-gray-200 pb-1';
+                catHeader.textContent = cat;
+                container.appendChild(catHeader);
+
+                const ul = document.createElement('ul');
+                ul.className = 'space-y-3';
+                
+                groupedChecked[cat].sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+                    const unsanitizedKey = `${item.name}_${item.unit || ''}`;
+                    const key = sanitizeForFirebaseKey(unsanitizedKey);
+                    const isChecked = true; // All items in this section are checked
+
+                    const li = document.createElement('li');
+                    li.className = `flex flex-col p-3 rounded-lg transition-colors duration-200 bg-gray-100`;
+                    
+                    const mainContent = document.createElement('div');
+                    mainContent.className = 'flex items-center w-full';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'form-checkbox h-6 w-6 text-tomato rounded-full border-gray-300 focus:ring-tomato cursor-pointer transition duration-150 ease-in-out';
+                    checkbox.checked = isChecked;
+                    
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'ml-3 flex-grow cursor-pointer select-none';
+                    
+                    const quantityDisplay = Number.isInteger(item.totalQuantity) ? item.totalQuantity : parseFloat(item.totalQuantity.toFixed(2));
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = `font-medium text-base line-through text-gray-400`;
+                    nameSpan.textContent = item.name;
+                    
+                    const qtySpan = document.createElement('span');
+                    qtySpan.className = `ml-2 font-bold text-base text-gray-400`;
+                    qtySpan.textContent = ` - ${quantityDisplay} ${item.unit || ''}`.trim();
+
+                    textDiv.appendChild(nameSpan);
+                    textDiv.appendChild(qtySpan);
+
+                    const toggle = () => {
+                        const newState = !checkbox.checked;
+                        checkbox.checked = newState;
+                        updateItemState(key, newState, li, checkbox, nameSpan, qtySpan);
+                    };
+
+                    checkbox.addEventListener('change', (e) => {
+                        updateItemState(key, e.target.checked, li, checkbox, nameSpan, qtySpan);
+                    });
+                    textDiv.addEventListener('click', toggle);
+
+                    mainContent.appendChild(checkbox);
+                    mainContent.appendChild(textDiv);
+                    li.appendChild(mainContent);
+
+                    ul.appendChild(li);
+                });
+                container.appendChild(ul);
+            });
+        }
 
         // --- Update Trash Button & Modal ---
         const trashBtn = document.getElementById('shopping-mode-trash-btn');
