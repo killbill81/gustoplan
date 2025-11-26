@@ -56,20 +56,23 @@ async function loadFriends() {
 
 function createFriendCard(friendData) {
     const card = document.createElement('div');
-    card.className = 'bg-white p-3 rounded-lg flex items-center justify-between shadow-sm';
+    card.className = 'bg-card text-card-foreground p-3 rounded-lg flex items-center justify-between shadow-sm border border-border';
 
     const userInfo = document.createElement('div');
     userInfo.className = 'flex items-center';
     userInfo.innerHTML = `
-        <img src="${friendData.photoURL || 'https://placehold.co/40'}" alt="Avatar" class="w-10 h-10 rounded-full mr-3">
+        <img src="${friendData.photoURL || 'https://placehold.co/40'}" 
+             alt="Avatar" 
+             class="w-10 h-10 rounded-full mr-3 object-cover bg-muted"
+             onerror="this.onerror=null; this.src='https://placehold.co/40?text=${friendData.displayName ? friendData.displayName.charAt(0).toUpperCase() : '?'}';">
         <div>
             <p class="font-bold">${friendData.displayName}</p>
-            <p class="text-sm text-gray-500">${friendData.email}</p>
+            <p class="text-sm text-muted-foreground">${friendData.email}</p>
         </div>
     `;
 
     const removeButton = document.createElement('button');
-    removeButton.className = 'btn btn-ghost text-red-500 btn-sm';
+    removeButton.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md';
     removeButton.innerHTML = '<i class="fas fa-user-times"></i>';
     removeButton.title = 'Retirer cet ami';
     removeButton.addEventListener('click', () => removeFriend(friendData.uid));
@@ -257,21 +260,24 @@ async function loadSentFriendRequests() {
 
 function createRequestCard(request) {
     const card = document.createElement('div');
-    card.className = 'bg-white p-3 rounded-lg flex items-center justify-between shadow-sm';
+    card.className = 'bg-card text-card-foreground p-3 rounded-lg flex items-center justify-between shadow-sm border border-border';
 
     const receiver = request.receiver;
     const userInfo = document.createElement('div');
     userInfo.className = 'flex items-center';
     userInfo.innerHTML = `
-        <img src="${receiver?.photoURL || 'https://placehold.co/40'}" alt="Avatar" class="w-10 h-10 rounded-full mr-3">
+        <img src="${receiver?.photoURL || 'https://placehold.co/40'}" 
+             alt="Avatar" 
+             class="w-10 h-10 rounded-full mr-3 object-cover bg-muted"
+             onerror="this.onerror=null; this.src='https://placehold.co/40?text=${receiver?.displayName ? receiver.displayName.charAt(0).toUpperCase() : '?'}';">
         <div>
             <p class="font-bold">${receiver?.displayName || 'Utilisateur inconnu'}</p>
-            <p class="text-sm text-gray-500">Statut : <span class="font-medium">${request.status}</span></p>
+            <p class="text-sm text-muted-foreground">Statut : <span class="font-medium">${request.status}</span></p>
         </div>
     `;
 
     const cancelButton = document.createElement('button');
-    cancelButton.className = 'btn btn-ghost text-red-500 btn-sm';
+    cancelButton.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md';
     cancelButton.innerHTML = '<i class="fas fa-times-circle"></i>';
     cancelButton.title = 'Annuler la demande';
     cancelButton.addEventListener('click', async () => {

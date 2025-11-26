@@ -170,13 +170,13 @@ export default function init() {
             buttonsDiv.className = 'flex space-x-2';
 
             const renameBtn = document.createElement('button');
-            renameBtn.className = 'btn btn-ghost btn-xs text-blue-500';
+            renameBtn.className = 'text-blue-500 hover:bg-blue-50 text-xs px-2 py-1 rounded-md';
             renameBtn.innerHTML = '<i class="fas fa-edit"></i>';
             renameBtn.addEventListener('click', () => handleRenameCategory(cat));
             buttonsDiv.appendChild(renameBtn);
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn btn-ghost btn-xs text-red-500';
+            deleteBtn.className = 'text-red-500 hover:bg-red-50 text-xs px-2 py-1 rounded-md';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
             deleteBtn.addEventListener('click', () => handleDeleteCategory(cat));
             buttonsDiv.appendChild(deleteBtn);
@@ -330,11 +330,11 @@ export default function init() {
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'w-full flex justify-end items-center space-x-2 border-t pt-2 mt-2';
             const editBtn = document.createElement('button');
-            editBtn.className = 'btn btn-ghost btn-xs text-blue-500 hover:bg-blue-50';
+            editBtn.className = 'text-blue-500 hover:bg-blue-50 text-xs px-2 py-1 rounded-md';
             editBtn.innerHTML = '<i class="fas fa-edit"></i>';
             editBtn.addEventListener('click', () => openIngredientModal(ing));
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn btn-ghost btn-xs text-red-500 hover:bg-red-50';
+            deleteBtn.className = 'text-red-500 hover:bg-red-50 text-xs px-2 py-1 rounded-md';
             deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
             deleteBtn.addEventListener('click', () => deleteIngredient(ing.id, ing.name));
             actionsDiv.appendChild(editBtn);

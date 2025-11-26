@@ -1,527 +1,134 @@
-/* GustoPlan Custom CSS */
+@import "tailwindcss";
 
-:root {
-    --tomato: #E07A5F; /* Corail / Terre Cuite */
-    --avocado: #81B29A; /* Vert Sauge */
-    --beige: #F4F1DE; /* Blanc Cassé / Crème d'Avoine */
-    --lemon: #FEFAE0; /* Jaune Miel très pâle (pour les fonds Midi) */
-    --eggplant: #3D405B; /* Bleu Nuit Profond */
-    --primary-text: #3D405B; /* Utilisation de l'Eggplant pour le texte principal */
-    --secondary-text: #81B29A; /* Utilisation du Sage pour le texte secondaire */
-    --border-light: #F2CC8F; /* Couleur de bordure plus chaude */
-    --card-bg: #FFFFFF; /* Garder le blanc pour les cartes */
-    --body-bg: #F4F1DE; /* Crème d'Avoine pour le fond de page */
-}
-
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Raleway:wght@400;500;600;700&display=swap');
-
-body {
-    font-family: 'Nunito', sans-serif;
-    line-height: 1.6;
-    color: var(--primary-text);
-    background-color: var(--body-bg);
-}
-
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Raleway', sans-serif;
-    color: var(--primary-text); 
-    margin-bottom: 0.5em;
-    line-height: 1.2;
-}
-
-h1 {
-    font-size: 2.8em;
-    font-weight: 700;
-}
-
-h2 {
-    font-size: 2.2em;
-    font-weight: 700;
-}
-
-h3 {
-    font-size: 1.8em;
-    font-weight: 500;
-}
-
-.gradient-bg {
-    background: linear-gradient(135deg, var(--tomato) 0%, var(--eggplant) 100%);
-}
-
-.meal-card {
-    transition: all 0.2s ease-in-out;
-    border-radius: 12px; /* Plus arrondi (rounded-xl) */
-    cursor: move; /* Indique qu'on peut déplacer */
-    border: 1px solid var(--border-light);
-    background-color: var(--card-bg);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.08); /* Ombre plus douce */
-    width: 100%; /* S'assure que la carte occupe toute la largeur disponible */
-    min-height: auto; /* Ajuste la hauteur automatiquement en fonction du contenu */
-}
-
-.meal-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Ombre plus prononcée au hover */
-}
-
-.meal-card span {
-    white-space: normal; /* Permet au texte de passer à la ligne */
-    word-wrap: break-word; /* Coupe les mots longs si nécessaire */
-    overflow: visible; /* Assure que tout le texte est visible */
-    display: block; /* Force le texte à occuper toute la largeur disponible */
-}
-
-/* Style pour l'élément en cours de drag */
-.meal-card.dragging {
-    opacity: 0.6;
-    border: 2px dashed var(--tomato);
-    cursor: grabbing;
-}
-
-.drag-area {
-    min-height: 90px; 
-    border: 2px dashed var(--border-light);
-    border-radius: 12px; /* Plus arrondi (rounded-xl) */
-    transition: all 0.2s ease;
-    background-color: var(--beige); /* Utilisation du Beige pour le fond de la zone de drag */
-    padding: 0.75rem;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.drag-area.drag-over { /* Classe ajoutée par JS */
-    border-color: var(--tomato);
-    background-color: rgba(224, 122, 95, 0.1); /* Lighter terracotta tint */
-}
-
-.meal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.nutrition-score {
-    width: 22px; /* Légèrement plus grand */
-    height: 22px; /* Légèrement plus grand */
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px; /* Ajustez la taille de la police si nécessaire */
-    flex-shrink: 0;
-    text-align: center;
-}
-
-.score-a { background-color: #6A994E; color: white; } /* Vert plus doux */
-.score-b { background-color: #A7C957; color: white; } /* Vert anis */
-.score-c { background-color: #F8B400; color: white; } /* Jaune Miel */
-.score-d { background-color: #E67E22; color: white; } /* Orange plus doux */
-.score-e { background-color: #D35400; color: white; } /* Orange foncé */
-
-.progress-bar {
-    height: 6px;
-    border-radius: 3px;
-    background-color: var(--border-light);
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    transition: width 0.5s ease;
-    border-radius: 3px;
-}
-
-/* Animation */
-@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-.pulse { animation: pulse 1.8s infinite ease-in-out; }
-
-@keyframes voicePulse {
-    0% { box-shadow: 0 0 0 0 rgba(224, 122, 95, 0.4); } /* Utilise la nouvelle couleur tomato */
-    70% { box-shadow: 0 0 0 10px rgba(224, 122, 95, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(224, 122, 95, 0); }
-}
-.voice-active { animation: voicePulse 1.5s infinite; }
-
-/* Alert colors and styles */
-.alert-level-high { background-color: rgba(230, 126, 34, 0.05); border-left: 3px solid #E67E22; } /* Orange plus doux */
-.alert-level-warning { background-color: rgba(248, 180, 0, 0.05); border-left: 3px solid #F8B400; } /* Jaune Miel */
-.alert-level-info { background-color: rgba(129, 178, 154, 0.05); border-left: 3px solid #81B29A; } /* Vert Sauge */
-
-.alert-text {
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-    display: flex;
-    align-items: center;
-}
-.alert-text i { margin-right: 0.25rem; }
-.alert-text-high { color: #E67E22; }
-.alert-text-warning { color: #F8B400; }
-.alert-text-info { color: #81B29A; }
-
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; } /* Légèrement plus large */
-::-webkit-scrollbar-track { background: var(--body-bg); } /* Fond de page */
-::-webkit-scrollbar-thumb { background: #BDBDBD; border-radius: 4px; } /* Gris doux */
-html.dark ::-webkit-scrollbar-thumb { background: #6B7280; }
-html.dark ::-webkit-scrollbar-thumb:hover { background: #555A61; }
-
-/* Dark Mode Styles */
-html.dark {
-    --primary-text: #E5E7EB;
-    --secondary-text: #9CA3AF;
-    --border-light: #374151;
-    --card-bg: #1F2937;
-    --body-bg: #111827;
-}
-
-html.dark .btn-outline {
-    background-color: transparent;
-    color: var(--tomato);
-    border-color: var(--tomato);
-}
-
-html.dark .btn-outline:hover:not(:disabled) {
-    background-color: rgba(224, 122, 95, 0.2); /* Nouvelle couleur tomato */
-}
-
-html.dark .drag-area {
-    background-color: rgba(25, 33, 46, 0.5);
-}
-
-html.dark .drag-area.drag-over {
-    background-color: rgba(224, 122, 95, 0.1); /* Nouvelle couleur tomato */
-}
-
-html.dark .add-meal-dropdown select {
-    background-color: #1F2937;
-    color: #E5E7EB;
-    border-color: #374151;
-}
-
-html.dark .servings-input {
-    border-color: #374151;
-    background-color: #111827;
-    color: #E5E7EB;
-}
-
-html.dark .servings-btn {
-    background-color: #374151;
-    border-color: #4B5563;
-    color: #D1D5DB;
-}
-
-html.dark .servings-btn:hover {
-    background-color: #4B5563;
-}
+@theme {
+    /* Custom Colors */
+    --color-tomato: #E07A5F;
+    --color-tomato-light: #F2CC8F;
+    --color-tomato-dark: #C45D42;
+    --color-eggplant: #3D405B;
+    --color-sage: #81B29A;
+    --color-cream: #F4F1DE;
+    --color-lunch-bg: #FEFAE0;
+    --color-dinner-bg: #EDF2F4;
 
-html.dark .ingredient-search-item:hover {
-    background-color: var(--tomato);
-    color: white;
-}
-
-/* Utilisation des variables pour les couleurs Tailwind-like */
-.bg-tomato { background-color: var(--tomato); }
-.text-tomato { color: var(--tomato); }
-.border-tomato { border-color: var(--tomato); }
-.focus\:ring-tomato:focus { --tw-ring-color: var(--tomato); }
-.bg-avocado { background-color: var(--avocado); }
-.text-avocado { color: var(--avocado); }
-.bg-eggplant { background-color: var(--eggplant); }
-.text-eggplant { color: var(--eggplant); }
-.bg-beige { background-color: var(--beige); }
-.bg-lemon { background-color: var(--lemon); }
-.text-yellow-600 { color: #ca8a04; } /* Garder le jaune Tailwind si nécessaire */
-.bg-yellow-500 { background-color: #eab308; } /* Garder le jaune Tailwind si nécessaire */
-
-/* Buttons Base Styles */
-.btn {
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 500;
-    border: 1px solid transparent;
-    cursor: pointer;
-    text-align: center;
-    vertical-align: middle;
-    user-select: none;
-}
-.btn:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-}
-.btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.875rem;
-    border-radius: 0.375rem;
-}
-.btn-xs {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-radius: 0.25rem;
-}
-
-/* Button Variants */
-.btn-primary { background-color: var(--tomato); color: white; border-color: var(--tomato); }
-.btn-primary:hover:not(:disabled) { background-color: var(--tomato-dark); border-color: var(--tomato-dark); } 
-.btn-secondary { background-color: var(--avocado); color: white; border-color: var(--avocado); }
-.btn-secondary:hover:not(:disabled) { background-color: #6C9B80; border-color: #6C9B80; } /* Darker Sage */
-.btn-info { background-color: #81B29A; color: white; border-color: #81B29A; } /* Utilisation du Vert Sauge pour Info */
-.btn-info:hover:not(:disabled) { background-color: #6C9B80; border-color: #6C9B80; } /* Darker Sage */
-.btn-outline { background-color: white; color: var(--tomato); border-color: var(--tomato); }
-.btn-outline:hover:not(:disabled) { background-color: rgba(224, 122, 95, 0.08); }
-.btn-active { background-color: var(--tomato); color: white; }
-.btn-ghost { background-color: transparent; color: var(--tomato); border: none; }
-.btn-ghost:hover:not(:disabled) { background-color: rgba(224, 122, 95, 0.1); }
-.btn-icon { padding: 0.5rem; }
-
-/* Add focus styles for accessibility */
-.btn:focus-visible {
-    outline: 2px solid var(--tomato);
-    outline-offset: 2px;
-}
-.btn-outline:focus-visible {
-     outline-color: var(--tomato);
-}
-.btn-secondary:focus-visible {
-    outline-color: var(--avocado);
-}
-
-#meal-tooltip {
-    max-width: 300px;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    opacity: 0;
-    transform: translateY(10px);
-}
-
-#meal-tooltip.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.quantity-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.quantity-controls button {
-    background-color: var(--tomato);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.quantity-controls button:hover {
-    background-color: var(--tomato-dark);
-}
-
-.quantity-controls input {
-    width: 3rem;
-    text-align: center;
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    padding: 0.25rem;
-}
-
-.add-meal-dropdown select {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    background-color: white;
-    font-size: 0.875rem;
-    color: var(--primary-text);
-}
-
-.add-meal-dropdown select:focus {
-    outline: none;
-    border-color: var(--tomato);
-    box-shadow: 0 0 0 2px rgba(224, 122, 95, 0.2);
-}
-
-#ai-analysis-section {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-light);
-    padding: 1rem;
-    border-radius: 12px; /* Plus arrondi */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-}
+    /* Shadcn Colors */
+    --color-border: hsl(var(--border));
+    --color-input: hsl(var(--input));
+    --color-ring: hsl(var(--ring));
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
 
-#ai-analysis-section h4 {
-    font-size: 1rem;
-    color: var(--primary-text);
-    margin-bottom: 0.5rem;
-}
-
-#ai-analysis-section p {
-    line-height: 1.5;
-    color: var(--secondary-text);
-}
-
-#ai-analysis-summary p {
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
-}
-
-#ai-suggestions p {
-    margin-bottom: 0.5rem;
-    line-height: 1.5;
-}
-
-#ai-suggestions .suggestion-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-}
-
-#ai-suggestions .suggestion-item i {
-    color: var(--tomato);
-}
-
-.suggestion-item i {
-    color: var(--tomato);
-    margin-top: 0.25rem;
-}
-
-/* AJOUTÉ : Styles pour le contrôle du nombre de personnes */
-.servings-control {
-    display: flex;
-    align-items: center;
-}
+    --color-primary: hsl(var(--primary));
+    --color-primary-foreground: hsl(var(--primary-foreground));
 
-.servings-input {
-    border: 1px solid var(--border-light);
-    background-color: var(--body-bg);
-    -moz-appearance: textfield;
-}
-
-.servings-input:focus {
-    outline: none;
-    border-color: var(--tomato);
-    box-shadow: 0 0 0 2px rgba(224, 122, 95, 0.2);
-}
-
-/* Cache les flèches sur Chrome, Safari, Edge, Opera */
-.servings-input::-webkit-outer-spin-button,
-.servings-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+    --color-secondary: hsl(var(--secondary));
+    --color-secondary-foreground: hsl(var(--secondary-foreground));
 
-/* AJOUTÉ : Style pour les boutons + et - */
-.servings-btn {
-    background-color: var(--border-light);
-    border: 1px solid var(--border-light);
-    color: var(--primary-text);
-    width: 28px; /* Légèrement plus grand */
-    height: 28px; /* Légèrement plus grand */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 6px; /* Plus arrondi */
-    transition: background-color 0.2s;
-}
+    --color-destructive: hsl(var(--destructive));
+    --color-destructive-foreground: hsl(var(--destructive-foreground));
 
-.servings-btn:hover {
-    background-color: rgba(224, 122, 95, 0.2); /* Hover sur le ton du tomato */
-}
+    --color-muted: hsl(var(--muted));
+    --color-muted-foreground: hsl(var(--muted-foreground));
 
-#name-tooltip {
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-}
+    --color-accent: hsl(var(--accent));
+    --color-accent-foreground: hsl(var(--accent-foreground));
 
-.shopping-list-compact {
-    font-size: 0.8rem; /* Taille de police légèrement augmentée */
-}
+    --color-popover: hsl(var(--popover));
+    --color-popover-foreground: hsl(var(--popover-foreground));
 
-.shopping-list-compact .shopping-list-qty-input {
-    font-size: 0.8rem;
-    padding: 0.15rem 0.3rem;
-    width: 3rem; /* Légèrement plus large */
-}
+    --color-card: hsl(var(--card));
+    --color-card-foreground: hsl(var(--card-foreground));
 
-.shopping-list-compact .btn-xs {
-    padding: 0.15rem 0.4rem;
+    /* Radius */
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
 }
 
-.form-editing {
-    border: 2px solid var(--tomato);
-    box-shadow: 0 0 18px rgba(224, 122, 95, 0.4); /* Ombre plus douce et colorée */
-    transition: all 0.3s ease-in-out;
-}
+@layer base {
+    :root {
+        --background: 46 38% 91%;
+        --foreground: 234 20% 30%;
 
-/* Masquer les flèches pour l'input de type number */
-#num-people-input::-webkit-outer-spin-button,
-#num-people-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
+        --card: 0 0% 100%;
+        --card-foreground: 234 20% 30%;
 
-#num-people-input {
-    -moz-appearance: textfield;
-}
+        --popover: 0 0% 100%;
+        --popover-foreground: 234 20% 30%;
 
-.ingredient-search-item:hover {
-    background-color: var(--tomato);
-    color: white;
-}
+        --primary: 13 68% 63%;
+        --primary-foreground: 0 0% 100%;
 
-/* Dark Mode Overrides for Tailwind Classes */
-html.dark .bg-white { background-color: #1F2937 !important; }
-html.dark .bg-gray-50 { background-color: #111827 !important; }
-html.dark .bg-gray-100 { background-color: #374151 !important; }
-html.dark .bg-blue-50 { background-color: #3D405B !important; } /* Utilisation du Bleu Nuit */
+        --secondary: 151 24% 60%;
+        --secondary-foreground: 0 0% 100%;
 
-html.dark .text-gray-500 { color: #A1A1AA !important; }
-html.dark .text-gray-600 { color: #D1D5DB !important; }
-html.dark .text-gray-700 { color: #E5E7EB !important; }
-html.dark .text-gray-800 { color: #F9FAFB !important; }
-html.dark .text-blue-800 { color: #81B29A !important; } /* Utilisation du Vert Sauge */
+        --muted: 46 38% 85%;
+        --muted-foreground: 234 20% 40%;
 
-html.dark .border-gray-300 { border-color: #4B5563 !important; }
-html.dark .border-b { border-color: #374151 !important; }
+        --accent: 46 38% 85%;
+        --accent-foreground: 234 20% 30%;
 
-html.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.25) !important; }
-html.dark .shadow-\[0_-4px_6px_-1px_rgba\(0,0,0,0\.1\)\] { box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.4) !important; }
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 210 40% 98%;
 
-html.dark .hover\:bg-gray-100:hover { background-color: #374151 !important; }
-html.dark .hover\:bg-red-50:hover { background-color: rgba(224, 122, 95, 0.1) !important; } /* Nouvelle couleur tomato */
+        --border: 37 78% 75%;
+        --input: 37 78% 75%;
+        --ring: 13 68% 63%;
 
-/* Ensure inputs are readable */
-html.dark input,
-html.dark textarea,
-html.dark select {
-    background-color: #374151 !important;
-    color: #F9FAFB !important;
-    border-color: #4B5563 !important;
-}
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-    color: #9CA3AF !important;
-}
-@media (max-width: 767px) {
-    .plan-actions {
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-        gap: 0.5rem !important;
+        --radius: 0.75rem;
     }
 
-    #meal-plan-grid-layout {
-        min-width: 0 !important;
+    .dark {
+        /* Background: #121212 */
+        --background: 0 0% 7%;
+        /* Text Main: #E0E0E0 */
+        --foreground: 0 0% 88%;
+
+        /* Surface/Cards: #2C2C2C */
+        --card: 0 0% 17%;
+        --card-foreground: 0 0% 88%;
+
+        --popover: 0 0% 17%;
+        --popover-foreground: 0 0% 88%;
+
+        --primary: 13 68% 63%; /* Tomato kept vivid */
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 151 24% 60%;
+        --secondary-foreground: 0 0% 100%;
+
+        --muted: 0 0% 17%;
+        /* Text Secondary: #A0A0A0 */
+        --muted-foreground: 0 0% 63%;
+
+        --accent: 0 0% 17%;
+        --accent-foreground: 0 0% 88%;
+
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+
+        /* Borders: #404040 for visibility */
+        --border: 0 0% 25%;
+        --input: 0 0% 25%;
+        --ring: 13 68% 63%;
+    }
+
+    /* Reduce image brightness in dark mode to prevent glare */
+    .dark img {
+        filter: brightness(0.85);
+        transition: filter 0.3s ease;
+    }
+}
+
+@layer base {
+    * {
+        border-color: var(--color-border);
+        border-style: solid;
+        border-width: 0;
+    }
+
+    body {
+        background-color: var(--color-background);
+        color: var(--color-foreground);
     }
 }

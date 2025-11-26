@@ -215,14 +215,14 @@ export default function init() {
         actions.className = 'w-full flex justify-end items-center space-x-2 border-t dark:border-gray-700 pt-2 mt-2';
 
         const editButton = document.createElement('button');
-        editButton.className = 'btn btn-ghost btn-sm text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/50';
+        editButton.className = 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-sm px-3 py-1 rounded-md';
         editButton.innerHTML = '<i class="fas fa-edit"></i>';
         editButton.title = 'Modifier';
         editButton.addEventListener('click', () => recipeFormHandler.openForm(recipe, 'Modifier la recette'));
         actions.appendChild(editButton);
 
         const deleteButton = document.createElement('button');
-        deleteButton.className = 'btn btn-ghost btn-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50';
+        deleteButton.className = 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50 text-sm px-3 py-1 rounded-md';
         deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteButton.title = 'Supprimer';
         deleteButton.addEventListener('click', () => handleDeleteRecipe(recipe.id, recipe.name));

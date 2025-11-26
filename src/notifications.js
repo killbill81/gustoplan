@@ -165,12 +165,7 @@ function renderNotification(notification) {
         title.textContent = `Invitation à collaborer`;
         info.textContent = `${notification.sender.displayName} vous invite à modifier son plan "${notification.data.planName}".`;
 
-        const acceptBtn = createButton('Accepter', 'btn-secondary', (e) => {
-            e.target.textContent = '...';
-            e.target.disabled = true;
-            acceptCollaborativePlan(notification.id, notification.data);
-        });
-        const declineBtn = createButton('Refuser', 'btn-ghost text-red-500', (e) => {
+const declineBtn = createButton('Refuser', 'text-red-500 hover:bg-red-50 px-3 py-1 rounded-md', (e) => {
             e.target.disabled = true;
             declineShare(notification.id);
         });
@@ -188,7 +183,7 @@ function renderNotification(notification) {
             e.target.disabled = true;
             acceptShare(notification.id, notification.data, notification.sender);
         });
-        const declineBtn = createButton('Refuser', 'btn-ghost text-red-500', (e) => {
+        const declineBtn = createButton('Refuser', 'text-red-500 hover:bg-red-50 px-3 py-1 rounded-md', (e) => {
             e.target.disabled = true;
             declineShare(notification.id);
         });
@@ -203,9 +198,7 @@ function renderNotification(notification) {
             e.target.disabled = true;
             handleAcceptFriendRequest(notification.id);
         });
-        const declineBtn = createButton('Refuser', 'btn-ghost text-red-500', (e) => {
-            e.target.disabled = true;
-            handleDeclineFriendRequest(notification.id);
+        const declineBtn = createButton('Refuser', 'text-red-500 hover:bg-red-50 px-3 py-1 rounded-md', (e) => {
         });
         buttonsDiv.append(acceptBtn, declineBtn);
     }

@@ -1,7 +1,11 @@
-import { resolve } from 'path';
-import { defineConfig } from 'vite';
+const { resolve } = require('path');
+const { defineConfig } = require('vite');
+const tailwindcss = require('@tailwindcss/vite').default;
 
-export default defineConfig({
+module.exports = defineConfig({
+  plugins: [
+    tailwindcss(),
+  ],
   build: {
     rollupOptions: {
       input: {

@@ -208,7 +208,7 @@ class RecipeFormHandler {
         // --- Remove Button ---
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.className = 'btn btn-ghost text-red-500 hover:bg-red-50 btn-sm mt-1';
+        removeBtn.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md mt-1';
         removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
         removeBtn.addEventListener('click', () => {
             ingredientRow.remove();

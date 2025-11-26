@@ -364,9 +364,14 @@ export default function init() {
         const closeTrashBtn = document.getElementById('close-shopping-trash-modal');
         const emptyTrashBtn = document.getElementById('shopping-empty-trash-btn');
 
-        // Ensure trash button is hidden
+        // Update trash button visibility
         if (trashBtn) {
-            trashBtn.classList.add('hidden');
+             if (deletedItems && deletedItems.length > 0) {
+                 trashBtn.classList.remove('hidden');
+                 if (trashCount) trashCount.textContent = deletedItems.length;
+            } else {
+                 trashBtn.classList.add('hidden');
+            }
         }
 
         if (trashModal && closeTrashBtn) {

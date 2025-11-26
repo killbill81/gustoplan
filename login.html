@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - GustoPlan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/style.css">
     <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.8.1/firebase-ui-auth.css" />
     <style>
         body {
@@ -12,6 +13,7 @@
         }
     </style>
 </head>
+
 <body class="flex items-center justify-center min-h-screen">
 
     <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-lg">
@@ -40,7 +42,7 @@
 
         const uiConfig = {
             callbacks: {
-                signInSuccessWithAuthResult: function(authResult, redirectUrl) {
+                signInSuccessWithAuthResult: function (authResult, redirectUrl) {
                     const user = authResult.user;
                     if (user) {
                         const db = firebase.firestore();
@@ -61,7 +63,7 @@
                     }
                     return false; // We handle the redirect manually
                 },
-                uiShown: function() {
+                uiShown: function () {
                     document.getElementById('loader').style.display = 'none';
                 }
             },
@@ -70,10 +72,10 @@
             signInOptions: [
                 firebase.auth.EmailAuthProvider.PROVIDER_ID,
                 {
-                  provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-                  customParameters: {
-                    prompt: 'select_account'
-                  }
+                    provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+                    customParameters: {
+                        prompt: 'select_account'
+                    }
                 }
             ]
         };
@@ -83,4 +85,5 @@
     </script>
 
 </body>
+
 </html>

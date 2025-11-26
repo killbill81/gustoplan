@@ -235,7 +235,7 @@ export default function init() {
 
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
-        removeBtn.className = 'btn btn-ghost text-red-500 hover:bg-red-50 btn-sm mt-1';
+        removeBtn.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md mt-1';
         removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
         removeBtn.addEventListener('click', () => {
             ingredientRow.remove();
@@ -280,19 +280,19 @@ export default function init() {
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'flex space-x-2';
             const editBtn = document.createElement('button');
-            editBtn.className = 'btn btn-ghost btn-sm text-blue-500';
+            editBtn.className = 'text-blue-500 hover:bg-blue-50 text-sm px-3 py-1 rounded-md';
             editBtn.innerHTML = '<i class="fas fa-edit"></i>';
             editBtn.addEventListener('click', () => openListModal(list));
             actionsDiv.appendChild(editBtn);
 
             const shareBtn = document.createElement('button');
-            shareBtn.className = 'btn btn-ghost btn-sm text-green-500';
+            shareBtn.className = 'text-green-500 hover:bg-green-50 text-sm px-3 py-1 rounded-md';
             shareBtn.innerHTML = '<i class="fas fa-share-alt"></i>';
             shareBtn.addEventListener('click', () => openShareModal({ list: list }));
             actionsDiv.appendChild(shareBtn);
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn btn-ghost btn-sm text-red-500';
+            deleteBtn.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
             deleteBtn.addEventListener('click', () => deleteList(list.id, list.name));
             actionsDiv.appendChild(deleteBtn);
@@ -348,7 +348,7 @@ export default function init() {
             actionsDiv.appendChild(integrateBtn);
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn btn-ghost btn-sm text-red-500';
+            deleteBtn.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
             deleteBtn.title = "Supprimer cette liste partagée";
             deleteBtn.addEventListener('click', () => deleteSharedList(list.id, list.name));

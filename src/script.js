@@ -101,7 +101,7 @@ export default function init() {
         container.className = 'flex flex-col items-center justify-center h-full';
 
         const plusBtn = document.createElement('button');
-        plusBtn.className = 'btn btn-ghost btn-xs p-0 h-4 flex items-center justify-center w-full';
+        plusBtn.className = 'text-gray-600 hover:bg-gray-100 p-0 h-4 flex items-center justify-center w-full rounded-md';
         plusBtn.innerHTML = '<i class="fas fa-plus"></i>';
         plusBtn.disabled = isReadOnly;
 
@@ -110,7 +110,7 @@ export default function init() {
         valueDisplay.textContent = currentValue;
 
         const minusBtn = document.createElement('button');
-        minusBtn.className = 'btn btn-ghost btn-xs p-0 h-4 flex items-center justify-center w-full';
+        minusBtn.className = 'text-gray-600 hover:bg-gray-100 p-0 h-4 flex items-center justify-center w-full rounded-md';
         minusBtn.innerHTML = '<i class="fas fa-minus"></i>';
         minusBtn.disabled = isReadOnly;
 
@@ -552,7 +552,7 @@ export default function init() {
                 rollbackBtn.addEventListener('click', () => rollbackPlan(docSnap.id));
 
                 const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-ghost text-red-500 hover:bg-red-100 btn-sm';
+                deleteBtn.className = 'text-red-500 hover:bg-red-100 text-sm px-3 py-1 rounded-md';
                 deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
                 deleteBtn.title = 'Supprimer cette version';
                 deleteBtn.addEventListener('click', (e) => {
@@ -1427,7 +1427,7 @@ export default function init() {
                     });
 
                     const deleteForeverBtn = document.createElement('button');
-                    deleteForeverBtn.className = 'btn btn-xs btn-ghost text-gray-400 hover:text-red-600';
+                    deleteForeverBtn.className = 'text-gray-400 hover:text-red-600 text-xs p-1 rounded-md';
                     deleteForeverBtn.title = "Supprimer définitivement";
                     deleteForeverBtn.innerHTML = '<i class="fas fa-times"></i>';
                     deleteForeverBtn.addEventListener('click', async () => {

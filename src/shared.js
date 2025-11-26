@@ -85,9 +85,7 @@ function createReceivedCard(item, ownerName) {
     card.appendChild(infoDiv);
 
     const deleteButton = document.createElement('button');
-    deleteButton.className = 'btn btn-ghost text-red-500 btn-sm';
-    deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
-    deleteButton.title = "Supprimer ce contenu partagé";
+deleteButton.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md';
     deleteButton.addEventListener('click', () => deleteReceivedItem(item.id, item.type));
     card.appendChild(deleteButton);
 
@@ -196,7 +194,7 @@ function createSentCard(share, personName, shareId) {
     actionsDiv.appendChild(statusBadge);
 
     const deleteButton = document.createElement('button');
-    deleteButton.className = 'btn btn-ghost text-red-500 btn-sm';
+    deleteButton.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md';
     deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
     deleteButton.title = "Annuler le partage";
     deleteButton.addEventListener('click', () => deleteSentShare(shareId));

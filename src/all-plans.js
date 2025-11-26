@@ -113,7 +113,7 @@ export default function initAllPlansPage() {
             loadBtn.style.display = 'none'; // Temporarily hide the button as logic needs rework for multi-week plans
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn btn-ghost text-red-500 hover:bg-red-100 btn-sm';
+            deleteBtn.className = 'text-red-500 hover:bg-red-100 text-sm px-3 py-1 rounded-md';
             deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
             deleteBtn.title = 'Supprimer la sauvegarde';
             deleteBtn.addEventListener('click', () => deletePlanSave(save.id));

@@ -3,46 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>GustoPlan - Planificateur Intelligent</title>
-    <!-- Tailwind CSS via CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              tomato: {
-                DEFAULT: '#E07A5F',   // Corail / Terre Cuite (anciennement tomato)
-                light: '#F2CC8F',     // Plus clair pour les fonds
-                dark: '#C45D42'       // Plus foncé pour le hover
-              },
-              eggplant: '#3D405B',    // Bleu Nuit Profond (anciennement eggplant)
-              sage: '#81B29A',        // Vert Sauge
-              cream: '#F4F1DE',       // Blanc Cassé / Crème d'Avoine (pour le fond de page)
-              'lunch-bg': '#FEFAE0',  // Jaune Miel très pâle pour Midi
-              'dinner-bg': '#EDF2F4', // Bleu Ardoise très pâle pour Soir
-            },
-            fontFamily: {
-              sans: ['Nunito', 'sans-serif'], // Garde ta police Nunito
-            }
-          }
-        }
-      }
-    </script>
-    <!-- Font Awesome pour les icônes -->
+    <title>GustoPlan</title>
+    <!-- Tailwind CSS (via CDN for simplicity, or local build) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lien vers le fichier CSS Personnalisé -->
-    <link rel="stylesheet" href="/src/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css?v=1.1">
     <!-- jsPDF and FileSaver for PDF/TXT Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
-<body class="bg-body-bg">
+<body class="bg-background text-foreground transition-colors duration-200">
     
     <!-- Mobile Navigation -->
     <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
@@ -67,7 +40,7 @@
     </div>
 
     <!-- Header -->
-    <header class="gradient-bg text-white shadow-lg sticky top-0 z-40">
+    <header class="bg-eggplant text-white shadow-lg sticky top-0 z-40">
         <div class="container mx-auto px-4 py-3">
             <div class="flex justify-between items-center">
                 <div class="flex items-center space-x-2">
@@ -91,43 +64,43 @@
 
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-3">
-                    <button id="voice-btn" class="btn btn-icon bg-white text-tomato rounded-full hover:bg-gray-100" aria-label="Commande vocale">
+                    <button id="voice-btn" class="w-10 h-10 flex items-center justify-center bg-white text-tomato rounded-full hover:bg-gray-100 shadow-sm transition-colors" aria-label="Commande vocale">
                         <i class="fas fa-microphone"></i>
                     </button>
-                    <button id="menu-btn" data-path="menu" class="btn bg-tomato text-white rounded-full text-sm nav-btn">Mon Menu</button>
-                    <button id="shopping-mode-btn" data-path="shopping-mode" class="btn bg-white text-green-600 border border-green-600 hover:bg-green-50 rounded-full text-sm nav-btn"><i class="fas fa-check-square mr-2"></i>Faire les courses</button>
-                    <button id="plans-btn" data-path="plans" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Plans</button>
-                    <button id="recipes-btn" data-path="recipes" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Recettes</button>
-                    <button id="ingredients-btn" data-path="ingredients" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Ingrédients</button>
-                    <button id="lists-btn" data-path="lists" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Mes Listes</button>
-                    <button id="friends-btn" data-path="friends" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Amis</button>
-                    <button id="shared-btn" data-path="shared" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm nav-btn">Contenus partagés</button>
+                    <button id="menu-btn" data-path="menu" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-tomato text-white hover:bg-tomato-dark transition-colors shadow-sm nav-btn">Mon Menu</button>
+                    <button id="shopping-mode-btn" data-path="shopping-mode" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-green-600 border border-green-600 hover:bg-green-50 transition-colors shadow-sm nav-btn"><i class="fas fa-check-square mr-2"></i>Faire les courses</button>
+                    <button id="plans-btn" data-path="plans" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-tomato hover:bg-gray-100 transition-colors shadow-sm nav-btn">Mes Plans</button>
+                    <button id="recipes-btn" data-path="recipes" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-tomato hover:bg-gray-100 transition-colors shadow-sm nav-btn">Mes Recettes</button>
+                    <button id="ingredients-btn" data-path="ingredients" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-tomato hover:bg-gray-100 transition-colors shadow-sm nav-btn">Mes Ingrédients</button>
+                    <button id="lists-btn" data-path="lists" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-tomato hover:bg-gray-100 transition-colors shadow-sm nav-btn">Mes Listes</button>
+                    <button id="friends-btn" data-path="friends" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-tomato hover:bg-gray-100 transition-colors shadow-sm nav-btn">Amis</button>
+                    <button id="shared-btn" data-path="shared" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-tomato hover:bg-gray-100 transition-colors shadow-sm nav-btn">Contenus partagés</button>
 
                     <!-- Notifications Bell -->
                     <div class="relative">
-                        <button id="notifications-btn" class="btn btn-icon bg-white text-tomato rounded-full hover:bg-gray-100" aria-label="Notifications">
+                        <button id="notifications-btn" class="w-10 h-10 flex items-center justify-center bg-white text-tomato rounded-full hover:bg-gray-100 shadow-sm transition-colors" aria-label="Notifications">
                             <i class="fas fa-envelope"></i>
                             <span id="notifications-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
                         </button>
                     </div>
 
-                    <span id="user-display-name" class="text-sm font-medium hidden md:inline-block mr-4"></span>
+                    <span id="user-display-name" class="text-sm font-bold bg-gray-100 text-gray-800 px-3 py-1 rounded-full hidden md:inline-block mr-4 shadow-sm"></span>
                     <!-- Profile Dropdown -->
                     <div class="relative inline-block text-left">
                         <div>
-                            <button type="button" id="profile-btn" class="btn bg-white text-tomato rounded-full hover:bg-gray-100 text-sm" aria-expanded="true" aria-haspopup="true">
+                            <button type="button" id="profile-btn" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-white text-tomato hover:bg-gray-100 transition-colors shadow-sm" aria-expanded="true" aria-haspopup="true">
                                 <i class="fas fa-user mr-2"></i> Mon Profil
                             </button>
                         </div>
 
-                        <div id="profile-menu" class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                        <div id="profile-menu" class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-card text-card-foreground ring-1 ring-black ring-opacity-5 dark:ring-gray-700 focus:outline-none z-50" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
                             <div class="py-1" role="none">
-                                <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="profile-details-link">Détail du profil</a>
-                                <a href="#" class="text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="settings-link">Paramètres</a>
+                                <a href="#" class="text-muted-foreground dark:text-gray-200 block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="-1" id="profile-details-link">Détail du profil</a>
+                                <a href="#" class="text-muted-foreground dark:text-gray-200 block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700" role="menuitem" tabindex="-1" id="settings-link">Paramètres</a>
                             </div>
                         </div>
                     </div>
-                    <button id="logout-btn" class="btn bg-red-500 text-white rounded-full hover:bg-red-600 text-sm">
+                    <button id="logout-btn" class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm">
                         <i class="fas fa-sign-out-alt mr-2"></i> Déconnexion
                     </button>
                 </div>
@@ -211,8 +184,8 @@
     <!-- Modals -->
 
     <!-- Import List Modal -->
-    <div id="import-list-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-lg relative">
+    <div id="import-list-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-lg relative">
             <button id="close-import-list-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -224,8 +197,8 @@
     </div>
 
     <!-- Voice Assistant Modal -->
-    <div id="voice-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog" aria-modal="true" aria-labelledby="voice-modal-title">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-md relative">
+    <div id="voice-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog" aria-modal="true" aria-labelledby="voice-modal-title">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-md relative">
             <button id="close-voice-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -234,7 +207,7 @@
                 <div id="voice-icon-container" class="w-16 h-16 bg-tomato bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i id="voice-icon" class="fas fa-microphone text-tomato text-2xl transition-transform duration-200"></i>
                 </div>
-                <p id="voice-status" class="text-gray-700 font-medium min-h-[1.5em]">Prêt à écouter</p>
+                <p id="voice-status" class="text-muted-foreground font-medium min-h-[1.5em]">Prêt à écouter</p>
                 <p id="voice-result" class="text-sm text-gray-500 mt-2 min-h-[2.5em]">Dites "Ajoute du poulet à la liste" ou "Quel est le repas de demain midi ?"</p>
             </div>
             <div class="flex justify-center">
@@ -246,8 +219,8 @@
     </div>
 
     <!-- Recipe Details Modal -->
-    <div id="recipe-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title">
-        <div class="bg-white rounded-xl p-4 md:p-6 w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto relative">
+    <div id="recipe-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-4 md:p-6 w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto relative">
              <button id="close-recipe-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 z-10" aria-label="Fermer la recette">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -316,8 +289,8 @@
 
 
     <!-- Create Plan Modal -->
-    <div id="create-plan-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-md relative">
+    <div id="create-plan-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-md relative">
             <button id="close-create-plan-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -325,8 +298,8 @@
             <form id="create-plan-form">
                 <div class="space-y-4">
                                     <div>
-                                        <label for="plan-name" class="block text-sm font-medium text-gray-700">Nom du plan</label>
-                                        <input type="text" id="plan-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" required>
+                                        <label for="plan-name" class="block text-sm font-medium text-muted-foreground">Nom du plan</label>
+                                        <input type="text" id="plan-name" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" required>
                                     </div>                </div>
                 <div class="flex justify-end space-x-4 mt-6">
                     <button type="button" id="cancel-create-plan-btn" class="btn btn-ghost">Annuler</button>
@@ -337,16 +310,16 @@
     </div>
 
     <!-- Rename Plan Modal -->
-    <div id="rename-plan-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-md relative">
+    <div id="rename-plan-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-md relative">
             <button id="close-rename-plan-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
             <h3 class="text-lg font-bold mb-4">Renommer le plan</h3>
             <form id="rename-plan-form">
                 <div>
-                    <label for="new-plan-name" class="block text-sm font-medium text-gray-700">Nouveau nom du plan</label>
-                    <input type="text" id="new-plan-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" required>
+                    <label for="new-plan-name" class="block text-sm font-medium text-muted-foreground">Nouveau nom du plan</label>
+                    <input type="text" id="new-plan-name" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" required>
                 </div>
                 <div class="flex justify-end space-x-4 mt-6">
                     <button type="button" id="cancel-rename-plan-btn" class="btn btn-ghost">Annuler</button>
@@ -357,8 +330,8 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[150] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-sm text-center">
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[150] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-sm text-center">
             <h3 id="delete-confirm-title" class="text-lg font-bold mb-4">Confirmer la suppression</h3>
             <p id="delete-confirm-message" class="text-gray-600 mb-6">Êtes-vous sûr de vouloir supprimer cet élément ?</p>
             <div class="flex justify-center space-x-4">
@@ -369,16 +342,16 @@
             </div>
         
             <!-- Save Plan As Modal -->
-            <div id="save-plan-as-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
-                <div class="bg-white rounded-xl p-6 w-11/12 max-w-md relative">
+            <div id="save-plan-as-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
+                <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-md relative">
                     <button id="close-save-plan-as-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                     <h3 class="text-lg font-bold mb-4">Nommer la sauvegarde</h3>
                     <form id="save-plan-as-form">
                         <div>
-                            <label for="save-plan-name" class="block text-sm font-medium text-gray-700">Nom de la sauvegarde</label>
-                            <input type="text" id="save-plan-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" required>
+                            <label for="save-plan-name" class="block text-sm font-medium text-muted-foreground">Nom de la sauvegarde</label>
+                            <input type="text" id="save-plan-name" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" required>
                         </div>
                         <div class="flex justify-end space-x-4 mt-6">
                             <button type="button" id="cancel-save-plan-as-btn" class="btn btn-ghost">Annuler</button>
@@ -389,8 +362,8 @@
             </div>
         
             <!-- Meal Selection Modal -->
-    <div id="meal-select-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-lg relative">
+    <div id="meal-select-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-lg relative">
             <button id="close-meal-select-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -403,8 +376,8 @@
 
 
     <!-- Recipe EDIT Form Modal -->
-    <div id="edit-recipe-form-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto relative">
+    <div id="edit-recipe-form-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto relative">
             <button id="close-edit-recipe-modal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -415,16 +388,16 @@
                 <!-- Main Details Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="md:col-span-2">
-                        <label for="edit-recipe-name" class="block text-sm font-medium text-gray-700">Nom de la recette</label>
-                        <input type="text" id="edit-recipe-name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" required>
+                        <label for="edit-recipe-name" class="block text-sm font-medium text-muted-foreground">Nom de la recette</label>
+                        <input type="text" id="edit-recipe-name" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" required>
                     </div>
                     <div class="md:col-span-2">
-                        <label for="edit-recipe-image-url" class="block text-sm font-medium text-gray-700">URL de l'image</label>
-                        <input type="text" id="edit-recipe-image-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" placeholder="Laisser vide pour une image aléatoire">
+                        <label for="edit-recipe-image-url" class="block text-sm font-medium text-muted-foreground">URL de l'image</label>
+                        <input type="text" id="edit-recipe-image-url" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" placeholder="Laisser vide pour une image aléatoire">
                     </div>
                     <div>
-                        <label for="edit-recipe-category" class="block text-sm font-medium text-gray-700">Catégorie</label>
-                        <select id="edit-recipe-category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" required>
+                        <label for="edit-recipe-category" class="block text-sm font-medium text-muted-foreground">Catégorie</label>
+                        <select id="edit-recipe-category" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" required>
                             <option>ENTREE</option>
                             <option>PLAT</option>
                             <option>ACCOMPAGNEMENT</option>
@@ -432,16 +405,16 @@
                         </select>
                     </div>
                     <div>
-                        <label for="edit-recipe-servings" class="block text-sm font-medium text-gray-700">Nombre de personnes</label>
-                        <input type="number" id="edit-recipe-servings" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" min="1">
+                        <label for="edit-recipe-servings" class="block text-sm font-medium text-muted-foreground">Nombre de personnes</label>
+                        <input type="number" id="edit-recipe-servings" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" min="1">
                     </div>
                     <div>
-                        <label for="edit-recipe-prep-time" class="block text-sm font-medium text-gray-700">Temps de préparation (min)</label>
-                        <input type="number" id="edit-recipe-prep-time" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato" min="0">
+                        <label for="edit-recipe-prep-time" class="block text-sm font-medium text-muted-foreground">Temps de préparation (min)</label>
+                        <input type="number" id="edit-recipe-prep-time" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato" min="0">
                     </div>
                      <div>
-                        <label for="edit-recipe-difficulty" class="block text-sm font-medium text-gray-700">Difficulté</label>
-                        <select id="edit-recipe-difficulty" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato">
+                        <label for="edit-recipe-difficulty" class="block text-sm font-medium text-muted-foreground">Difficulté</label>
+                        <select id="edit-recipe-difficulty" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato">
                             <option>Très facile</option>
                             <option>Facile</option>
                             <option>Moyen</option>
@@ -462,7 +435,7 @@
                 <!-- Steps Section -->
                 <div>
                     <label for="edit-recipe-steps" class="block text-lg font-medium text-gray-800">Préparation</label>
-                    <textarea id="edit-recipe-steps" rows="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato"></textarea>
+                    <textarea id="edit-recipe-steps" rows="8" class="mt-1 block w-full rounded-md bg-input border-input text-foreground shadow-sm focus:ring-2 focus:ring-ring focus:border-ring focus:border-tomato focus:ring-tomato"></textarea>
                 </div>
 
                 <!-- Form Actions -->
@@ -475,8 +448,8 @@
     </div>
 
     <!-- Share Modal -->
-    <div id="share-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-lg relative">
+    <div id="share-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-lg relative">
             <button id="close-share-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -511,7 +484,7 @@
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
+    <div id="settings-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-11/12 max-w-md relative">
             <button id="close-settings-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
@@ -519,7 +492,7 @@
             <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Paramètres</h3>
             <div class="space-y-4">
                 <div class="flex items-center justify-between p-3 border rounded-lg dark:border-gray-700">
-                    <span class="font-medium text-gray-700 dark:text-gray-300">Mode Sombre</span>
+                    <span class="font-medium text-muted-foreground dark:text-gray-300">Mode Sombre</span>
                     <label for="dark-mode-toggle" class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="dark-mode-toggle" class="sr-only peer">
                         <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-tomato-300 dark:peer-focus:ring-tomato-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-tomato"></div>
@@ -538,8 +511,8 @@
     </div>
 
     <!-- Trash Modal -->
-    <div id="trash-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[160] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-md relative max-h-[80vh] flex flex-col">
+    <div id="trash-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[160] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-md relative max-h-[80vh] flex flex-col">
             <button id="close-trash-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -556,11 +529,11 @@
         </div>
     </div>
 
-    <script type="module" src="./src/main.js"></script>
+    <script type="module" src="./src/main.js?v=1.1"></script>
 
     <!-- Unit Selection Modal -->
-    <div id="unit-select-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[150] hidden">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-sm">
+    <div id="unit-select-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[150] hidden">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-sm">
             <h3 id="unit-modal-title" class="text-lg font-bold mb-4">Choisir une unité</h3>
             <div id="unit-modal-list" class="flex flex-wrap gap-2">
                 <!-- Units will be injected here by JS -->
@@ -572,8 +545,8 @@
     </div>
 
     <!-- Plan History Modal -->
-    <div id="plan-history-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] hidden" role="dialog">
-        <div class="bg-white rounded-xl p-6 w-11/12 max-w-2xl relative max-h-[80vh] flex flex-col">
+    <div id="plan-history-modal" class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden" role="dialog">
+        <div class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-2xl relative max-h-[80vh] flex flex-col">
             <button id="close-plan-history-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600" aria-label="Fermer">
                 <i class="fas fa-times text-xl"></i>
             </button>
@@ -583,5 +556,25 @@
             </div>
         </div>
     </div>
+    <script>
+        // Direct script to handle profile dropdown
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileBtn = document.getElementById('profile-btn');
+            const profileMenu = document.getElementById('profile-menu');
+            
+            if (profileBtn && profileMenu) {
+                profileBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    profileMenu.classList.toggle('hidden');
+                };
+                
+                document.addEventListener('click', function(e) {
+                    if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+                        profileMenu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
