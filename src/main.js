@@ -120,25 +120,98 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Mobile Menu Logic
+    // Mobile Menu Logic - Dynamic Overlay Strategy
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    const mobileNavButtons = document.querySelectorAll('.nav-btn-mobile');
+    const mobileMenuSource = document.getElementById('mobile-menu'); // The hidden source
+    let mobileMenuOverlay = null;
 
+    if (mobileMenuBtn && mobileMenuSource) {
+        console.log("Mobile menu initialized (Overlay Mode)");
+        
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            if (mobileMenuOverlay) {
+                // Close
+                mobileMenuOverlay.remove();
+                mobileMenuOverlay = null;
+            } else {
+                // Open - Create Overlay
+                mobileMenuOverlay = document.createElement('div');
+                mobileMenuOverlay.id = 'mobile-menu-overlay-container'; // Unique ID
+                
+                // Copy content
+                mobileMenuOverlay.innerHTML = mobileMenuSource.innerHTML;
+                
+                // Style Overlay
+                Object.assign(mobileMenuOverlay.style, {
+                    position: 'fixed',
+                    top: '60px', // Matches header height approx
+                    left: '0',
+                    width: '100%',
+                    backgroundColor: '#3D405B', // Eggplant
+                    zIndex: '10000',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    padding: '1rem',
+                    display: 'block'
+                });
+                
+                // Handle clicks directly for known actions
+                mobileMenuOverlay.addEventListener('click', (ev) => {
+                    const target = ev.target.closest('button');
+                    if (!target) return;
+                    
+                    const path = target.dataset.path;
+                    
+                    if (path) {
+                        console.log("Overlay: Navigating directly to", path);
+                        navigateTo(path);
+                    } else if (target.id === 'profile-btn-mobile') {
+                        console.log("Overlay: Opening settings");
+                        if (settingsModal) settingsModal.classList.remove('hidden');
+                    } else {
+                        // Fallback: Delegate to original element (e.g. Logout button handled elsewhere)
+                        let original = null;
+                        if (target.id) {
+                            original = document.getElementById(target.id);
+                        }
+                        
+                        if (original) {
+                            console.log("Overlay: Delegating click to original:", original);
+                            original.click();
+                        } else {
+                            console.warn("Overlay: No action found for", target);
+                        }
+                    }
+                    
+                    // Close menu safely
+                    if (mobileMenuOverlay) {
+                        mobileMenuOverlay.remove();
+                        mobileMenuOverlay = null;
+                    }
+                });
 
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
+                document.body.appendChild(mobileMenuOverlay);
+            }
         });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (mobileMenuOverlay && !mobileMenuOverlay.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                mobileMenuOverlay.remove();
+                mobileMenuOverlay = null;
+            }
+        });
+
+    } else {
+        console.warn("Mobile menu elements missing");
     }
 
+    // Keep existing listeners for ORIGINAL elements (they will be triggered by the clone)
     const profileBtnMobile = document.getElementById('profile-btn-mobile');
     if (profileBtnMobile && settingsModal) {
         profileBtnMobile.addEventListener('click', () => {
             settingsModal.classList.remove('hidden');
-            if (mobileMenu) {
-                mobileMenu.classList.add('hidden');
-            }
         });
     }
 
@@ -146,10 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', (e) => {
             const path = e.currentTarget.dataset.path;
             navigateTo(path);
-            // Fermer le menu après la navigation
-            if (mobileMenu) {
-                mobileMenu.classList.add('hidden');
-            }
         });
     });
 });

@@ -349,14 +349,14 @@ export default function init() {
 
             if (ing.seasons && ing.seasons.length > 0) {
                 const seasonsDiv = document.createElement('div');
-                seasonsDiv.className = 'w-full flex space-x-2 mt-1 px-1';
+                seasonsDiv.className = 'w-full flex flex-wrap gap-1 mt-1 px-1'; // Changed to flex-wrap and gap-1
                 const icons = { 'Printemps': '🌸', 'Eté': '☀️', 'Automne': '🍂', 'Hiver': '❄️' };
                 const order = ['Printemps', 'Eté', 'Automne', 'Hiver'];
                 ing.seasons.sort((a, b) => order.indexOf(a) - order.indexOf(b)).forEach(s => {
                     const span = document.createElement('span');
-                    span.textContent = icons[s] || s;
+                    span.textContent = `${icons[s] || ''} ${s}`; // Icon + Name
                     span.title = s;
-                    span.className = 'text-base cursor-help';
+                    span.className = 'text-[10px] text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200 whitespace-nowrap'; // Styled as badge
                     seasonsDiv.appendChild(span);
                 });
                 card.appendChild(seasonsDiv);
