@@ -347,6 +347,27 @@ const routes = {
                         <select id="ingredient-category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required></select>
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Saisonnalité (Optionnel)</label>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="flex items-center space-x-2 cursor-pointer bg-green-50 px-2 py-1 rounded-md border border-green-200">
+                                <input type="checkbox" id="season-printemps" value="Printemps" class="form-checkbox h-4 w-4 text-green-600 focus:ring-green-500">
+                                <span class="text-sm text-green-800">Printemps 🌸</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-yellow-50 px-2 py-1 rounded-md border border-yellow-200">
+                                <input type="checkbox" id="season-ete" value="Eté" class="form-checkbox h-4 w-4 text-yellow-600 focus:ring-yellow-500">
+                                <span class="text-sm text-yellow-800">Eté ☀️</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-orange-50 px-2 py-1 rounded-md border border-orange-200">
+                                <input type="checkbox" id="season-automne" value="Automne" class="form-checkbox h-4 w-4 text-orange-600 focus:ring-orange-500">
+                                <span class="text-sm text-orange-800">Automne 🍂</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
+                                <input type="checkbox" id="season-hiver" value="Hiver" class="form-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm text-blue-800">Hiver ❄️</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div>
                         <label for="ingredient-image-url" class="block text-sm font-medium text-gray-700">URL de l'image</label>
                         <input type="text" id="ingredient-image-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Laisser vide pour une image aléatoire">
                     </div>

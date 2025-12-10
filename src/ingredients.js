@@ -40,32 +40,7 @@ export default function init() {
     // --- Main Data Loading ---
     async function fetchAllData() {
         await fetchIngredientCategories();
-        await ensureDefaultCategories(); // Check and add defaults if missing
         await fetchAllIngredients();
-    }
-
-    async function ensureDefaultCategories() {
-        if (!db) return;
-        const defaults = ["Fruit", "Légume"];
-        // Re-fetch local list names just in case, but we rely on ingredientCategories populated above
-        const existingNames = ingredientCategories.map(c => c.name.toLowerCase());
-        
-        let added = false;
-        for (const def of defaults) {
-            if (!existingNames.includes(def.toLowerCase())) {
-                try {
-                    await addDoc(collection(db, "ingredient_categories"), { name: def });
-                    // Manually push to local list to update UI immediately without re-fetch
-                    ingredientCategories.push({ name: def, id: "temp_" + def }); 
-                    added = true;
-                } catch (e) {
-                    console.error(`Erreur ajout catégorie défaut ${def}`, e);
-                }
-            }
-        }
-        if (added) {
-            ingredientCategories.sort((a, b) => a.name.localeCompare(b.name));
-        }
     }
 
     async function fetchIngredientCategories() {
@@ -131,6 +106,15 @@ export default function init() {
             ingredientUnitSelect.value = units[0];
             ingredientCategorySelect.value = activeCategory || (allAvailableCategories.length > 0 ? allAvailableCategories[0] : '');
         }
+
+        // Handle Season Checkboxes
+        const seasons = ingredient ? (ingredient.seasons || []) : [];
+        ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
+            const id = `season-${season.toLowerCase().replace('é', 'e')}`;
+            const checkbox = document.getElementById(id);
+            if (checkbox) checkbox.checked = seasons.includes(season);
+        });
+
         ingredientModal.classList.remove('hidden');
     }
 
@@ -141,10 +125,19 @@ export default function init() {
     async function handleIngredientFormSubmit(e) {
         e.preventDefault();
         const id = ingredientIdInput.value;
+
+        const selectedSeasons = [];
+        ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
+            const id = `season-${season.toLowerCase().replace('é', 'e')}`;
+            const checkbox = document.getElementById(id);
+            if (checkbox && checkbox.checked) selectedSeasons.push(season);
+        });
+
         const ingredientData = {
             name: ingredientNameInput.value,
             unit: ingredientUnitSelect.value,
             category: ingredientCategorySelect.value,
+            seasons: selectedSeasons,
             imageUrl: document.getElementById('ingredient-image-url').value || `https://tse2.mm.bing.net/th?q=${encodeURIComponent(ingredientNameInput.value)}%20ingredient&w=400&h=300&c=7&rs=1&p=0`
         };
 
@@ -352,6 +345,23 @@ export default function init() {
             unitSpan.textContent = ing.unit;
             infoDiv.appendChild(nameSpan);
             infoDiv.appendChild(unitSpan);
+            card.appendChild(infoDiv);
+
+            if (ing.seasons && ing.seasons.length > 0) {
+                const seasonsDiv = document.createElement('div');
+                seasonsDiv.className = 'w-full flex space-x-2 mt-1 px-1';
+                const icons = { 'Printemps': '🌸', 'Eté': '☀️', 'Automne': '🍂', 'Hiver': '❄️' };
+                const order = ['Printemps', 'Eté', 'Automne', 'Hiver'];
+                ing.seasons.sort((a, b) => order.indexOf(a) - order.indexOf(b)).forEach(s => {
+                    const span = document.createElement('span');
+                    span.textContent = icons[s] || s;
+                    span.title = s;
+                    span.className = 'text-base cursor-help';
+                    seasonsDiv.appendChild(span);
+                });
+                card.appendChild(seasonsDiv);
+            }
+
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'w-full flex justify-end items-center space-x-2 border-t pt-2 mt-2';
             const editBtn = document.createElement('button');
@@ -364,7 +374,6 @@ export default function init() {
             deleteBtn.addEventListener('click', () => deleteIngredient(ing.id, ing.name));
             actionsDiv.appendChild(editBtn);
             actionsDiv.appendChild(deleteBtn);
-            card.appendChild(infoDiv);
             card.appendChild(actionsDiv);
             grid.appendChild(card);
         });
