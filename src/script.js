@@ -1243,7 +1243,15 @@ export default function init() {
 
                 const li = document.createElement('li');
                 let liClasses = 'p-2 rounded';
-                li.className = liClasses + (item.source === 'manual' ? ' bg-lemon' : ' bg-gray-50');
+                
+                const isManual = item.hasManualEntry === true || item.source === 'manual';
+                if (isManual) {
+                    li.style.backgroundColor = "#ffedd5"; // Force orange background
+                    liClasses += ' bg-orange-100';
+                } else {
+                    liClasses += ' bg-gray-50';
+                }
+                li.className = liClasses;
 
                 const mainRow = document.createElement('div');
                 mainRow.className = 'flex justify-between items-center';
@@ -1473,6 +1481,7 @@ export default function init() {
         const manualItems = currentPlan.manualItems ? JSON.parse(JSON.stringify(currentPlan.manualItems)) : [];
         const combinedIngredients = new Map(manualItems.map(item => {
             const key = `${item.name.trim().toLowerCase()}_${item.unit || ''}`;
+            item.hasManualEntry = true; // AJOUT DU FLAG POUR IDENTIFICATION
             return [key, item];
         }));
 

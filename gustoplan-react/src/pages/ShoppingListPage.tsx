@@ -406,7 +406,8 @@ export default function ShoppingListPage() {
                           return (
                             <li key={sanitizeForFirebaseKey(`${item.name}_${item.unit || ''}`)} className={cn(
                               "flex flex-col p-3 rounded-lg transition-colors duration-200 border",
-                              isChecked ? "bg-muted/50 border-muted text-muted-foreground line-through" : "bg-card border-border shadow-sm"
+                              isChecked ? "bg-muted/50 border-muted text-muted-foreground line-through" : "bg-card border-border shadow-sm",
+                              (!item.sources || item.sources.length === 0) && "bg-orange-100 dark:bg-orange-900" // Added class for manual items
                             )}>
                               <div className="flex items-center w-full">
                                 <Checkbox 

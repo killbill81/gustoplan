@@ -199,9 +199,16 @@ export default function init() {
                 const unsanitizedKey = `${item.name}_${item.unit || ''}`;
                 const key = sanitizeForFirebaseKey(unsanitizedKey);
                 const isChecked = checkedItems.hasOwnProperty(key) ? checkedItems[key] : (checkedItems[unsanitizedKey] || false);
+                const isManual = item.hasManualEntry === true || (!item.sources || item.sources.length === 0);
 
                 const li = document.createElement('li');
-                li.className = `flex flex-col p-3 rounded-lg transition-colors duration-200 ${isChecked ? 'bg-gray-100' : 'bg-white shadow-sm border border-gray-100'}`;
+                if (isManual) {
+                    li.dataset.isManual = "true";
+                    li.style.backgroundColor = "#ffedd5"; // Force orange background
+                }
+                
+                const bgClass = isChecked ? 'bg-gray-100' : (isManual ? 'bg-orange-100 shadow-sm border border-orange-200' : 'bg-white shadow-sm border border-gray-100');
+                li.className = `flex flex-col p-3 rounded-lg transition-colors duration-200 ${bgClass}`;
                 
                 const mainContent = document.createElement('div');
                 mainContent.className = 'flex items-center w-full';
@@ -307,8 +314,10 @@ export default function init() {
                     const unsanitizedKey = `${item.name}_${item.unit || ''}`;
                     const key = sanitizeForFirebaseKey(unsanitizedKey);
                     const isChecked = true; // All items in this section are checked
+                    const isManual = item.hasManualEntry === true || (!item.sources || item.sources.length === 0);
 
                     const li = document.createElement('li');
+                    if (isManual) li.dataset.isManual = "true";
                     li.className = `flex flex-col p-3 rounded-lg transition-colors duration-200 bg-gray-100`;
                     
                     const mainContent = document.createElement('div');
@@ -492,17 +501,26 @@ export default function init() {
     function updateItemState(key, isChecked, li, checkbox, nameSpan, qtySpan) {
         if (!currentPlan) return;
         
+        const isManual = li.dataset.isManual === "true";
+
         // Optimistic UI update
         if (isChecked) {
-            li.classList.remove('bg-white', 'shadow-sm', 'border', 'border-gray-100');
+            li.classList.remove('bg-white', 'bg-orange-100', 'shadow-sm', 'border', 'border-gray-100', 'border-orange-200');
             li.classList.add('bg-gray-100');
+            li.style.backgroundColor = ""; // Clear manual color when checked
             nameSpan.classList.add('line-through', 'text-gray-400');
             nameSpan.classList.remove('text-gray-800');
             qtySpan.classList.add('text-gray-400');
             qtySpan.classList.remove('text-gray-800');
         } else {
-            li.classList.add('bg-white', 'shadow-sm', 'border', 'border-gray-100');
             li.classList.remove('bg-gray-100');
+            if (isManual) {
+                li.classList.add('bg-orange-100', 'shadow-sm', 'border', 'border-orange-200');
+                li.style.backgroundColor = "#ffedd5"; // Restore manual color
+            } else {
+                li.classList.add('bg-white', 'shadow-sm', 'border', 'border-gray-100');
+                li.style.backgroundColor = ""; // Ensure white/default
+            }
             nameSpan.classList.remove('line-through', 'text-gray-400');
             nameSpan.classList.add('text-gray-800');
             qtySpan.classList.remove('text-gray-400');
@@ -534,7 +552,8 @@ export default function init() {
                  name: item.name.trim(),
                  totalQuantity: item.totalQuantity,
                  unit: item.unit,
-                 category: item.category || 'Inconnue'
+                 category: item.category || 'Inconnue',
+                 hasManualEntry: true
              });
         });
 

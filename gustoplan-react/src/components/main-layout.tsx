@@ -11,6 +11,7 @@ export default function MainLayout() {
           <div className="flex gap-6 md:gap-10">
             <Link to="/" className="flex items-center space-x-2">
               <h1 className="text-2xl font-bold text-primary">GustoPlan</h1>
+              <span className="text-xs font-mono bg-blue-100 text-blue-800 px-1 rounded border border-blue-200">React</span>
             </Link>
             <MainNav />
           </div>

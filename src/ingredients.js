@@ -40,7 +40,32 @@ export default function init() {
     // --- Main Data Loading ---
     async function fetchAllData() {
         await fetchIngredientCategories();
+        await ensureDefaultCategories(); // Check and add defaults if missing
         await fetchAllIngredients();
+    }
+
+    async function ensureDefaultCategories() {
+        if (!db) return;
+        const defaults = ["Fruit", "Légume"];
+        // Re-fetch local list names just in case, but we rely on ingredientCategories populated above
+        const existingNames = ingredientCategories.map(c => c.name.toLowerCase());
+        
+        let added = false;
+        for (const def of defaults) {
+            if (!existingNames.includes(def.toLowerCase())) {
+                try {
+                    await addDoc(collection(db, "ingredient_categories"), { name: def });
+                    // Manually push to local list to update UI immediately without re-fetch
+                    ingredientCategories.push({ name: def, id: "temp_" + def }); 
+                    added = true;
+                } catch (e) {
+                    console.error(`Erreur ajout catégorie défaut ${def}`, e);
+                }
+            }
+        }
+        if (added) {
+            ingredientCategories.sort((a, b) => a.name.localeCompare(b.name));
+        }
     }
 
     async function fetchIngredientCategories() {
