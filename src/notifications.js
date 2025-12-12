@@ -4,6 +4,8 @@ import { getCurrentUserId } from './auth.js';
 import { acceptFriendRequest, declineFriendRequest } from './friends.js';
 import { addCollaborator } from './plans.js';
 
+console.log("DEBUG: Loading notifications.js module");
+
 // --- State ---
 let pendingShares = [];
 let pendingFriendRequests = [];
@@ -165,7 +167,13 @@ function renderNotification(notification) {
         title.textContent = `Invitation à collaborer`;
         info.textContent = `${notification.sender.displayName} vous invite à modifier son plan "${notification.data.planName}".`;
 
-const declineBtn = createButton('Refuser', 'text-red-500 hover:bg-red-50 px-3 py-1 rounded-md', (e) => {
+        const acceptBtn = createButton('Accepter', 'btn-secondary', (e) => {
+            e.target.textContent = '...';
+            e.target.disabled = true;
+            acceptCollaborativePlan(notification.id, notification.data);
+        });
+
+        const declineBtn = createButton('Refuser', 'text-red-500 hover:bg-red-50 px-3 py-1 rounded-md', (e) => {
             e.target.disabled = true;
             declineShare(notification.id);
         });
@@ -273,12 +281,19 @@ function listenForFriendRequests(userId) {
 
 // --- Main Initialization ---
 export function initNotifications() {
+    console.log("DEBUG: initNotifications called");
     ui.btn = document.getElementById('notifications-btn');
     ui.btnMobile = document.getElementById('notifications-btn-mobile'); // Get mobile button
     ui.badge = document.getElementById('notifications-badge');
     ui.badgeMobile = document.getElementById('notifications-badge-mobile');
     ui.dropdown = document.getElementById('notifications-dropdown');
     ui.list = document.getElementById('notifications-list');
+
+    console.log("DEBUG: Notification elements found:", { 
+        btn: !!ui.btn, 
+        btnMobile: !!ui.btnMobile, 
+        dropdown: !!ui.dropdown 
+    });
 
     if (!ui.btn || !ui.dropdown) return; // Check for dropdown as well
 
@@ -293,33 +308,78 @@ export function initNotifications() {
     listenForShares(currentUserId);
     listenForFriendRequests(currentUserId);
 
+    // Clear existing listeners by cloning nodes
+    const newBtn = ui.btn.cloneNode(true);
+    ui.btn.parentNode.replaceChild(newBtn, ui.btn);
+    ui.btn = newBtn;
+
+    // IMPORTANT: Re-fetch badge reference because it was inside the button and thus replaced by the clone
+    ui.badge = document.getElementById('notifications-badge');
+
+    if (ui.btnMobile) {
+        const newBtnMobile = ui.btnMobile.cloneNode(true);
+        ui.btnMobile.parentNode.replaceChild(newBtnMobile, ui.btnMobile);
+        ui.btnMobile = newBtnMobile;
+        // Re-fetch mobile badge reference
+        ui.badgeMobile = document.getElementById('notifications-badge-mobile');
+    }
+
+    // Re-select badges inside the new buttons if they are nested, 
+    // BUT here badges are siblings or children?
+    // HTML: <button id="notifications-btn">...</button> <span id="notifications-badge">...</span> is separate?
+    // Check HTML: 
+    // <div class="relative">
+    //    <button id="notifications-btn" ...></button>
+    //    <span id="notifications-badge" ...></span>
+    // </div>
+    // They are siblings. Cloning button doesn't affect badge reference. Good.
+
     const toggleDropdown = (e) => {
+        console.log("Notification click detected");
         e.stopPropagation();
-        const isHidden = ui.dropdown.classList.toggle('hidden');
         
-        if (!isHidden) {
+        // Ensure dropdown is found
+        const dropdown = document.getElementById('notifications-dropdown');
+        if (!dropdown) return;
+
+        const isHidden = dropdown.classList.contains('hidden');
+        
+        if (isHidden) {
+            // OPEN
+            dropdown.classList.remove('hidden');
+            document.body.appendChild(dropdown); // Move to top level
+
             const isMobile = window.innerWidth < 768;
             const button = isMobile ? ui.btnMobile : ui.btn;
-            if (!button) return; // Safety check
-            
             const btnRect = button.getBoundingClientRect();
 
-            // Positionne le dropdown par rapport au bouton
-            ui.dropdown.style.position = 'fixed'; // Use fixed positioning
+            Object.assign(dropdown.style, {
+                display: 'block',
+                position: 'fixed',
+                zIndex: '10000',
+                top: `${btnRect.bottom + 8}px`,
+                maxHeight: '80vh'
+            });
+            
             if (isMobile) {
-                ui.dropdown.style.top = `${btnRect.bottom + 8}px`;
-                ui.dropdown.style.left = '50%';
-                ui.dropdown.style.transform = 'translateX(-50%)';
-                ui.dropdown.style.width = '95vw';
-                ui.dropdown.style.right = 'auto';
+                Object.assign(dropdown.style, {
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '95vw',
+                    right: 'auto'
+                });
             } else {
-                // Desktop positioning
-                ui.dropdown.style.top = `${btnRect.bottom + 8}px`;
-                ui.dropdown.style.left = 'auto';
-                ui.dropdown.style.right = `${window.innerWidth - btnRect.right}px`;
-                ui.dropdown.style.transform = 'none';
-                ui.dropdown.style.width = '20rem'; // w-80
+                Object.assign(dropdown.style, {
+                    left: 'auto',
+                    right: `${window.innerWidth - btnRect.right}px`,
+                    transform: 'none',
+                    width: '20rem'
+                });
             }
+        } else {
+            // CLOSE
+            dropdown.classList.add('hidden');
+            dropdown.style.cssText = ''; // Reset inline styles
         }
     };
 
@@ -329,13 +389,16 @@ export function initNotifications() {
         ui.btnMobile.addEventListener('click', toggleDropdown);
     }
 
+    // Global click listener to close dropdown
     document.addEventListener('click', (event) => {
-        if (ui.dropdown && !ui.dropdown.classList.contains('hidden')) {
+        const dropdown = document.getElementById('notifications-dropdown');
+        if (dropdown && !dropdown.classList.contains('hidden')) {
             const isClickInside = ui.btn.contains(event.target) || 
                                   (ui.btnMobile && ui.btnMobile.contains(event.target)) || 
-                                  ui.dropdown.contains(event.target);
+                                  dropdown.contains(event.target);
             if (!isClickInside) {
-                ui.dropdown.classList.add('hidden');
+                dropdown.classList.add('hidden');
+                dropdown.style.cssText = '';
             }
         }
     });

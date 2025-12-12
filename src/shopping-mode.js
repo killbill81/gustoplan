@@ -15,108 +15,212 @@ function sanitizeForFirebaseKey(str) {
 }
 
 export default function init() {
-    const container = document.getElementById('shopping-mode-container');
+    let container = document.getElementById('shopping-mode-container');
     const planSelect = document.getElementById('shopping-mode-plan-select');
+    const trashBtn = document.getElementById('shopping-mode-trash-btn'); // Local ref for listener
+    const trashModal = document.getElementById('shopping-trash-modal');
+    let activePlanId = null;
 
-    // --- Scroll to Top Button Logic ---
-    const scrollTopBtn = document.createElement('button');
-    scrollTopBtn.id = 'scroll-to-top-btn';
-    scrollTopBtn.className = 'hidden fixed bottom-20 right-5 bg-tomato text-white rounded-full w-12 h-12 shadow-lg z-50';
-    scrollTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
-    document.body.appendChild(scrollTopBtn);
+    // --- Helper Functions defined inside init to access container ---
 
-    window.addEventListener('scroll', () => {
-        if (window.pageYOffset > 200) {
-            scrollTopBtn.classList.remove('hidden');
+    function updateTrashUI(deletedItems) {
+        console.log(`[DEBUG] updateTrashUI called with ${deletedItems ? deletedItems.length : 'null'} items`);
+        const trashBtn = document.getElementById('shopping-mode-trash-btn');
+        const trashCount = document.getElementById('shopping-mode-trash-count');
+        const trashModal = document.getElementById('shopping-trash-modal');
+        const trashList = document.getElementById('shopping-trash-list');
+        const closeTrashBtn = document.getElementById('close-shopping-trash-modal');
+        const emptyTrashBtn = document.getElementById('shopping-empty-trash-btn');
+
+        // Update trash button visibility and count
+        if (trashBtn) {
+            if (deletedItems && deletedItems.length > 0) {
+                trashBtn.classList.remove('hidden');
+                if (trashCount) trashCount.textContent = deletedItems.length;
+            } else {
+                trashBtn.classList.add('hidden');
+                if (trashCount) trashCount.textContent = '0'; // Ensure count is reset
+            }
+        }
+
+        if (trashModal && closeTrashBtn) {
+            closeTrashBtn.onclick = () => trashModal.classList.add('hidden');
+            trashModal.onclick = (e) => {
+                if (e.target === trashModal) trashModal.classList.add('hidden');
+            };
+        }
+
+        if (deletedItems && deletedItems.length > 0) {
+            if (emptyTrashBtn) {
+                emptyTrashBtn.classList.remove('hidden');
+                // Replace to clear old listeners
+                const newEmptyBtn = emptyTrashBtn.cloneNode(true);
+                emptyTrashBtn.parentNode.replaceChild(newEmptyBtn, emptyTrashBtn);
+
+                newEmptyBtn.addEventListener('click', async () => {
+                    if (!currentPlan || !confirm("Tout supprimer définitivement ?")) return;
+                    const planRef = doc(db, "plans", currentPlan.id);
+                    const itemsToHide = deletedItems.map(i => sanitizeForFirebaseKey(`${i.name}_${i.unit || ''}`));
+
+                    try {
+                        await import('firebase/firestore').then(module => {
+                            module.updateDoc(planRef, {
+                                hiddenTrashItems: module.arrayUnion(...itemsToHide),
+                                lastUpdated: new Date()
+                            });
+                        });
+                        trashModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Erreur vidage corbeille:", error);
+                    }
+                });
+            }
+
+            if (trashList) {
+                trashList.innerHTML = '';
+                const deletedUl = document.createElement('ul');
+                deletedUl.className = 'space-y-3';
+
+                deletedItems.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-center p-3 rounded-lg bg-gray-100 shadow-inner justify-between';
+
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'flex-grow ml-2 overflow-hidden';
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'font-medium text-base text-gray-500 line-through block truncate';
+                    nameSpan.textContent = item.name;
+
+                    textDiv.appendChild(nameSpan);
+
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'flex items-center space-x-2 flex-shrink-0';
+
+                    const restoreBtn = document.createElement('button');
+                    restoreBtn.className = 'text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1 border border-blue-300 rounded-full hover:bg-blue-50 transition-colors';
+                    restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
+                    restoreBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        try {
+                            await import('firebase/firestore').then(async module => {
+                                await module.runTransaction(db, async (transaction) => {
+                                    const planDoc = await transaction.get(planRef);
+                                    if (!planDoc.exists()) return;
+
+                                    const currentItems = planDoc.data().manualItems || [];
+                                    const finalItems = currentItems.filter(i => !(i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit));
+
+                                    transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
+                                });
+                                // If last item, close modal
+                                if (deletedItems.length <= 1) trashModal.classList.add('hidden');
+                            });
+                        } catch (error) { console.error(error); }
+                    });
+
+                    const deleteForeverBtn = document.createElement('button');
+                    deleteForeverBtn.className = 'text-gray-400 hover:text-red-600 font-medium text-sm px-2 py-1';
+                    deleteForeverBtn.innerHTML = '<i class="fas fa-times text-lg"></i>';
+                    deleteForeverBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        const key = sanitizeForFirebaseKey(`${item.name}_${item.unit || ''}`);
+                        try {
+                            await import('firebase/firestore').then(module => {
+                                module.updateDoc(planRef, {
+                                    hiddenTrashItems: module.arrayUnion(key),
+                                    lastUpdated: new Date()
+                                });
+                            });
+                            // If last item, close modal
+                            if (deletedItems.length <= 1) trashModal.classList.add('hidden');
+                        } catch (error) { console.error(error); }
+                    });
+
+                    actionsDiv.appendChild(restoreBtn);
+                    actionsDiv.appendChild(deleteForeverBtn);
+
+                    li.appendChild(textDiv);
+                    li.appendChild(actionsDiv);
+                    deletedUl.appendChild(li);
+                });
+                trashList.appendChild(deletedUl);
+            }
         } else {
-            scrollTopBtn.classList.add('hidden');
+            if (trashList) trashList.innerHTML = '<p class="text-center text-gray-500 italic py-4">La corbeille est vide.</p>';
+            if (emptyTrashBtn) emptyTrashBtn.classList.add('hidden');
         }
-    });
+    }
 
-    scrollTopBtn.addEventListener('click', () => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Load checked items from Plan Data (Firestore)
-    // No need to load from LocalStorage anymore, data comes via onSnapshot
-
-    async function fetchData() {
-        // 1. Fetch Master Ingredients
-        try {
-            const ingSnap = await getDocs(collection(db, "ingredients"));
-            masterIngredientList = ingSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } catch (e) {
-            console.error("Error fetching ingredients", e);
+    function resetUI() {
+        console.log('[DEBUG] Resetting UI and State');
+        currentPlan = null;
+        if (container) {
+            container.innerHTML = '<div class="flex justify-center p-10"><i class="fas fa-spinner fa-spin text-tomato text-2xl"></i></div>';
         }
+        // Force hide modal to prevent ghost data
+        if (trashModal) trashModal.classList.add('hidden');
+        updateTrashUI([]);
+    }
 
-        // 2. Fetch All Recipes (availableMeals)
-        try {
-            const recipesSnap = await getDocs(collection(db, "recipes"));
-            availableMeals = recipesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        } catch (e) {
-            console.error("Error fetching recipes", e);
-        }
-
-        // 3. Fetch Plans
-        const unsubscribePlans = getUserPlans((plans) => {
-            if (!planSelect) return;
-            planSelect.innerHTML = '';
-            
-            if (plans.length === 0) {
-                container.innerHTML = '<p class="text-center p-4">Aucun plan trouvé.</p>';
-                return;
-            }
-
-            plans.forEach(plan => {
-                const option = document.createElement('option');
-                option.value = plan.id;
-                option.textContent = plan.name;
-                planSelect.appendChild(option);
-            });
-
-            // Select the first plan by default or restore selection
-            const lastActivePlanId = localStorage.getItem('lastActivePlanId');
-            
-            if (lastActivePlanId && plans.some(p => p.id === lastActivePlanId)) {
-                planSelect.value = lastActivePlanId;
-                loadPlan(lastActivePlanId);
-            } else if (plans.length > 0) {
-                loadPlan(plans[0].id);
-            }
-            
-            // Listen for change
-            planSelect.addEventListener('change', (e) => {
-                const newPlanId = e.target.value;
-                localStorage.setItem('lastActivePlanId', newPlanId);
-                loadPlan(newPlanId);
-            });
+    // LISTENER FOR TRASH BUTTON
+    if (trashBtn && trashModal) {
+        trashBtn.addEventListener('click', () => {
+            trashModal.classList.remove('hidden');
         });
     }
 
     function loadPlan(planId) {
+        console.log(`[DEBUG] loadPlan called for: ${planId}`);
+        activePlanId = planId;
+
         if (currentUnsubscribe) {
+            console.log('[DEBUG] Unsubscribing from previous plan');
             currentUnsubscribe();
             currentUnsubscribe = null;
         }
 
+        resetUI();
+
         const planRef = doc(db, 'plans', planId);
         currentUnsubscribe = onSnapshot(planRef, (docSnap) => {
+            console.log(`[DEBUG] Snapshot received for doc: ${docSnap.id}`);
+
+            // Race condition check
+            if (activePlanId !== planId) {
+                console.warn(`[DEBUG] Ignored snapshot for ${planId} because active is ${activePlanId}`);
+                return;
+            }
+
             if (docSnap.exists()) {
+                console.log(`[DEBUG] Plan data found for ID: ${docSnap.id}`);
                 currentPlan = { id: docSnap.id, ...docSnap.data() };
                 // Initialize checkedItems from plan data
                 checkedItems = currentPlan.checkedItems || {};
                 renderShoppingList();
             } else {
-                container.innerHTML = '<p class="text-center p-4 text-red-500">Plan introuvable.</p>';
+                console.log('[DEBUG] Plan not found');
+                if (container) container.innerHTML = '<p class="text-center p-4 text-red-500">Plan introuvable.</p>';
             }
         });
     }
 
     function renderShoppingList() {
-        if (!currentPlan || !container) return;
+        if (!currentPlan || !container) {
+            console.log('[DEBUG] renderShoppingList aborted: missing plan or container');
+            return;
+        }
 
+        console.log(`[DEBUG] Rendering shopping list for plan: ${currentPlan.name} (${currentPlan.id})`);
         const { active: shoppingList, deleted: deletedItems } = generateList(currentPlan);
-        
+
+        console.log(`[DEBUG] Computed deletedItems: ${deletedItems.length} items`);
+
+        // Always update trash UI first
+        updateTrashUI(deletedItems);
+
         container.innerHTML = '';
 
         // --- Split items into checked and unchecked lists ---
@@ -132,7 +236,7 @@ export default function init() {
                 uncheckedItems.push(item);
             }
         });
-        
+
         if (uncheckedItems.length === 0 && checkedItemsList.length === 0) {
             container.innerHTML = '<p class="text-center p-10 text-gray-500">Votre liste de courses est vide pour ce plan.</p>';
             return;
@@ -147,9 +251,9 @@ export default function init() {
         }, {});
 
         const categories = Object.keys(grouped).sort((a, b) => {
-             if (a === 'Inconnue') return 1;
-             if (b === 'Inconnue') return -1;
-             return a.localeCompare(b);
+            if (a === 'Inconnue') return 1;
+            if (b === 'Inconnue') return -1;
+            return a.localeCompare(b);
         });
 
         // Create and inject the tabs container at the top of the main list container
@@ -191,7 +295,7 @@ export default function init() {
 
             const ul = document.createElement('ul');
             ul.className = 'space-y-3';
-            
+
             grouped[cat].sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
                 // The key logic needs to match how we access it.
                 // In generateList we don't have plan ID in the item key, but we need a unique key for storage.
@@ -206,10 +310,10 @@ export default function init() {
                     li.dataset.isManual = "true";
                     li.style.backgroundColor = "#ffedd5"; // Force orange background
                 }
-                
+
                 const bgClass = isChecked ? 'bg-gray-100' : (isManual ? 'bg-orange-100 shadow-sm border border-orange-200' : 'bg-white shadow-sm border border-gray-100');
                 li.className = `flex flex-col p-3 rounded-lg transition-colors duration-200 ${bgClass}`;
-                
+
                 const mainContent = document.createElement('div');
                 mainContent.className = 'flex items-center w-full';
 
@@ -217,16 +321,16 @@ export default function init() {
                 checkbox.type = 'checkbox';
                 checkbox.className = 'form-checkbox h-6 w-6 text-tomato rounded-full border-gray-300 focus:ring-tomato cursor-pointer transition duration-150 ease-in-out';
                 checkbox.checked = isChecked;
-                
+
                 const textDiv = document.createElement('div');
                 textDiv.className = 'ml-3 flex-grow cursor-pointer select-none';
-                
+
                 const quantityDisplay = Number.isInteger(item.totalQuantity) ? item.totalQuantity : parseFloat(item.totalQuantity.toFixed(2));
-                
+
                 const nameSpan = document.createElement('span');
                 nameSpan.className = `font-medium text-base ${isChecked ? 'line-through text-gray-400' : 'text-gray-800'}`;
                 nameSpan.textContent = item.name;
-                
+
                 const qtySpan = document.createElement('span');
                 qtySpan.className = `ml-2 font-bold text-base ${isChecked ? 'text-gray-400' : 'text-gray-800'}`;
                 qtySpan.textContent = ` - ${quantityDisplay} ${item.unit || ''}`.trim();
@@ -254,7 +358,7 @@ export default function init() {
                 if (item.sources && item.sources.length > 0) {
                     const annotationsDiv = document.createElement('div');
                     annotationsDiv.className = 'mt-2 ml-9 text-xs text-gray-500 space-y-1'; // Adjusted margin to align with text
-                    
+
                     // Group sources by recipe and day
                     const groupedSources = item.sources.reduce((acc, source) => {
                         const key = `${source.recipeName} (${source.day} ${source.time})`;
@@ -309,7 +413,7 @@ export default function init() {
 
                 const ul = document.createElement('ul');
                 ul.className = 'space-y-3';
-                
+
                 groupedChecked[cat].sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
                     const unsanitizedKey = `${item.name}_${item.unit || ''}`;
                     const key = sanitizeForFirebaseKey(unsanitizedKey);
@@ -319,7 +423,7 @@ export default function init() {
                     const li = document.createElement('li');
                     if (isManual) li.dataset.isManual = "true";
                     li.className = `flex flex-col p-3 rounded-lg transition-colors duration-200 bg-gray-100`;
-                    
+
                     const mainContent = document.createElement('div');
                     mainContent.className = 'flex items-center w-full';
 
@@ -327,16 +431,16 @@ export default function init() {
                     checkbox.type = 'checkbox';
                     checkbox.className = 'form-checkbox h-6 w-6 text-tomato rounded-full border-gray-300 focus:ring-tomato cursor-pointer transition duration-150 ease-in-out';
                     checkbox.checked = isChecked;
-                    
+
                     const textDiv = document.createElement('div');
                     textDiv.className = 'ml-3 flex-grow cursor-pointer select-none';
-                    
+
                     const quantityDisplay = Number.isInteger(item.totalQuantity) ? item.totalQuantity : parseFloat(item.totalQuantity.toFixed(2));
-                    
+
                     const nameSpan = document.createElement('span');
                     nameSpan.className = `font-medium text-base line-through text-gray-400`;
                     nameSpan.textContent = item.name;
-                    
+
                     const qtySpan = document.createElement('span');
                     qtySpan.className = `ml-2 font-bold text-base text-gray-400`;
                     qtySpan.textContent = ` - ${quantityDisplay} ${item.unit || ''}`.trim();
@@ -364,143 +468,11 @@ export default function init() {
                 container.appendChild(ul);
             });
         }
-
-        // --- Update Trash Button & Modal ---
-        const trashBtn = document.getElementById('shopping-mode-trash-btn');
-        const trashCount = document.getElementById('shopping-mode-trash-count');
-        const trashModal = document.getElementById('shopping-trash-modal');
-        const trashList = document.getElementById('shopping-trash-list');
-        const closeTrashBtn = document.getElementById('close-shopping-trash-modal');
-        const emptyTrashBtn = document.getElementById('shopping-empty-trash-btn');
-
-        // Update trash button visibility
-        if (trashBtn) {
-             if (deletedItems && deletedItems.length > 0) {
-                 trashBtn.classList.remove('hidden');
-                 if (trashCount) trashCount.textContent = deletedItems.length;
-            } else {
-                 trashBtn.classList.add('hidden');
-            }
-        }
-
-        if (trashModal && closeTrashBtn) {
-             closeTrashBtn.onclick = () => trashModal.classList.add('hidden');
-             trashModal.addEventListener('click', (e) => {
-                if (e.target === trashModal) trashModal.classList.add('hidden');
-            });
-        }
-
-        if (deletedItems && deletedItems.length > 0) {
-            if (emptyTrashBtn) {
-                emptyTrashBtn.classList.remove('hidden');
-                // Replace to clear old listeners
-                const newEmptyBtn = emptyTrashBtn.cloneNode(true);
-                emptyTrashBtn.parentNode.replaceChild(newEmptyBtn, emptyTrashBtn);
-                
-                newEmptyBtn.addEventListener('click', async () => {
-                    if (!currentPlan || !confirm("Tout supprimer définitivement ?")) return;
-                    const planRef = doc(db, "plans", currentPlan.id);
-                    const itemsToHide = deletedItems.map(i => sanitizeForFirebaseKey(`${i.name}_${i.unit || ''}`));
-                    
-                    try {
-                        await import('firebase/firestore').then(module => {
-                            module.updateDoc(planRef, {
-                                hiddenTrashItems: module.arrayUnion(...itemsToHide),
-                                lastUpdated: new Date()
-                            });
-                        });
-                         trashModal.classList.add('hidden');
-                    } catch (error) {
-                        console.error("Erreur vidage corbeille:", error);
-                    }
-                });
-            }
-
-            if (trashList) {
-                trashList.innerHTML = '';
-                const deletedUl = document.createElement('ul');
-                deletedUl.className = 'space-y-3';
-
-                deletedItems.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = 'flex items-center p-3 rounded-lg bg-gray-100 shadow-inner justify-between';
-                    
-                    const textDiv = document.createElement('div');
-                    textDiv.className = 'flex-grow ml-2 overflow-hidden';
-                    
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'font-medium text-base text-gray-500 line-through block truncate';
-                    nameSpan.textContent = item.name;
-                    
-                    textDiv.appendChild(nameSpan);
-
-                    const actionsDiv = document.createElement('div');
-                    actionsDiv.className = 'flex items-center space-x-2 flex-shrink-0';
-
-                    const restoreBtn = document.createElement('button');
-                    restoreBtn.className = 'text-blue-600 hover:text-blue-800 font-medium text-sm px-3 py-1 border border-blue-300 rounded-full hover:bg-blue-50 transition-colors';
-                    restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
-                    restoreBtn.addEventListener('click', async () => {
-                        if (!currentPlan) return;
-                        const planRef = doc(db, "plans", currentPlan.id);
-                        try {
-                            await import('firebase/firestore').then(async module => {
-                                await module.runTransaction(db, async (transaction) => {
-                                    const planDoc = await transaction.get(planRef);
-                                    if (!planDoc.exists()) return;
-
-                                    const currentItems = planDoc.data().manualItems || [];
-                                    const finalItems = currentItems.filter(i => !(i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit));
-                                    
-                                    transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
-                                });
-                                // If last item, close modal
-                                if (deletedItems.length <= 1) trashModal.classList.add('hidden');
-                            });
-                        } catch (error) {
-                            console.error("Erreur lors de la restauration :", error);
-                        }
-                    });
-
-                    const deleteForeverBtn = document.createElement('button');
-                    deleteForeverBtn.className = 'text-gray-400 hover:text-red-600 font-medium text-sm px-2 py-1';
-                    deleteForeverBtn.innerHTML = '<i class="fas fa-times text-lg"></i>';
-                    deleteForeverBtn.addEventListener('click', async () => {
-                        if (!currentPlan) return;
-                        const planRef = doc(db, "plans", currentPlan.id);
-                        const key = sanitizeForFirebaseKey(`${item.name}_${item.unit || ''}`);
-                        try {
-                             await import('firebase/firestore').then(module => {
-                                module.updateDoc(planRef, {
-                                    hiddenTrashItems: module.arrayUnion(key),
-                                    lastUpdated: new Date()
-                                });
-                            });
-                             // If last item, close modal
-                            if (deletedItems.length <= 1) trashModal.classList.add('hidden');
-                        } catch (error) {
-                            console.error("Erreur suppression définitive:", error);
-                        }
-                    });
-
-                    actionsDiv.appendChild(restoreBtn);
-                    actionsDiv.appendChild(deleteForeverBtn);
-
-                    li.appendChild(textDiv);
-                    li.appendChild(actionsDiv);
-                    deletedUl.appendChild(li);
-                });
-                trashList.appendChild(deletedUl);
-            }
-        } else {
-             if (trashList) trashList.innerHTML = '<p class="text-center text-gray-500 italic py-4">La corbeille est vide.</p>';
-             if (emptyTrashBtn) emptyTrashBtn.classList.add('hidden');
-        }
     }
 
     function updateItemState(key, isChecked, li, checkbox, nameSpan, qtySpan) {
         if (!currentPlan) return;
-        
+
         const isManual = li.dataset.isManual === "true";
 
         // Optimistic UI update
@@ -531,7 +503,7 @@ export default function init() {
         const updateData = {};
         updateData[`checkedItems.${key}`] = isChecked;
         updateData['lastUpdated'] = new Date();
-        
+
         import('firebase/firestore').then(module => {
             module.updateDoc(planRef, updateData);
         }).catch(error => {
@@ -539,7 +511,6 @@ export default function init() {
         });
     }
 
-    // Copied and adapted from shopping.js
     function generateList(plan) {
         const list = [];
         const combinedIngredients = new Map();
@@ -547,14 +518,14 @@ export default function init() {
 
         // 1. Add Manual Items
         manualItems.forEach(item => {
-             const key = `${item.name.trim().toLowerCase()}_${item.unit || ''}`;
-             combinedIngredients.set(key, {
-                 name: item.name.trim(),
-                 totalQuantity: item.totalQuantity,
-                 unit: item.unit,
-                 category: item.category || 'Inconnue',
-                 hasManualEntry: true
-             });
+            const key = `${item.name.trim().toLowerCase()}_${item.unit || ''}`;
+            combinedIngredients.set(key, {
+                name: item.name.trim(),
+                totalQuantity: item.totalQuantity,
+                unit: item.unit,
+                category: item.category || 'Inconnue',
+                hasManualEntry: true
+            });
         });
 
         // 2. Process Weeks
@@ -566,59 +537,59 @@ export default function init() {
                 const servings = weekData.servingsData || {};
 
                 for (const slotId in menu) {
-                     const mealsInSlot = menu[slotId];
-                     if (!Array.isArray(mealsInSlot)) continue;
+                    const mealsInSlot = menu[slotId];
+                    if (!Array.isArray(mealsInSlot)) continue;
 
-                     const [dayIndexStr, mealType] = slotId.split('-');
-                     const servingsKey = `${dayIndexStr}-${mealType}`;
-                     const numPeople = parseInt(servings[servingsKey] || plan.defaultNumPeople || 1, 10);
+                    const [dayIndexStr, mealType] = slotId.split('-');
+                    const servingsKey = `${dayIndexStr}-${mealType}`;
+                    const numPeople = parseInt(servings[servingsKey] || plan.defaultNumPeople || 1, 10);
 
-                     mealsInSlot.forEach(mealRef => {
-                         // Resolve meal from availableMeals
-                         const fullMeal = availableMeals.find(m => m.id === mealRef.id) || mealRef;
-                         if (!fullMeal || !fullMeal.ingredients) return;
+                    mealsInSlot.forEach(mealRef => {
+                        // Resolve meal from availableMeals
+                        const fullMeal = availableMeals.find(m => m.id === mealRef.id) || mealRef;
+                        if (!fullMeal || !fullMeal.ingredients) return;
 
-                         const baseServings = fullMeal.servings || 1;
-                         
-                         fullMeal.ingredients.forEach(ing => {
-                             if (!ing.name || !ing.quantity) return;
+                        const baseServings = fullMeal.servings || 1;
 
-                             const masterIng = masterIngredientList.find(i => i.name.toLowerCase() === ing.name.toLowerCase());
-                             const category = masterIng ? masterIng.category : 'Inconnue';
-                             const baseQty = parseFloat(String(ing.quantity).replace(',', '.'));
-                             if (isNaN(baseQty)) return;
+                        fullMeal.ingredients.forEach(ing => {
+                            if (!ing.name || !ing.quantity) return;
 
-                             const qtyPerPerson = baseQty / baseServings;
-                             const finalQty = qtyPerPerson * numPeople;
-                             const displayUnit = ing.unit || '';
-                             const key = `${ing.name.trim().toLowerCase()}_${displayUnit}`;
+                            const masterIng = masterIngredientList.find(i => i.name.toLowerCase() === ing.name.toLowerCase());
+                            const category = masterIng ? masterIng.category : 'Inconnue';
+                            const baseQty = parseFloat(String(ing.quantity).replace(',', '.'));
+                            if (isNaN(baseQty)) return;
 
-                             if (combinedIngredients.has(key)) {
-                                 const existing = combinedIngredients.get(key);
-                                 existing.totalQuantity += finalQty;
-                                 if (!existing.sources) existing.sources = [];
-                                 existing.sources.push({
-                                     recipeName: fullMeal.name,
-                                     day: allDays[parseInt(dayIndexStr, 10)],
-                                     time: mealType === 'lunch' ? 'Midi' : 'Soir',
-                                     quantity: finalQty
-                                 });
-                             } else {
-                                 combinedIngredients.set(key, {
-                                     name: ing.name.trim(),
-                                     totalQuantity: finalQty,
-                                     unit: displayUnit,
-                                     category: category,
-                                     sources: [{
-                                         recipeName: fullMeal.name,
-                                         day: allDays[parseInt(dayIndexStr, 10)],
-                                         time: mealType === 'lunch' ? 'Midi' : 'Soir',
-                                         quantity: finalQty
-                                     }]
-                                 });
-                             }
-                         });
-                     });
+                            const qtyPerPerson = baseQty / baseServings;
+                            const finalQty = qtyPerPerson * numPeople;
+                            const displayUnit = ing.unit || '';
+                            const key = `${ing.name.trim().toLowerCase()}_${displayUnit}`;
+
+                            if (combinedIngredients.has(key)) {
+                                const existing = combinedIngredients.get(key);
+                                existing.totalQuantity += finalQty;
+                                if (!existing.sources) existing.sources = [];
+                                existing.sources.push({
+                                    recipeName: fullMeal.name,
+                                    day: allDays[parseInt(dayIndexStr, 10)],
+                                    time: mealType === 'lunch' ? 'Midi' : 'Soir',
+                                    quantity: finalQty
+                                });
+                            } else {
+                                combinedIngredients.set(key, {
+                                    name: ing.name.trim(),
+                                    totalQuantity: finalQty,
+                                    unit: displayUnit,
+                                    category: category,
+                                    sources: [{
+                                        recipeName: fullMeal.name,
+                                        day: allDays[parseInt(dayIndexStr, 10)],
+                                        time: mealType === 'lunch' ? 'Midi' : 'Soir',
+                                        quantity: finalQty
+                                    }]
+                                });
+                            }
+                        });
+                    });
                 }
             }
         }
@@ -642,9 +613,101 @@ export default function init() {
         return { active: activeList, deleted: deletedList };
     }
 
+    // --- Scroll to Top Button Logic ---
+    const scrollTopBtn = document.createElement('button');
+    scrollTopBtn.id = 'scroll-to-top-btn';
+    scrollTopBtn.className = 'hidden fixed bottom-20 right-5 bg-tomato text-white rounded-full w-12 h-12 shadow-lg z-50';
+    scrollTopBtn.innerHTML = '<i class="fas fa-arrow-up"></i>';
+    document.body.appendChild(scrollTopBtn);
+
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 200) {
+            scrollTopBtn.classList.remove('hidden');
+        } else {
+            scrollTopBtn.classList.add('hidden');
+        }
+    });
+
+    scrollTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Setup Plan Select Listener ONCE
+    if (planSelect) {
+        // Clone to remove existing listeners (nuclear option to be safe if init runs multiple times without full cleanup)
+        const newSelect = planSelect.cloneNode(true);
+        planSelect.parentNode.replaceChild(newSelect, planSelect);
+
+        newSelect.addEventListener('change', (e) => {
+            const newPlanId = e.target.value;
+            localStorage.setItem('lastActivePlanId', newPlanId);
+            loadPlan(newPlanId);
+        });
+    }
+
+    async function fetchData() {
+        // 1. Fetch Master Ingredients
+        try {
+            const ingSnap = await getDocs(collection(db, "ingredients"));
+            masterIngredientList = ingSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (e) {
+            console.error("Error fetching ingredients", e);
+        }
+
+        // 2. Fetch All Recipes (availableMeals)
+        try {
+            const recipesSnap = await getDocs(collection(db, "recipes"));
+            availableMeals = recipesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (e) {
+            console.error("Error fetching recipes", e);
+        }
+
+        // 3. Fetch Plans
+        const unsubscribePlans = getUserPlans((plans) => {
+            const currentSelect = document.getElementById('shopping-mode-plan-select'); // Get fresh ref
+            if (!currentSelect) return;
+
+            const currentVal = currentSelect.value;
+            currentSelect.innerHTML = '';
+
+            if (plans.length === 0) {
+                if (container) container.innerHTML = '<p class="text-center p-4">Aucun plan trouvé.</p>';
+                return;
+            }
+
+            plans.forEach(plan => {
+                const option = document.createElement('option');
+                option.value = plan.id;
+                option.textContent = plan.name;
+                currentSelect.appendChild(option);
+            });
+
+            // Select logic
+            const lastActivePlanId = localStorage.getItem('lastActivePlanId');
+            let targetId = null;
+
+            if (lastActivePlanId && plans.some(p => p.id === lastActivePlanId)) {
+                targetId = lastActivePlanId;
+            } else if (plans.length > 0) {
+                targetId = plans[0].id;
+            }
+
+            if (targetId) {
+                if (currentVal && plans.some(p => p.id === currentVal)) {
+                    currentSelect.value = currentVal;
+                    if (!currentPlan) loadPlan(currentVal);
+                } else {
+                    currentSelect.value = targetId;
+                    loadPlan(targetId);
+                }
+            }
+        });
+    }
+
     fetchData();
 
     return () => {
         if (currentUnsubscribe) currentUnsubscribe();
+        if (scrollTopBtn) scrollTopBtn.remove();
     };
 }

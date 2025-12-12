@@ -29,6 +29,7 @@ function startApp() {
 
   // Load default page
   navigateTo('menu');
+  console.log("DEBUG: Calling initNotifications...");
   initNotifications();
 }
 

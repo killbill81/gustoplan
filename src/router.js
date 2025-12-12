@@ -618,7 +618,20 @@ const routes = {
     }
 };
 
-const modules = import.meta.glob('./*.js', { eager: true });
+// Manual module map for standard browser compatibility (no bundler required)
+// This ensures the code runs directly on XAMPP/Apache without Vite's import.meta.glob
+const moduleMap = {
+    './script.js': () => import('./script.js'),
+    './recipes.js': () => import('./recipes.js'),
+    './ingredients.js': () => import('./ingredients.js'),
+    './lists.js': () => import('./lists.js'),
+    './friends.js': () => import('./friends.js'),
+    './shared.js': () => import('./shared.js'),
+    './all-plans.js': () => import('./all-plans.js'),
+    './view-plan.js': () => import('./view-plan.js'),
+    './shopping-mode.js': () => import('./shopping-mode.js'),
+};
+
 let currentCleanup = null;
 
 async function navigateTo(path) {
@@ -631,13 +644,20 @@ async function navigateTo(path) {
     if (route && mainContent) {
         mainContent.innerHTML = route.html;
         if (route.script) {
-            const module = modules[route.script];
-            if (module) {
-                if (module.default && typeof module.default === 'function') {
-                    currentCleanup = module.default(); // Store the returned cleanup function
+            const loadModule = moduleMap[route.script];
+            if (loadModule) {
+                try {
+                    // Cache busting for development - optional, can be removed in prod
+                    // but helpful since the user reported issues with updates.
+                    const module = await loadModule();
+                    if (module.default && typeof module.default === 'function') {
+                        currentCleanup = module.default(); // Store the returned cleanup function
+                    }
+                } catch (e) {
+                    console.error(`Error loading module ${route.script}:`, e);
                 }
             } else {
-                console.error(`Module not found for path: ${route.script}`);
+                console.error(`Module not found in map for path: ${route.script}`);
             }
         }
     } else {
