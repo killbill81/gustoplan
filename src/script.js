@@ -64,7 +64,7 @@ export default function init() {
         const minusBtn = document.createElement('button');
         minusBtn.className = 'btn btn-outline btn-xs';
         minusBtn.textContent = '-';
-        
+
         const valueDisplay = document.createElement('span');
         valueDisplay.className = 'font-medium text-center w-6';
         valueDisplay.textContent = currentValue;
@@ -188,7 +188,7 @@ export default function init() {
     let defaultNumPeople = 1;
     let tooltipTimer = null;
     let currentlyOpenTooltipButton = null;
-    
+
     let allPlans = [];
     let currentPlan = null;
 
@@ -266,7 +266,7 @@ export default function init() {
             defaultNumPeople = currentPlan.defaultNumPeople || 1;
             startDay = currentPlan.startDay || 'Lundi';
         }
-        
+
         if (elements.startDaySelect) elements.startDaySelect.value = startDay;
         if (elements.defaultServingsControl) {
             elements.defaultServingsControl.innerHTML = '';
@@ -304,7 +304,7 @@ export default function init() {
 
         const plansRef = collection(db, "plans");
         const q = query(plansRef, where("userId", "==", userId), where("isShared", "==", true), where("week", "==", week));
-        
+
         try {
             const sharedPlansSnap = await getDocs(q);
             const sharedPlans = sharedPlansSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -378,7 +378,7 @@ export default function init() {
 
         const gridContainer = document.createElement('div');
         gridContainer.className = 'min-w-[1400px]'; // This will be overridden by CSS, but good for structure
-        
+
         const headerHTML = `
             <div class="grid grid-cols-[100px_35px_repeat(5,_minmax(0,_1fr))_35px_repeat(5,_minmax(0,_1fr))] gap-1 text-center mb-1">
                 <div class="p-2"></div>
@@ -433,7 +433,7 @@ export default function init() {
 
                 // Now that it's saved, update the UI
                 closeSharedPlansModal();
-                
+
                 // Update the global state
                 menuData = planToSave.menuData;
                 servingsData = planToSave.servingsData;
@@ -584,10 +584,10 @@ export default function init() {
             menuData = {};
             servingsData = {};
             remarksData = {};
-            
+
             // Re-render the empty plan
             renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
-            
+
             // Save the cleared week
             await saveCurrentPlan();
             await generateShoppingListFromPlan();
@@ -596,42 +596,42 @@ export default function init() {
 
     function renderMobilePlanner(container, plan, isReadOnly = false) {
         if (!container) return;
-    
+
         const planMenuData = plan.menuData || {};
         const planServingsData = plan.servingsData || {};
         const planRemarksData = plan.remarksData || {};
         const planDefaultNumPeople = plan.defaultNumPeople || 1;
         const planStartDay = plan.startDay || 'Lundi';
-    
+
         container.innerHTML = ''; // Clear previous content
         const mobileContent = document.createDocumentFragment();
-    
+
         const startDayIndex = allDays.indexOf(planStartDay);
         const weekDays = [...allDays.slice(startDayIndex), ...allDays.slice(0, startDayIndex)];
-    
+
         weekDays.forEach(dayName => {
             const dayOriginalIndex = allDays.indexOf(dayName);
-            
+
             // Card for each day
             const dayCard = document.createElement('div');
             dayCard.className = 'bg-blue-100 border border-blue-300 rounded-xl shadow-md p-4 mb-4';
-    
+
             // Day title
             const dayTitle = document.createElement('h3');
             dayTitle.className = 'text-xl font-bold text-gray-800 mb-3';
             dayTitle.textContent = dayName.toUpperCase();
             dayCard.appendChild(dayTitle);
-    
+
             const mealsContainer = document.createElement('div');
             mealsContainer.className = 'space-y-4';
-    
+
             ['lunch', 'dinner'].forEach(mealType => {
                 const mealSection = document.createElement('div');
                 mealSection.className = `border-t pt-3 ${mealType === 'lunch' ? 'bg-amber-50' : 'bg-stone-100'} rounded-lg p-2`;
 
                 const mealHeader = document.createElement('div');
                 mealHeader.className = 'flex justify-between items-center mb-2';
-    
+
                 const mealTitle = document.createElement('h4');
                 mealTitle.className = 'text-lg font-semibold text-tomato';
                 mealTitle.textContent = mealType === 'lunch' ? 'Midi' : 'Soir';
@@ -645,34 +645,34 @@ export default function init() {
                     });
                     mealHeader.appendChild(servingsControl);
                 }
-                
+
                 mealSection.appendChild(mealHeader);
-    
+
                 const mealSlotsContainer = document.createElement('div');
                 mealSlotsContainer.className = 'space-y-2';
-    
+
                 let hasContent = false;
                 const categories = ['Entrée', 'Plat', 'Accompagnement', 'Dessert', 'Remarque'];
-    
+
                 for (let i = 0; i < categories.length; i++) {
                     const categoryName = categories[i];
                     const slotId = `${dayOriginalIndex}-${mealType}-${i}`;
                     const mealsInSlot = planMenuData[slotId];
-    
+
                     const categoryWrapper = document.createElement('div');
                     categoryWrapper.className = 'mb-2';
-    
+
                     const categoryHeader = document.createElement('h5');
                     categoryHeader.className = 'text-md font-semibold text-gray-700 mb-1';
                     categoryHeader.textContent = categoryName;
                     categoryWrapper.appendChild(categoryHeader);
-    
+
                     if (categoryName === 'Remarque') {
                         categoryWrapper.appendChild(createRemarkElement(slotId, planRemarksData, isReadOnly));
                     } else {
                         const mealsList = document.createElement('div');
                         mealsList.className = 'space-y-1';
-    
+
                         if (Array.isArray(mealsInSlot) && mealsInSlot.length > 0) {
                             hasContent = true;
                             mealsInSlot.forEach((mealRef, index) => {
@@ -681,18 +681,18 @@ export default function init() {
                                     const mealCard = createMealCardElement(fullMeal, slotId, index, isReadOnly);
                                     mealCard.classList.remove('bg-white', 'shadow-sm');
                                     mealCard.classList.add('bg-emerald-200', 'border', 'border-emerald-400');
-    
+
                                     if (!isReadOnly) {
                                         const editButton = mealCard.querySelector('.edit-meal-btn');
                                         const deleteButton = mealCard.querySelector('.delete-meal-btn');
-                                        if(editButton) editButton.classList.remove('hidden');
-                                        if(deleteButton) deleteButton.classList.remove('hidden');
+                                        if (editButton) editButton.classList.remove('hidden');
+                                        if (deleteButton) deleteButton.classList.remove('hidden');
                                     }
                                     mealsList.appendChild(mealCard);
                                 }
                             });
                         }
-    
+
                         if (!isReadOnly) {
                             const addMealButton = document.createElement('button');
                             addMealButton.className = 'btn btn-outline btn-sm w-full mt-2';
@@ -708,15 +708,15 @@ export default function init() {
                     }
                     mealSlotsContainer.appendChild(categoryWrapper);
                 }
-    
+
                 mealSection.appendChild(mealSlotsContainer);
                 mealsContainer.appendChild(mealSection);
             });
-    
+
             dayCard.appendChild(mealsContainer);
             mobileContent.appendChild(dayCard);
         });
-    
+
         container.appendChild(mobileContent);
         // No need for attachPlannerListeners here as we handle clicks directly
     }
@@ -742,7 +742,7 @@ export default function init() {
             const dayOriginalIndex = allDays.indexOf(dayName);
             const dayRow = document.createElement('div');
             dayRow.className = 'grid grid-cols-[100px_35px_repeat(5,_minmax(0,_1fr))_35px_repeat(5,_minmax(0,_1fr))] items-stretch border-b border-gray-300';
-            
+
             const dayHeader = document.createElement('div');
             dayHeader.className = 'font-bold p-2 flex items-center justify-center bg-gray-100 text-sm border-r border-gray-300';
             dayHeader.textContent = dayName.toUpperCase();
@@ -752,12 +752,12 @@ export default function init() {
                 const servingsKey = `${dayOriginalIndex}-${mealType}`;
                 const currentValue = planServingsData[servingsKey] || planDefaultNumPeople;
                 const isOverridden = planServingsData.hasOwnProperty(servingsKey);
-                
+
                 const servingsCell = document.createElement('div');
                 const servingsControl = createVerticalServingsControl(currentValue, isOverridden, (newValue) => {
                     handleServingsChange(servingsKey, newValue);
                 }, isReadOnly); // Pass read-only flag
-                
+
                 let cellClasses = 'border-r border-gray-300 flex items-center justify-center transition-colors duration-300';
                 if (isOverridden) cellClasses += ' bg-tomato';
                 else cellClasses += (mealType === 'lunch') ? ' bg-amber-50' : ' bg-stone-100';
@@ -770,7 +770,7 @@ export default function init() {
                     const mealsInSlot = planMenuData[slotId];
                     const mealSlotDiv = document.createElement('div');
                     const category = getCategoryFromSlotId(slotId);
-                    
+
                     let slotClasses = 'meal-slot p-1 min-h-[70px] flex flex-col justify-start border-r border-gray-300';
                     slotClasses += (mealType === 'lunch') ? ' bg-amber-50' : ' bg-stone-100';
                     mealSlotDiv.className = slotClasses;
@@ -903,7 +903,7 @@ export default function init() {
                     addIngredientToShoppingList(newName, 1, newUnit);
                     elements.addItemInput.value = '';
                     resultsContainer.classList.add('hidden');
-                } catch {} 
+                } catch { }
             });
             resultsContainer.appendChild(createItem);
             resultsContainer.classList.remove('hidden');
@@ -964,7 +964,7 @@ export default function init() {
                         acc[key] += source.quantity;
                         return acc;
                     }, {});
-                    
+
                     const annotationString = Object.keys(groupedSources).join(' / ');
                     line += ` *** ${annotationString} ***`;
                 }
@@ -1020,7 +1020,7 @@ export default function init() {
             doc.text(`--- ${category.toUpperCase()} ---`, 14, y);
             y += 8;
             doc.setFont(undefined, 'normal');
-            
+
             const itemsInCategory = groupedList[category].sort((a, b) => a.name.localeCompare(b.name));
             itemsInCategory.forEach(item => {
                 checkPageBreak();
@@ -1050,7 +1050,7 @@ export default function init() {
                     }
                     doc.setTextColor(0); // reset to black
                 }
-                 y += 2; // small space after each ingredient
+                y += 2; // small space after each ingredient
             });
             y += 5; // Extra space between categories
         });
@@ -1058,99 +1058,99 @@ export default function init() {
         doc.save("liste-de-courses.pdf");
     }
 
-            async function exportPlanToPDF() {
-                if (!currentPlan) {
-                    alert("Veuillez sélectionner un plan à exporter.");
-                    return;
+    async function exportPlanToPDF() {
+        if (!currentPlan) {
+            alert("Veuillez sélectionner un plan à exporter.");
+            return;
+        }
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+        if (loadingOverlay) loadingOverlay.classList.remove('hidden');
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const pdfDoc = new jsPDF();
+
+            const planRef = doc(db, "plans", currentPlan.id);
+            const planSnap = await getDoc(planRef);
+            const fullPlan = planSnap.exists() ? planSnap.data() : null;
+
+            if (!fullPlan || !fullPlan.weeks) {
+                alert("Ce plan est vide et ne peut pas être exporté.");
+                return;
+            }
+
+            pdfDoc.setFontSize(18);
+            pdfDoc.text(`Plan de Repas: ${fullPlan.name}`, 14, 20);
+
+            const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+            const categories = { '0': 'E', '1': 'P', '2': 'A', '3': 'D' }; // Abrégé pour la clarté
+
+            const sortedWeeks = Object.keys(fullPlan.weeks).sort((a, b) => parseInt(a) - parseInt(b));
+            let firstTable = true;
+
+            for (const weekNumber of sortedWeeks) {
+                const weekData = fullPlan.weeks[weekNumber];
+                const menu = weekData.menuData || {};
+
+                if (Object.keys(menu).length === 0) {
+                    continue; // Skip empty weeks
                 }
-            
-                const loadingOverlay = document.getElementById('loading-overlay');
-                if (loadingOverlay) loadingOverlay.classList.remove('hidden');
-            
-                try {
-                    const { jsPDF } = window.jspdf;
-                    const pdfDoc = new jsPDF();
-        
-                    const planRef = doc(db, "plans", currentPlan.id);
-                    const planSnap = await getDoc(planRef);
-                    const fullPlan = planSnap.exists() ? planSnap.data() : null;
-            
-                    if (!fullPlan || !fullPlan.weeks) {
-                        alert("Ce plan est vide et ne peut pas être exporté.");
-                        return;
-                    }
-        
-                    pdfDoc.setFontSize(18);
-                    pdfDoc.text(`Plan de Repas: ${fullPlan.name}`, 14, 20);
-        
-                    const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-                    const categories = { '0': 'E', '1': 'P', '2': 'A', '3': 'D' }; // Abrégé pour la clarté
-        
-                    const sortedWeeks = Object.keys(fullPlan.weeks).sort((a, b) => parseInt(a) - parseInt(b));
-                    let firstTable = true;
-        
-                    for (const weekNumber of sortedWeeks) {
-                        const weekData = fullPlan.weeks[weekNumber];
-                        const menu = weekData.menuData || {};
-            
-                        if (Object.keys(menu).length === 0) {
-                            continue; // Skip empty weeks
-                        }
-        
-                        const head = [['Jour', 'Midi', 'Soir']];
-                        const body = [];
-                        const startDayIndex = allDays.indexOf(fullPlan.startDay || 'Lundi');
-                        const weekDays = [...allDays.slice(startDayIndex), ...allDays.slice(0, startDayIndex)];
-        
-                        for (const dayName of weekDays) {
-                            const dayIndex = allDays.indexOf(dayName);
-                            let lunchMeals = [];
-                            let dinnerMeals = [];
-        
-                            for (const mealType of ['lunch', 'dinner']) {
-                                for (const catIndex in categories) {
-                                    const slotId = `${dayIndex}-${mealType}-${catIndex}`;
-                                    if (menu[slotId] && Array.isArray(menu[slotId])) {
-                                        menu[slotId].forEach(meal => {
-                                            const mealText = `[${categories[catIndex]}] ${meal.name}`;
-                                            if (mealType === 'lunch') {
-                                                lunchMeals.push(mealText);
-                                            } else {
-                                                dinnerMeals.push(mealText);
-                                            }
-                                        });
+
+                const head = [['Jour', 'Midi', 'Soir']];
+                const body = [];
+                const startDayIndex = allDays.indexOf(fullPlan.startDay || 'Lundi');
+                const weekDays = [...allDays.slice(startDayIndex), ...allDays.slice(0, startDayIndex)];
+
+                for (const dayName of weekDays) {
+                    const dayIndex = allDays.indexOf(dayName);
+                    let lunchMeals = [];
+                    let dinnerMeals = [];
+
+                    for (const mealType of ['lunch', 'dinner']) {
+                        for (const catIndex in categories) {
+                            const slotId = `${dayIndex}-${mealType}-${catIndex}`;
+                            if (menu[slotId] && Array.isArray(menu[slotId])) {
+                                menu[slotId].forEach(meal => {
+                                    const mealText = `[${categories[catIndex]}] ${meal.name}`;
+                                    if (mealType === 'lunch') {
+                                        lunchMeals.push(mealText);
+                                    } else {
+                                        dinnerMeals.push(mealText);
                                     }
-                                }
+                                });
                             }
-                            body.push([dayName, lunchMeals.join('\n') || '-', dinnerMeals.join('\n') || '-']);
                         }
-        
-                        pdfDoc.setFontSize(14);
-                        const startY = firstTable ? 30 : pdfDoc.autoTable.previous.finalY + 20;
-                        pdfDoc.text(`Semaine ${weekNumber}`, 14, startY - 5);
-        
-                        pdfDoc.autoTable({
-                            startY: startY,
-                            head: head,
-                            body: body,
-                            theme: 'grid',
-                            styles: { cellPadding: 2, fontSize: 8, valign: 'middle' },
-                            headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
-                            alternateRowStyles: { fillColor: [245, 245, 245] },
-                        });
-        
-                        firstTable = false;
                     }
-        
-                    pdfDoc.save(`plan_${fullPlan.name.replace(/ /g, '_')}.pdf`);
-        
-                } catch (error) {
-                    console.error("Erreur lors de la génération du PDF du plan :", error);
-                    alert("Une erreur est survenue lors de la création du PDF.");
-                } finally {
-                    if (loadingOverlay) loadingOverlay.classList.add('hidden');
+                    body.push([dayName, lunchMeals.join('\n') || '-', dinnerMeals.join('\n') || '-']);
                 }
-            }    async function addIngredientToShoppingList(name, quantity, unit, isAdjustment = false) {
+
+                pdfDoc.setFontSize(14);
+                const startY = firstTable ? 30 : pdfDoc.autoTable.previous.finalY + 20;
+                pdfDoc.text(`Semaine ${weekNumber}`, 14, startY - 5);
+
+                pdfDoc.autoTable({
+                    startY: startY,
+                    head: head,
+                    body: body,
+                    theme: 'grid',
+                    styles: { cellPadding: 2, fontSize: 8, valign: 'middle' },
+                    headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+                    alternateRowStyles: { fillColor: [245, 245, 245] },
+                });
+
+                firstTable = false;
+            }
+
+            pdfDoc.save(`plan_${fullPlan.name.replace(/ /g, '_')}.pdf`);
+
+        } catch (error) {
+            console.error("Erreur lors de la génération du PDF du plan :", error);
+            alert("Une erreur est survenue lors de la création du PDF.");
+        } finally {
+            if (loadingOverlay) loadingOverlay.classList.add('hidden');
+        }
+    } async function addIngredientToShoppingList(name, quantity, unit, isAdjustment = false) {
         if (!currentPlan) return alert("Veuillez sélectionner un plan.");
 
         const planRef = doc(db, "plans", currentPlan.id);
@@ -1179,7 +1179,7 @@ export default function init() {
                         category: (masterIngredient === null || masterIngredient === void 0 ? void 0 : masterIngredient.category) || 'Inconnue'
                     });
                 }
-                
+
                 // On filtre les éléments dont la quantité résultante est 0
                 const finalItems = currentItems.filter(item => item.totalQuantity !== 0);
 
@@ -1199,7 +1199,129 @@ export default function init() {
         return 1;
     }
 
+    function updateTrashUI(deletedItems) {
+        if (elements.openTrashBtn) {
+            elements.openTrashBtn.classList.remove('hidden'); // Always visible now
+            if (elements.trashCount) {
+                elements.trashCount.textContent = deletedItems.length;
+                if (deletedItems.length > 0) {
+                    elements.trashCount.classList.remove('bg-gray-200');
+                    elements.trashCount.classList.add('bg-red-500', 'text-white');
+                } else {
+                    elements.trashCount.classList.add('bg-gray-200');
+                    elements.trashCount.classList.remove('bg-red-500', 'text-white');
+                }
+            }
+        }
+
+        if (deletedItems && deletedItems.length > 0) {
+
+            if (elements.emptyTrashBtn) {
+                elements.emptyTrashBtn.classList.remove('hidden');
+                // Clone to remove old listeners if any
+                const newEmptyBtn = elements.emptyTrashBtn.cloneNode(true);
+                elements.emptyTrashBtn.parentNode.replaceChild(newEmptyBtn, elements.emptyTrashBtn);
+                elements.emptyTrashBtn = newEmptyBtn;
+
+                elements.emptyTrashBtn.addEventListener('click', async () => {
+                    if (!currentPlan || !confirm("Voulez-vous supprimer définitivement tous les éléments de la corbeille ?")) return;
+                    const planRef = doc(db, "plans", currentPlan.id);
+                    const itemsToHide = deletedItems.map(i => `${i.name}_${i.unit || ''}`);
+
+                    try {
+                        await import('firebase/firestore').then(module => {
+                            module.updateDoc(planRef, {
+                                hiddenTrashItems: module.arrayUnion(...itemsToHide),
+                                lastUpdated: new Date()
+                            });
+                        });
+                        elements.trashModal.classList.add('hidden');
+                    } catch (error) {
+                        console.error("Erreur vidage corbeille:", error);
+                    }
+                });
+            }
+
+            if (elements.trashListContainer) {
+                elements.trashListContainer.innerHTML = '';
+                const deletedUl = document.createElement('ul');
+                deletedUl.className = 'space-y-2';
+
+                deletedItems.forEach(item => {
+                    const li = document.createElement('li');
+                    li.className = 'p-2 rounded bg-gray-100 flex justify-between items-center group';
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'text-sm text-gray-500 line-through';
+                    nameSpan.textContent = item.name;
+                    li.appendChild(nameSpan);
+
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'flex items-center space-x-2';
+
+                    const restoreBtn = document.createElement('button');
+                    restoreBtn.className = 'btn btn-xs btn-outline text-blue-600 hover:bg-blue-50 border-blue-300';
+                    restoreBtn.innerHTML = '<i class="fas fa-undo mr-1"></i> Restaurer';
+                    restoreBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        try {
+                            await runTransaction(db, async (transaction) => {
+                                const planDoc = await transaction.get(planRef);
+                                if (!planDoc.exists()) return;
+
+                                const currentItems = planDoc.data().manualItems || [];
+                                const finalItems = currentItems.filter(i => !(i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit));
+
+                                transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
+                            });
+                            // If it was the last item, close modal
+                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
+                        } catch (error) {
+                            console.error("Erreur lors de la restauration :", error);
+                        }
+                    });
+
+                    const deleteForeverBtn = document.createElement('button');
+                    deleteForeverBtn.className = 'text-gray-400 hover:text-red-600 text-xs p-1 rounded-md';
+                    deleteForeverBtn.title = "Supprimer définitivement";
+                    deleteForeverBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    deleteForeverBtn.addEventListener('click', async () => {
+                        if (!currentPlan) return;
+                        const planRef = doc(db, "plans", currentPlan.id);
+                        const key = `${item.name}_${item.unit || ''}`;
+                        try {
+                            await import('firebase/firestore').then(module => {
+                                module.updateDoc(planRef, {
+                                    hiddenTrashItems: module.arrayUnion(key),
+                                    lastUpdated: new Date()
+                                });
+                            });
+                            // If it was the last item, close modal
+                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
+                        } catch (error) {
+                            console.error("Erreur suppression définitive:", error);
+                        }
+                    });
+
+                    actionsDiv.appendChild(restoreBtn);
+                    actionsDiv.appendChild(deleteForeverBtn);
+                    li.appendChild(actionsDiv);
+                    deletedUl.appendChild(li);
+                });
+                elements.trashListContainer.appendChild(deletedUl);
+            }
+        } else {
+            // When no deleted items, still show trash button, but clear modal content and hide empty trash button
+            if (elements.trashListContainer) elements.trashListContainer.innerHTML = '<p class="text-center text-gray-500 italic py-4">La corbeille est vide.</p>';
+            if (elements.emptyTrashBtn) elements.emptyTrashBtn.classList.add('hidden');
+        }
+    }
+
     function renderShoppingList(deletedItems = []) {
+        // Always update trash UI first, regardless of shopping list state
+        updateTrashUI(deletedItems);
+
         const container = elements.shoppingListContainer;
         if (!container) return;
         container.innerHTML = '';
@@ -1243,7 +1365,7 @@ export default function init() {
 
                 const li = document.createElement('li');
                 let liClasses = 'p-2 rounded';
-                
+
                 const isManual = item.hasManualEntry === true || item.source === 'manual';
                 if (isManual) {
                     li.style.backgroundColor = "#ffedd5"; // Force orange background
@@ -1259,7 +1381,7 @@ export default function init() {
                 // Item Name (with checkmark if applicable)
                 const nameContainer = document.createElement('div');
                 nameContainer.className = 'flex-grow flex items-center';
-                
+
                 if (isChecked) {
                     const checkIcon = document.createElement('i');
                     checkIcon.className = 'fas fa-check mr-2 bg-green-500 text-white rounded-full p-1 flex items-center justify-center w-5 h-5';
@@ -1273,7 +1395,7 @@ export default function init() {
                 }
                 nameSpan.textContent = item.name;
                 nameContainer.appendChild(nameSpan);
-                
+
                 mainRow.appendChild(nameContainer);
 
                 const controlsDiv = document.createElement('div');
@@ -1326,7 +1448,7 @@ export default function init() {
                 if (item.sources && item.sources.length > 0) {
                     const annotationsDiv = document.createElement('div');
                     annotationsDiv.className = 'p-2 mt-1 ml-4 rounded-md bg-stone-100';
-                    
+
                     // Group sources by recipe and day
                     const groupedSources = item.sources.reduce((acc, source) => {
                         const key = `${source.recipeName} (${source.day} ${source.time})`;
@@ -1350,124 +1472,6 @@ export default function init() {
             });
             container.appendChild(ul);
         });
-
-        // --- Update Trash Button & Modal ---
-        if (elements.openTrashBtn) {
-            elements.openTrashBtn.classList.remove('hidden'); // Always visible now
-            if (elements.trashCount) {
-                elements.trashCount.textContent = deletedItems.length;
-                if (deletedItems.length > 0) {
-                    elements.trashCount.classList.remove('bg-gray-200');
-                    elements.trashCount.classList.add('bg-red-500', 'text-white');
-                } else {
-                    elements.trashCount.classList.add('bg-gray-200');
-                    elements.trashCount.classList.remove('bg-red-500', 'text-white');
-                }
-            }
-        }
-        
-        if (deletedItems && deletedItems.length > 0) {
-            
-            if (elements.emptyTrashBtn) {
-                elements.emptyTrashBtn.classList.remove('hidden');
-                // Clone to remove old listeners if any
-                const newEmptyBtn = elements.emptyTrashBtn.cloneNode(true);
-                elements.emptyTrashBtn.parentNode.replaceChild(newEmptyBtn, elements.emptyTrashBtn);
-                elements.emptyTrashBtn = newEmptyBtn;
-
-                elements.emptyTrashBtn.addEventListener('click', async () => {
-                    if (!currentPlan || !confirm("Voulez-vous supprimer définitivement tous les éléments de la corbeille ?")) return;
-                    const planRef = doc(db, "plans", currentPlan.id);
-                    const itemsToHide = deletedItems.map(i => `${i.name}_${i.unit || ''}`);
-                    
-                    try {
-                        await import('firebase/firestore').then(module => {
-                            module.updateDoc(planRef, {
-                                hiddenTrashItems: module.arrayUnion(...itemsToHide),
-                                lastUpdated: new Date()
-                            });
-                        });
-                        elements.trashModal.classList.add('hidden');
-                    } catch (error) {
-                        console.error("Erreur vidage corbeille:", error);
-                    }
-                });
-            }
-
-            if (elements.trashListContainer) {
-                elements.trashListContainer.innerHTML = '';
-                const deletedUl = document.createElement('ul');
-                deletedUl.className = 'space-y-2';
-
-                deletedItems.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = 'p-2 rounded bg-gray-100 flex justify-between items-center group';
-
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'text-sm text-gray-500 line-through';
-                    nameSpan.textContent = item.name;
-                    li.appendChild(nameSpan);
-
-                    const actionsDiv = document.createElement('div');
-                    actionsDiv.className = 'flex items-center space-x-2';
-
-                    const restoreBtn = document.createElement('button');
-                    restoreBtn.className = 'btn btn-xs btn-outline text-blue-600 hover:bg-blue-50 border-blue-300';
-                    restoreBtn.innerHTML = '<i class="fas fa-undo mr-1"></i> Restaurer';
-                    restoreBtn.addEventListener('click', async () => {
-                        if (!currentPlan) return;
-                        const planRef = doc(db, "plans", currentPlan.id);
-                        try {
-                            await runTransaction(db, async (transaction) => {
-                                const planDoc = await transaction.get(planRef);
-                                if (!planDoc.exists()) return;
-
-                                const currentItems = planDoc.data().manualItems || [];
-                                const finalItems = currentItems.filter(i => !(i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit));
-                                
-                                transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
-                            });
-                            // If it was the last item, close modal
-                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
-                        } catch (error) {
-                            console.error("Erreur lors de la restauration :", error);
-                        }
-                    });
-
-                    const deleteForeverBtn = document.createElement('button');
-                    deleteForeverBtn.className = 'text-gray-400 hover:text-red-600 text-xs p-1 rounded-md';
-                    deleteForeverBtn.title = "Supprimer définitivement";
-                    deleteForeverBtn.innerHTML = '<i class="fas fa-times"></i>';
-                    deleteForeverBtn.addEventListener('click', async () => {
-                        if (!currentPlan) return;
-                        const planRef = doc(db, "plans", currentPlan.id);
-                        const key = `${item.name}_${item.unit || ''}`;
-                        try {
-                             await import('firebase/firestore').then(module => {
-                                module.updateDoc(planRef, {
-                                    hiddenTrashItems: module.arrayUnion(key),
-                                    lastUpdated: new Date()
-                                });
-                            });
-                             // If it was the last item, close modal
-                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
-                        } catch (error) {
-                            console.error("Erreur suppression définitive:", error);
-                        }
-                    });
-
-                    actionsDiv.appendChild(restoreBtn);
-                    actionsDiv.appendChild(deleteForeverBtn);
-                    li.appendChild(actionsDiv);
-                    deletedUl.appendChild(li);
-                });
-                elements.trashListContainer.appendChild(deletedUl);
-            }
-        } else {
-            // When no deleted items, still show trash button, but clear modal content and hide empty trash button
-            if (elements.trashListContainer) elements.trashListContainer.innerHTML = '<p class="text-center text-gray-500 italic py-4">La corbeille est vide.</p>';
-            if (elements.emptyTrashBtn) elements.emptyTrashBtn.classList.add('hidden');
-        }
     }
 
     async function generateShoppingListFromPlan() {
@@ -1510,7 +1514,7 @@ export default function init() {
                         const latestMealData = availableMeals.find(m => m.id === mealInPlan.id);
                         const mealToUse = latestMealData || mealInPlan;
                         if (!mealToUse || !Array.isArray(mealToUse.ingredients)) continue;
-                        
+
                         const recipeBaseServings = mealToUse.servings || 1;
                         if (recipeBaseServings <= 0) continue;
 
@@ -1564,21 +1568,21 @@ export default function init() {
 
         const finalIngredients = Array.from(combinedIngredients.values());
         const hiddenTrashItems = currentPlan.hiddenTrashItems || [];
-        
+
         const activeIngredients = finalIngredients.filter(item => item.totalQuantity > 0).sort((a, b) => a.name.localeCompare(b.name));
-        
+
         // Filter deleted ingredients: quantity <= 0, has source, AND NOT in hidden list
         const deletedIngredients = finalIngredients.filter(item => {
             const key = `${item.name}_${item.unit || ''}`;
-            return item.totalQuantity <= 0 && 
-                   item.sources && 
-                   item.sources.length > 0 && 
-                   !hiddenTrashItems.includes(key);
+            return item.totalQuantity <= 0 &&
+                item.sources &&
+                item.sources.length > 0 &&
+                !hiddenTrashItems.includes(key);
         }).sort((a, b) => a.name.localeCompare(b.name));
 
         shoppingList.length = 0;
         shoppingList.push(...activeIngredients);
-        
+
         // Pass deleted ingredients to render function (we'll store them in a property of shoppingList for convenience or a global var)
         renderShoppingList(deletedIngredients);
     }
@@ -1620,7 +1624,7 @@ export default function init() {
                     mealButton.className = 'w-full text-left p-2 hover:bg-gray-100 rounded-lg transition-colors duration-150';
                     const nameP = document.createElement('p');
                     nameP.className = 'font-medium text-gray-800 text-sm';
-                    
+
                     if (meal.isFavorite) {
                         nameP.innerHTML = `${meal.name} <i class="fas fa-heart text-red-500 ml-2"></i>`;
                     } else {
@@ -1759,8 +1763,8 @@ export default function init() {
             deleteButton.className = 'delete-meal-btn text-red-700 hover:text-red-900 hidden px-1 py-0.5';
             deleteButton.innerHTML = '<i class="fas fa-times-circle fa-xs"></i>';
             deleteButton.title = 'Retirer du planning';
-            deleteButton.addEventListener('click', (e) => { 
-                e.stopPropagation(); 
+            deleteButton.addEventListener('click', (e) => {
+                e.stopPropagation();
                 handleDeleteMeal(slotId, index);
             });
             deleteButton.addEventListener('mousedown', e => e.stopPropagation());
@@ -1821,7 +1825,7 @@ export default function init() {
 
         const tooltip = document.createElement('div');
         tooltip.className = 'planner-ingredient-tooltip z-50 w-64 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-left text-sm';
-        
+
         if (meal.ingredients && meal.ingredients.length > 0) {
             if (meal.servings && meal.servings > 0) {
                 const servingsInfo = document.createElement('p');
@@ -1846,7 +1850,7 @@ export default function init() {
         }
 
         document.body.appendChild(tooltip);
-        
+
         const cardRect = button.closest('.meal-card').getBoundingClientRect();
         const tooltipRect = tooltip.getBoundingClientRect();
         const isMobile = window.innerWidth < 768;
@@ -1881,14 +1885,14 @@ export default function init() {
             tooltip.style.left = `${left}px`;
             tooltip.style.top = `${top}px`;
         }
-        
+
         tooltip.style.position = 'fixed';
     }
 
     function createAddElement(slotId, isSmall = false) {
         const wrapper = document.createElement('div');
         const button = document.createElement('button');
-        
+
         if (isSmall) {
             wrapper.className = 'w-full flex justify-center pt-1';
             button.className = 'add-more-meal-btn text-gray-400 hover:text-green-500 transition-colors duration-150';
@@ -1899,7 +1903,7 @@ export default function init() {
             button.className = 'add-meal-btn text-green-500 hover:text-green-700 transition-transform duration-150 hover:scale-125';
             button.innerHTML = '<i class="fas fa-plus-circle text-lg"></i>';
         }
-        
+
         button.addEventListener('click', () => openMealSelectModal(slotId));
         wrapper.appendChild(button);
         return wrapper;
@@ -1972,7 +1976,7 @@ export default function init() {
         const dayName = allDays[parseInt(dayIndexStr, 10)];
         const mealTypeName = mealType === 'lunch' ? 'midi' : 'soir';
         const description = `a ajouté '${meal.name}' à ${dayName} ${mealTypeName}`;
-        
+
         await updateCurrentPlan({ [`weeks.${currentWeek}.menuData`]: newMenuData }, description);
         // The onSnapshot listener will handle the UI update.
         closeMealSelectModal();
@@ -1984,7 +1988,7 @@ export default function init() {
         const mealToDelete = menuData[slotId][index];
         // Create a deep copy of the menu data to modify
         const newMenuData = JSON.parse(JSON.stringify(menuData));
-        
+
         // Remove the meal from the copied data
         newMenuData[slotId].splice(index, 1);
         if (newMenuData[slotId].length === 0) {
@@ -2013,17 +2017,17 @@ export default function init() {
                 startDay: startDay,
                 lastUpdated: new Date()
             };
-    
+
             // Charger le plan vide dans l'état global et l'interface utilisateur
             loadPlan(emptyPlan);
-    
+
             // Mettre à jour la représentation en mémoire du plan
             if (availablePlans.length > 0) {
                 availablePlans[0] = emptyPlan;
             } else {
                 availablePlans.push(emptyPlan);
             }
-            
+
             // Sauvegarder le plan vidé dans Firebase
             await updateCurrentPlan({ [`weeks.${currentWeek}`]: { menuData: {}, servingsData: {}, remarksData: {} } }, `a vidé le menu de la semaine ${currentWeek}`);
         }
@@ -2037,16 +2041,16 @@ export default function init() {
     }
 
     function updateWeekDisplay() {
-        if(elements.currentWeekDisplay) elements.currentWeekDisplay.textContent = `Semaine ${currentWeek}`;
+        if (elements.currentWeekDisplay) elements.currentWeekDisplay.textContent = `Semaine ${currentWeek}`;
     }
 
     function setupEventListeners() {
         elements.prevWeekBtn?.addEventListener('click', () => changeWeek(currentWeek - 1));
         elements.nextWeekBtn?.addEventListener('click', () => changeWeek(currentWeek + 1));
         elements.clearMenuBtn?.addEventListener('click', clearMenu);
-        
-        elements.startDaySelect?.addEventListener('change', async (event) => { 
-            startDay = event.target.value; 
+
+        elements.startDaySelect?.addEventListener('change', async (event) => {
+            startDay = event.target.value;
             if (currentPlan) {
                 await updateCurrentPlan({ startDay: startDay }, `a changé le premier jour de la semaine à '${startDay}'`);
             }
@@ -2073,7 +2077,7 @@ export default function init() {
             if (infoButton) {
                 const slotId = infoButton.dataset.slotId;
                 const mealIndex = parseInt(infoButton.dataset.mealIndex, 10);
-                
+
                 if (slotId && !isNaN(mealIndex)) {
                     const mealRef = menuData[slotId]?.[mealIndex];
                     // Ensure we have a reference with an ID
@@ -2280,7 +2284,7 @@ export default function init() {
                 } else if (typeof status === 'string' && status !== 'idle') {
                     // Handle simple string statuses like 'editing_recipe'
                     let actionText = '';
-                    switch(status) {
+                    switch (status) {
                         case 'editing_recipe':
                             actionText = 'modifie une recette...';
                             break;
@@ -2291,7 +2295,7 @@ export default function init() {
                 }
             }
         });
-        
+
         activityContainer.innerHTML = activityHtml;
         avatarContainer.classList.remove('hidden');
     }
@@ -2305,7 +2309,7 @@ export default function init() {
             localStorage.setItem('lastActivePlanId', selectedPlanId);
         }
         currentPlan = allPlans.find(p => p.id === selectedPlanId) || null;
-        
+
         // Afficher/cacher les boutons d'action en fonction de la propriété
         const deletePlanBtn = document.getElementById('delete-plan-btn');
         const renamePlanBtn = document.getElementById('rename-plan-btn');
@@ -2362,7 +2366,7 @@ export default function init() {
 
     async function initializeApp() {
         if (!db) return;
-        
+
         const cleanupPlanManagement = initPlanManagement();
         setupEventListeners();
         setupShoppingListAutocomplete();
@@ -2390,12 +2394,12 @@ export default function init() {
                         menuData[slotId] = updatedMealsInSlot;
                     }
                 }
-            // Re-render the planner to reflect potential changes (like favorite status)
-            renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
-            renderMobilePlanner(document.getElementById('mobile-meal-plan'), { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
-            
-            // Also, regenerate the shopping list if a recipe's content changed
-            generateShoppingListFromPlan();
+                // Re-render the planner to reflect potential changes (like favorite status)
+                renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+                renderMobilePlanner(document.getElementById('mobile-meal-plan'), { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+
+                // Also, regenerate the shopping list if a recipe's content changed
+                generateShoppingListFromPlan();
             }
         });
 
@@ -2407,7 +2411,7 @@ export default function init() {
             // Vérifier si un plan a été passé depuis la page 'Mes Plans'
             const selectedPlanId = localStorage.getItem('selectedPlanId');
             const lastActivePlanId = localStorage.getItem('lastActivePlanId');
-            
+
             if (selectedPlanId && plans.some(p => p.id === selectedPlanId)) {
                 elements.planSelect.value = selectedPlanId;
                 localStorage.removeItem('selectedPlanId'); // Nettoyer après utilisation
@@ -2425,7 +2429,7 @@ export default function init() {
             cleanupPlanManagement();
         };
     }
-    
+
     const cleanupPromise = initializeApp();
 
     return async () => {

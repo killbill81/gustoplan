@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo } from "react" // Removed useCallback
+import { useState, useEffect, useMemo } from "react"
 import { auth, db } from "@/lib/firebase"
-import { collection, query, where, onSnapshot, doc, or, updateDoc, arrayRemove, arrayUnion } from "firebase/firestore"
+import { collection, query, where, onSnapshot, doc, or, updateDoc } from "firebase/firestore"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card" // CardFooter might be unused now, but keeping for safety if needed later or strictly following import structure
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Loader2, Plus, Trash2, Undo2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface IngredientItem {
@@ -134,24 +134,15 @@ const generateShoppingList = (plan: PlanData, availableRecipes: RecipeData[], ma
   }
 
   const activeList: IngredientItem[] = [];
-  const deletedList: IngredientItem[] = [];
-  const hiddenTrashItems = plan.hiddenTrashItems || [];
-
+  
   combinedIngredients.forEach(item => {
-    // Item in trash means totalQuantity <= 0 AND has sources AND NOT hidden forever
-    const unsanitizedKey = `${item.name}_${item.unit || ''}`;
-    const key = sanitizeForFirebaseKey(unsanitizedKey);
-
+    // Only add if totalQuantity > 0
     if (item.totalQuantity > 0) {
       activeList.push(item);
-    } else if (item.totalQuantity <= 0 && item.sources && item.sources.length > 0) {
-      if (!hiddenTrashItems.includes(key)) { // Only add to deleted if not permanently hidden
-        deletedList.push(item);
-      }
     }
   });
 
-  return { active: activeList, deleted: deletedList };
+  return { active: activeList };
 };
 
 // --- ShoppingListPage Component --- //
@@ -162,9 +153,7 @@ export default function ShoppingListPage() {
   const [masterIngredientList, setMasterIngredientList] = useState<MasterIngredientData[]>([]);
   const [availableRecipes, setAvailableRecipes] = useState<RecipeData[]>([]);
   const [shoppingList, setShoppingList] = useState<IngredientItem[]>([]);
-  const [deletedItems, setDeletedItems] = useState<IngredientItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showTrashModal, setShowTrashModal] = useState(false);
 
   // Fetch user plans
   useEffect(() => {
@@ -225,7 +214,6 @@ export default function ShoppingListPage() {
     if (!selectedPlanId || !masterIngredientList.length || !availableRecipes.length) {
       setLoading(true); // Keep loading if critical data is not ready
       setShoppingList([]);
-      setDeletedItems([]);
       return;
     }
 
@@ -233,13 +221,11 @@ export default function ShoppingListPage() {
       if (docSnap.exists()) {
         const data = docSnap.data() as PlanData;
         setCurrentPlanData(data);
-        const { active, deleted } = generateShoppingList(data, availableRecipes, masterIngredientList);
+        const { active } = generateShoppingList(data, availableRecipes, masterIngredientList);
         setShoppingList(active);
-        setDeletedItems(deleted);
       } else {
         setCurrentPlanData(null);
         setShoppingList([]);
-        setDeletedItems([]);
       }
       setLoading(false);
     });
@@ -278,58 +264,6 @@ export default function ShoppingListPage() {
       });
     } catch (error) {
       console.error("Error updating checked item:", error);
-    }
-  };
-
-  const handleRestoreItem = async (item: IngredientItem) => {
-    if (!currentPlanData) return;
-
-    const planRef = doc(db, "plans", currentPlanData.id);
-    const key = sanitizeForFirebaseKey(`${item.name}_${item.unit || ''}`);
-    
-    try {
-      await updateDoc(planRef, {
-        hiddenTrashItems: arrayRemove(key), // Remove from hidden trash
-        manualItems: arrayUnion({ ...item, totalQuantity: Math.abs(item.totalQuantity) }), // Restore as manual item (positive qty)
-        lastUpdated: new Date(),
-      });
-    } catch (error) {
-      console.error("Error restoring item:", error);
-    }
-  };
-
-  const handlePermanentDelete = async (item: IngredientItem) => {
-    if (!currentPlanData) return;
-    if (!window.confirm(`Voulez-vous supprimer définitivement '${item.name}' de la corbeille ?`)) return;
-
-    const planRef = doc(db, "plans", currentPlanData.id);
-    const key = sanitizeForFirebaseKey(`${item.name}_${item.unit || ''}`);
-    
-    try {
-      await updateDoc(planRef, {
-        hiddenTrashItems: arrayUnion(key), // Mark as permanently hidden
-        lastUpdated: new Date(),
-      });
-    } catch (error) {
-      console.error("Error permanently deleting item:", error);
-    }
-  };
-
-  const handleEmptyTrash = async () => {
-    if (!currentPlanData) return;
-    if (!window.confirm("Voulez-vous supprimer définitivement tous les éléments de la corbeille ?")) return;
-
-    const planRef = doc(db, "plans", currentPlanData.id);
-    const itemsToHideForever = deletedItems.map(i => sanitizeForFirebaseKey(`${i.name}_${i.unit || ''}`));
-    
-    try {
-      await updateDoc(planRef, {
-        hiddenTrashItems: arrayUnion(...itemsToHideForever),
-        lastUpdated: new Date(),
-      });
-      setShowTrashModal(false);
-    } catch (error) {
-      console.error("Erreur vidage corbeille:", error);
     }
   };
 
@@ -375,20 +309,6 @@ export default function ShoppingListPage() {
         <Card className="mb-6">
           <CardHeader className="flex-row items-center justify-between py-4">
             <CardTitle className="text-lg md:text-xl font-semibold">Articles à acheter</CardTitle>
-            <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowTrashModal(true)} 
-                disabled={deletedItems.length === 0}
-                className="relative"
-            >
-                <Trash2 className="h-5 w-5" />
-                {deletedItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                        {deletedItems.length}
-                    </span>
-                )}
-            </Button>
           </CardHeader>
           <CardContent className="pb-4">
             {shoppingList.length === 0 && categories.length === 0 ? (
@@ -442,46 +362,6 @@ export default function ShoppingListPage() {
         </Card>
       ) : (
         <p className="text-center py-12 text-muted-foreground">Veuillez sélectionner un plan pour voir votre liste de courses.</p>
-      )}
-
-      {/* Trash Modal */}
-      {showTrashModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-          <Card className="w-11/12 max-w-md max-h-[80vh] flex flex-col shadow-lg">
-            <CardHeader className="flex-row items-center justify-between py-4 pr-12">
-              <CardTitle className="text-xl font-bold flex items-center gap-2"><Trash2 className="h-5 w-5" /> Corbeille</CardTitle>
-              <Button variant="ghost" size="sm" onClick={handleEmptyTrash} disabled={deletedItems.length === 0} className="text-destructive hover:bg-destructive/10">
-                Vider tout
-              </Button>
-            </CardHeader>
-            <CardContent className="flex-grow overflow-y-auto">
-              {deletedItems.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">La corbeille est vide.</p>
-              ) : (
-                <ScrollArea className="h-[calc(80vh-180px)]">
-                  <ul className="space-y-3">
-                    {deletedItems.map((item, index) => (
-                      <li key={index} className="flex items-center justify-between p-3 rounded-lg bg-card text-muted-foreground shadow-inner border border-border">
-                        <span className="font-medium text-base line-through flex-grow pr-2">{item.name}</span>
-                        <div className="flex items-center space-x-2 flex-shrink-0">
-                          <Button variant="outline" size="sm" onClick={() => handleRestoreItem(item)}>
-                            <Undo2 className="h-4 w-4 mr-1" /> Restaurer
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handlePermanentDelete(item)} className="text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </ScrollArea>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-end p-4">
-                <Button variant="outline" onClick={() => setShowTrashModal(false)}>Fermer</Button>
-            </CardFooter>
-          </Card>
-        </div>
       )}
     </div>
   );
