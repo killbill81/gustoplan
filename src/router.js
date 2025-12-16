@@ -276,6 +276,7 @@ const routes = {
                                 <option>Difficile</option>
                             </select>
                         </div>
+
                     </div>
                     <div>
                         <h4 class="text-lg font-medium text-foreground mb-2">Ingrédients</h4>

@@ -75,19 +75,33 @@ class RecipeFormHandler {
             this.recipeServingsInput.value = parseInt(recipe.servings) || '';
             this.recipePrepTimeInput.value = parseInt(recipe.prepTime) || '';
             this.recipeDifficultyInput.value = recipe.difficulty || 'Moyen';
-            this.recipeImageUrlInput.value = recipe.imageUrl || ''; // Ajout de la gestion de l'URL de l'image
+            this.recipeImageUrlInput.value = recipe.imageUrl || '';
             this.recipeStepsTextarea.value = recipe.steps || '';
+
+            // Handle Seasonality
+            const seasons = recipe.seasons || [];
+            ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
+                // Note: ID logic must match what was added to router.js
+                // In router.js I added IDs: recipe-season-printemps, recipe-season-ete, recipe-season-automne, recipe-season-hiver
+                const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
+                const checkbox = document.getElementById(seasonId);
+                if (checkbox) checkbox.checked = seasons.includes(season);
+            });
+
             if (recipe.ingredients && recipe.ingredients.length > 0) {
-                // Pass a copy of each ingredient to addIngredientInput
-                // This ensures that the original recipe.ingredients array is not directly modified
-                // but the new array (this.form.ingredients) gets the references to the new objects.
-                recipe.ingredients.forEach(ing => this.addIngredientInput({ ...ing }, ingredients)); // Pass a copy
+                recipe.ingredients.forEach(ing => this.addIngredientInput({ ...ing }, ingredients));
             } else {
-                this.addIngredientInput(undefined, ingredients); // Pass ingredients array
+                this.addIngredientInput(undefined, ingredients);
             }
         } else {
             this.recipeIdInput.value = '';
-            this.addIngredientInput(undefined, ingredients); // Pass ingredients array
+            // Reset Seasonality
+            ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
+                const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
+                const checkbox = document.getElementById(seasonId);
+                if (checkbox) checkbox.checked = false;
+            });
+            this.addIngredientInput(undefined, ingredients);
         }
         this.modal.classList.remove('hidden');
     }
@@ -229,8 +243,15 @@ class RecipeFormHandler {
 
         // Retrieve ingredients from the array stored on the form
         console.log("Ingredients array from form before filter:", this.form.ingredients); // New log
-        const ingredients = this.form.ingredients.filter(ing => ing !== null && ing.quantity && ing.name); // Filter out nulls and empty
-        console.log("Ingredients array after filter:", ingredients); // New log
+        const ingredients = this.form.ingredients.filter(ing => ing !== null && ing.quantity && ing.name);
+
+        // Collect checked seasons
+        const selectedSeasons = [];
+        ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
+            const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
+            const checkbox = document.getElementById(seasonId);
+            if (checkbox && checkbox.checked) selectedSeasons.push(season);
+        });
 
         const recipeData = {
             name: this.recipeNameInput.value,
@@ -238,11 +259,12 @@ class RecipeFormHandler {
             servings: parseInt(this.recipeServingsInput.value) || 0,
             prepTime: parseInt(this.recipePrepTimeInput.value) || 0,
             difficulty: this.recipeDifficultyInput.value,
+            seasons: selectedSeasons, // Add seasons to data
             steps: this.recipeStepsTextarea.value,
             ingredients: ingredients,
             imageUrl: this.recipeImageUrlInput.value || `https://tse2.mm.bing.net/th?q=${encodeURIComponent(this.recipeNameInput.value)}%20recette&w=400&h=300&c=7&rs=1&p=0`
         };
-        console.log("Recipe data being sent to Firebase:", recipeData); // New log
+        console.log("Recipe data being sent to Firebase:", recipeData);
 
         const id = this.recipeIdInput.value;
         try {

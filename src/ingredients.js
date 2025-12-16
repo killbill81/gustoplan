@@ -1,4 +1,3 @@
-// ingredients.js
 import { db } from './firebase-config.js';
 import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
 
@@ -69,7 +68,7 @@ export default function init() {
     // --- Ingredient Modal Logic ---
     function openIngredientModal(ingredient = null) {
         ingredientForm.reset();
-        
+
         ingredientUnitSelect.innerHTML = '';
         units.forEach(unit => {
             const option = document.createElement('option');
@@ -82,7 +81,7 @@ export default function init() {
         const usedCategoryNames = [...new Set(allIngredients.map(i => i.category).filter(Boolean))];
         const allAvailableCategories = [...new Set([...officialCategoryNames, ...usedCategoryNames])];
         allAvailableCategories.sort((a, b) => a.localeCompare(b.name));
-        
+
         ingredientCategorySelect.innerHTML = '';
         if (allAvailableCategories.length === 0) {
         }
@@ -179,7 +178,7 @@ export default function init() {
         ingredientCategories.forEach(cat => {
             const catDiv = document.createElement('div');
             catDiv.className = 'flex items-center justify-between p-2 border-b';
-            
+
             const catName = document.createElement('span');
             catName.textContent = cat.name;
             catDiv.appendChild(catName);
@@ -266,7 +265,7 @@ export default function init() {
     // --- Main View Rendering ---
     function renderTabs() {
         tabsContainer.innerHTML = '';
-        
+
         const officialCategoryNames = ingredientCategories.map(c => c.name);
         const categoriesInUse = [...new Set(allIngredients.map(i => i.category || 'Inconnue'))];
         let allCategories = [...new Set([...officialCategoryNames, ...categoriesInUse])];
@@ -278,7 +277,7 @@ export default function init() {
             allCategories.push('Inconnue');
         }
 
-        if(allCategories.length === 0 && allIngredients.length > 0) {
+        if (allCategories.length === 0 && allIngredients.length > 0) {
             allCategories.push('Inconnue');
         }
 
@@ -322,7 +321,7 @@ export default function init() {
 
         const grid = document.createElement('div');
         grid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
-        
+
         ingredientsForCategory.forEach(ing => {
             const card = document.createElement('div');
             card.className = 'p-3 bg-white shadow-sm rounded-lg flex flex-col items-start space-y-2';
@@ -414,7 +413,7 @@ export default function init() {
                 previousActiveCategory = null; // Reset for the next search
             }
         }
-        
+
         renderTabs();
         renderIngredients();
     });

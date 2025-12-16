@@ -23,7 +23,7 @@ export default function init() {
     const tabsContainer = document.getElementById('category-tabs');
     const recipeListContainer = document.getElementById('recipe-list-container');
     const addRecipeBtn = document.getElementById('add-recipe-btn');
-    
+
     // --- Recipe Form Handler Instance ---
     if (recipeFormHandler) {
         recipeFormHandler.destroy();
@@ -53,7 +53,7 @@ export default function init() {
         // The listener will catch the change, no manual refresh needed.
     });
 
-    
+
 
     // --- State ---
     let allRecipes = [];
@@ -70,8 +70,8 @@ export default function init() {
 
     // --- Main Functions ---
     function initRecipeListener() {
-        if (!db) return () => {}; // Return an empty unsubscribe function if db is not available
-        
+        if (!db) return () => { }; // Return an empty unsubscribe function if db is not available
+
         const unsubscribe = onSnapshot(collection(db, "recipes"), (snapshot) => {
             console.log("Recipe data updated on /recipes page from listener.");
             allRecipes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -205,6 +205,24 @@ export default function init() {
         details.textContent = `${recipe.difficulty || ''} - Pour ${recipe.servings || '?'} pers.`;
         card.appendChild(details);
 
+        // --- Seasons Section ---
+        if (recipe.seasons && recipe.seasons.length > 0) {
+            const seasonsDiv = document.createElement('div');
+            seasonsDiv.className = 'w-full flex flex-wrap gap-1 mt-1 px-1';
+            const icons = { 'Printemps': '🌸', 'Eté': '☀️', 'Automne': '🍂', 'Hiver': '❄️' };
+            const order = ['Printemps', 'Eté', 'Automne', 'Hiver'];
+
+            recipe.seasons.sort((a, b) => order.indexOf(a) - order.indexOf(b)).forEach(s => {
+                const span = document.createElement('span');
+                span.textContent = `${icons[s] || ''} ${s}`;
+                span.title = s;
+                // Use a smaller, badge-like style similar to ingredients
+                span.className = 'text-[10px] text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full border border-gray-200 dark:border-gray-600 whitespace-nowrap';
+                seasonsDiv.appendChild(span);
+            });
+            card.appendChild(seasonsDiv);
+        }
+
         // --- Spacer ---
         const flexGrow = document.createElement('div');
         flexGrow.className = 'flex-grow';
@@ -227,7 +245,7 @@ export default function init() {
         deleteButton.title = 'Supprimer';
         deleteButton.addEventListener('click', () => handleDeleteRecipe(recipe.id, recipe.name));
         actions.appendChild(deleteButton);
-        
+
         card.appendChild(actions);
 
         return card;
@@ -246,7 +264,7 @@ export default function init() {
 
     // --- Event Listeners ---
     addRecipeBtn.addEventListener('click', () => recipeFormHandler.openForm(null, 'Ajouter une recette'));
-    
+
     searchBar.addEventListener('input', (e) => {
         const newSearchTerm = e.target.value;
 
@@ -268,7 +286,7 @@ export default function init() {
                 previousActiveCategory = null;
             }
         }
-        
+
         renderTabs();
         renderRecipes();
     });
