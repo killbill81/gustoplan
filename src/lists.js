@@ -24,15 +24,32 @@ export default function init() {
     const addIngredientBtn = document.getElementById('add-ingredient-btn');
     const saveListBtn = document.getElementById('save-list-btn');
 
+    // Generator elements
+    const generateBtn = document.getElementById('generate-seasonal-list-btn');
+    const genModal = document.getElementById('seasonal-list-modal');
+    const closeGenModalBtn = document.getElementById('close-seasonal-modal');
+    const genCategorySelect = document.getElementById('gen-category');
+    const genPreviewBtn = document.getElementById('gen-preview-btn');
+    const genCreateBtn = document.getElementById('gen-create-btn');
+    const genPreviewSection = document.getElementById('gen-preview-section');
+    const genPreviewList = document.getElementById('gen-preview-list');
+    const genSeasonRadios = document.getElementsByName('gen-season');
+    const genModeRadios = document.getElementsByName('gen-mode');
+    const genMonthSelect = document.getElementById('gen-month');
+    const genSeasonSelector = document.getElementById('gen-season-selector');
+    const genMonthSelector = document.getElementById('gen-month-selector');
+
     // --- State ---
     let allLists = [];
     let searchTerm = '';
     let masterIngredientList = [];
+    let ingredientCategories = []; // New state for categories
     let currentIngredients = [];
 
     // --- Main Data Loading ---
     async function fetchAllData() {
         await fetchMasterIngredients();
+        await fetchIngredientCategories(); // New fetch
         await fetchAllLists();
         await loadSharedLists();
     }
@@ -45,6 +62,17 @@ export default function init() {
             masterIngredientList.sort((a, b) => a.name.localeCompare(b.name));
         } catch (error) {
             console.error("Erreur lors de la récupération de la liste des ingrédients: ", error);
+        }
+    }
+
+    async function fetchIngredientCategories() {
+        if (!db) return;
+        try {
+            const querySnapshot = await getDocs(collection(db, "ingredient_categories"));
+            ingredientCategories = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            ingredientCategories.sort((a, b) => a.name.localeCompare(b.name));
+        } catch (error) {
+            console.error("Erreur lors de la récupération des catégories: ", error);
         }
     }
 
@@ -422,7 +450,186 @@ export default function init() {
     closeListModalBtn.addEventListener('click', closeListModal);
     cancelListBtn.addEventListener('click', closeListModal);
     listForm.addEventListener('submit', handleListFormSubmit);
+
+    // --- Generator Logic ---
+    function openGeneratorModal() {
+        // Reset
+        genPreviewSection.classList.add('hidden');
+        genCreateBtn.classList.add('hidden');
+        genPreviewBtn.classList.remove('hidden');
+        genPreviewList.innerHTML = '';
+        genSeasonRadios.forEach(r => r.checked = false);
+
+        // Populate Categories
+        genCategorySelect.innerHTML = '';
+        const uniqueCategories = [...new Set(ingredientCategories.map(c => c.name))];
+        // Also add categories from ingredients that might not be in the official list
+        const usedCategories = [...new Set(masterIngredientList.map(i => i.category).filter(Boolean))];
+        const allCategories = [...new Set([...uniqueCategories, ...usedCategories])].sort();
+
+        allCategories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            genCategorySelect.appendChild(option);
+        });
+
+        // Initialize Mode
+        toggleMode();
+        genModal.classList.remove('hidden');
+    }
+
+    function toggleMode() {
+        let mode = 'season';
+        for (const r of genModeRadios) { if (r.checked) mode = r.value; }
+
+        if (mode === 'season') {
+            genSeasonSelector.classList.remove('hidden');
+            genMonthSelector.classList.add('hidden');
+        } else {
+            genSeasonSelector.classList.add('hidden');
+            genMonthSelector.classList.remove('hidden');
+        }
+    }
+
+    function closeGeneratorModal() {
+        genModal.classList.add('hidden');
+    }
+
+    function getIngredientMonths(ing) {
+        if (ing.months && ing.months.length > 0) return ing.months;
+        // Fallback
+        const seasons = ing.seasons || [];
+        let inferredMonths = [];
+        if (seasons.includes('Printemps')) inferredMonths.push('Avril', 'Mai', 'Juin');
+        if (seasons.includes('Eté')) inferredMonths.push('Juillet', 'Août', 'Septembre');
+        if (seasons.includes('Automne')) inferredMonths.push('Octobre', 'Novembre', 'Décembre');
+        if (seasons.includes('Hiver')) inferredMonths.push('Janvier', 'Février', 'Mars');
+        return inferredMonths;
+    }
+
+    function handleGeneratorPreview() {
+        let mode = 'season';
+        for (const r of genModeRadios) { if (r.checked) mode = r.value; }
+        const selectedCategory = genCategorySelect.value;
+        let matchingIngredients = [];
+
+        if (mode === 'season') {
+            let selectedSeason = null;
+            for (const radio of genSeasonRadios) {
+                if (radio.checked) {
+                    selectedSeason = radio.value;
+                    break;
+                }
+            }
+
+            if (!selectedSeason) {
+                alert("Veuillez choisir une saison.");
+                return;
+            }
+
+            matchingIngredients = masterIngredientList.filter(ing => {
+                const matchCat = (ing.category || 'Inconnue') === selectedCategory;
+                const matchSeason = ing.seasons && ing.seasons.includes(selectedSeason);
+                return matchCat && matchSeason;
+            });
+
+        } else {
+            const selectedMonth = genMonthSelect.value;
+            matchingIngredients = masterIngredientList.filter(ing => {
+                const matchCat = (ing.category || 'Inconnue') === selectedCategory;
+                const months = getIngredientMonths(ing);
+                const matchMonth = months.includes(selectedMonth);
+                return matchCat && matchMonth;
+            });
+        }
+
+        genPreviewList.innerHTML = '';
+        if (matchingIngredients.length === 0) {
+            genPreviewList.innerHTML = '<p class="text-sm text-gray-500 italic">Aucun ingrédient trouvé pour cette combinaison.</p>';
+            genCreateBtn.classList.add('hidden');
+        } else {
+            matchingIngredients.forEach(ing => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                div.innerHTML = `
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" class="form-checkbox h-4 w-4 text-tomato focus:ring-tomato gen-ingredient-check" value="${ing.id}" checked>
+                        <span class="text-sm text-gray-700">${ing.name} (${ing.unit || '-'})</span>
+                    </label>
+                `;
+                genPreviewList.appendChild(div);
+            });
+            genCreateBtn.classList.remove('hidden');
+        }
+
+        genPreviewSection.classList.remove('hidden');
+        genPreviewBtn.classList.add('hidden'); // Hide preview btn, show create
+    }
+
+    async function handleGeneratorCreate() {
+        const selectedCheckboxes = document.querySelectorAll('.gen-ingredient-check:checked');
+        if (selectedCheckboxes.length === 0) {
+            alert("Aucun ingrédient sélectionné.");
+            return;
+        }
+
+        // Get Filtered Ingredients Data
+        const ingredientsToAdd = [];
+        selectedCheckboxes.forEach(box => {
+            const ingId = box.value;
+            const originalIng = masterIngredientList.find(i => i.id === ingId);
+            if (originalIng) {
+                ingredientsToAdd.push({
+                    name: originalIng.name,
+                    unit: originalIng.unit || 'pièce(s)',
+                    quantity: '1', // Default quantity
+                    id: originalIng.id,
+                    checked: false
+                });
+            }
+        });
+
+        let mode = 'season';
+        for (const r of genModeRadios) { if (r.checked) mode = r.value; }
+        const selectedCategory = genCategorySelect.value;
+        let listName = '';
+
+        if (mode === 'season') {
+            let selectedSeason = null;
+            for (const radio of genSeasonRadios) { if (radio.checked) selectedSeason = radio.value; }
+            listName = `${selectedCategory} - ${selectedSeason}`;
+        } else {
+            const selectedMonth = genMonthSelect.value;
+            listName = `${selectedCategory} - ${selectedMonth}`;
+        }
+
+        const userId = getCurrentUserId();
+
+        try {
+            await addDoc(collection(db, "shopping_lists"), {
+                name: listName,
+                ingredients: ingredientsToAdd,
+                userId: userId,
+                createdAt: new Date().toISOString()
+            });
+            closeGeneratorModal();
+            await fetchAllLists();
+            alert(`Liste "${listName}" créée avec succès !`);
+        } catch (error) {
+            console.error("Erreur création auto liste:", error);
+            alert("Erreur lors de la création de la liste.");
+        }
+    }
+
     addIngredientBtn.addEventListener('click', () => addIngredientInput());
+
+    // Generator Listeners
+    if (generateBtn) generateBtn.addEventListener('click', openGeneratorModal);
+    if (closeGenModalBtn) closeGenModalBtn.addEventListener('click', closeGeneratorModal);
+    if (genPreviewBtn) genPreviewBtn.addEventListener('click', handleGeneratorPreview);
+    if (genCreateBtn) genCreateBtn.addEventListener('click', handleGeneratorCreate);
+    if (genModeRadios) genModeRadios.forEach(r => r.addEventListener('change', toggleMode));
 
     if (db) {
         fetchAllData();

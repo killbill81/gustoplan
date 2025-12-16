@@ -108,10 +108,18 @@ export default function init() {
 
         // Handle Season Checkboxes
         const seasons = ingredient ? (ingredient.seasons || []) : [];
+        const months = ingredient ? (ingredient.months || []) : [];
+
         ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
             const id = `season-${season.toLowerCase().replace('é', 'e')}`;
             const checkbox = document.getElementById(id);
             if (checkbox) checkbox.checked = seasons.includes(season);
+        });
+
+        // Handle Month Checkboxes
+        const allMonthCheckboxes = document.querySelectorAll('.month-checkbox');
+        allMonthCheckboxes.forEach(cb => {
+            cb.checked = months.includes(cb.value);
         });
 
         ingredientModal.classList.remove('hidden');
@@ -132,11 +140,17 @@ export default function init() {
             if (checkbox && checkbox.checked) selectedSeasons.push(season);
         });
 
+        const selectedMonths = [];
+        document.querySelectorAll('.month-checkbox:checked').forEach(cb => {
+            selectedMonths.push(cb.value);
+        });
+
         const ingredientData = {
             name: ingredientNameInput.value,
             unit: ingredientUnitSelect.value,
             category: ingredientCategorySelect.value,
             seasons: selectedSeasons,
+            months: selectedMonths,
             imageUrl: document.getElementById('ingredient-image-url').value || `https://tse2.mm.bing.net/th?q=${encodeURIComponent(ingredientNameInput.value)}%20ingredient&w=400&h=300&c=7&rs=1&p=0`
         };
 
@@ -427,6 +441,30 @@ export default function init() {
     closeCategoryModalBtn.addEventListener('click', closeCategoryModal);
     doneCategoryModalBtn.addEventListener('click', closeCategoryModal);
     addCategoryForm.addEventListener('submit', handleAddCategory);
+
+    // Seasonality Bindings
+    const seasonCheckboxes = document.querySelectorAll('.season-checkbox');
+    const monthCheckboxes = document.querySelectorAll('.month-checkbox');
+
+    seasonCheckboxes.forEach(sc => {
+        sc.addEventListener('change', (e) => {
+            const season = e.target.value;
+            const isChecked = e.target.checked;
+            // Find related months
+            const relatedMonths = document.querySelectorAll(`.month-checkbox[data-season="${season}"]`);
+            relatedMonths.forEach(mc => mc.checked = isChecked);
+        });
+    });
+
+    monthCheckboxes.forEach(mc => {
+        mc.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                const season = e.target.dataset.season;
+                const seasonCheckbox = document.querySelector(`.season-checkbox[value="${season}"]`);
+                if (seasonCheckbox) seasonCheckbox.checked = true;
+            }
+        });
+    });
 
     fetchAllData();
 }

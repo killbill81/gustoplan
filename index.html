@@ -444,6 +444,121 @@
         </div>
     </div>
 
+    <!-- Seasonal List Generator Modal -->
+    <div id="seasonal-list-modal"
+        class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden">
+        <div
+            class="bg-card text-card-foreground border border-border rounded-xl p-6 w-11/12 max-w-lg relative max-h-[90vh] overflow-y-auto">
+            <button id="close-seasonal-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                aria-label="Fermer">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h3 class="text-lg font-bold mb-4">Générer une liste de saison</h3>
+
+            <div class="space-y-4">
+                <!-- Step 1: Season -->
+                <!-- Step 1: Mode & Selection -->
+                <div>
+                    <div class="flex space-x-4 mb-4 border-b pb-2">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="gen-mode" value="season"
+                                class="form-radio text-tomato focus:ring-tomato" checked>
+                            <span class="ml-2 text-sm font-medium text-gray-700">Par Saison</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="gen-mode" value="month"
+                                class="form-radio text-tomato focus:ring-tomato">
+                            <span class="ml-2 text-sm font-medium text-gray-700">Par Mois</span>
+                        </label>
+                    </div>
+
+                    <div id="gen-season-selector">
+                        <label class="block text-sm font-medium text-muted-foreground mb-2">Choisir la saison</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="gen-season" value="Printemps" class="peer sr-only">
+                                <div
+                                    class="p-3 rounded-lg border text-center peer-checked:bg-green-100 peer-checked:border-green-500 hover:bg-gray-50">
+                                    <span class="block text-2xl">🌸</span>
+                                    <span class="text-sm font-medium">Printemps</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="gen-season" value="Eté" class="peer sr-only">
+                                <div
+                                    class="p-3 rounded-lg border text-center peer-checked:bg-yellow-100 peer-checked:border-yellow-500 hover:bg-gray-50">
+                                    <span class="block text-2xl">☀️</span>
+                                    <span class="text-sm font-medium">Eté</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="gen-season" value="Automne" class="peer sr-only">
+                                <div
+                                    class="p-3 rounded-lg border text-center peer-checked:bg-orange-100 peer-checked:border-orange-500 hover:bg-gray-50">
+                                    <span class="block text-2xl">🍂</span>
+                                    <span class="text-sm font-medium">Automne</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="gen-season" value="Hiver" class="peer sr-only">
+                                <div
+                                    class="p-3 rounded-lg border text-center peer-checked:bg-blue-100 peer-checked:border-blue-500 hover:bg-gray-50">
+                                    <span class="block text-2xl">❄️</span>
+                                    <span class="text-sm font-medium">Hiver</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="gen-month-selector" class="hidden">
+                        <label for="gen-month" class="block text-sm font-medium text-muted-foreground mb-2">Choisir le
+                            mois</label>
+                        <select id="gen-month"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato">
+                            <option value="Janvier">Janvier</option>
+                            <option value="Février">Février</option>
+                            <option value="Mars">Mars</option>
+                            <option value="Avril">Avril</option>
+                            <option value="Mai">Mai</option>
+                            <option value="Juin">Juin</option>
+                            <option value="Juillet">Juillet</option>
+                            <option value="Août">Août</option>
+                            <option value="Septembre">Septembre</option>
+                            <option value="Octobre">Octobre</option>
+                            <option value="Novembre">Novembre</option>
+                            <option value="Décembre">Décembre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Category -->
+                <div>
+                    <label for="gen-category" class="block text-sm font-medium text-muted-foreground mb-2">2. Choisir la
+                        catégorie</label>
+                    <select id="gen-category"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato">
+                        <!-- Categories will be loaded here -->
+                    </select>
+                </div>
+
+                <!-- Step 3: Preview -->
+                <div id="gen-preview-section" class="hidden">
+                    <label class="block text-sm font-medium text-muted-foreground mb-2">3. Sélectionner les
+                        ingrédients</label>
+                    <div id="gen-preview-list"
+                        class="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2 bg-gray-50">
+                        <!-- Checkboxes will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="gen-preview-btn" class="btn btn-secondary">Voir les ingrédients</button>
+                <button id="gen-create-btn" class="btn btn-primary hidden">Créer la liste</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Save Plan As Modal -->
     <div id="save-plan-as-modal"
         class="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[100] hidden"
