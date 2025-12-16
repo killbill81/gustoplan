@@ -578,10 +578,6 @@ const routes = {
                         </button>
                         <h2 class="text-2xl font-bold text-foreground">Faire les courses</h2>
                     </div>
-                    <button id="shopping-mode-trash-btn" class="text-muted-foreground hover:text-gray-700 relative hidden p-2">
-                        <i class="fas fa-trash-alt text-lg"></i>
-                        <span id="shopping-mode-trash-count" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1 rounded-full">0</span>
-                    </button>
                 </div>
                 <div class="flex justify-start items-center mb-4">
                     <label for="shopping-mode-plan-select" class="text-sm font-medium text-gray-700 mr-2">Plan:</label>
@@ -593,24 +589,6 @@ const routes = {
             
             <div id="shopping-mode-container" class="p-4 -mt-4">
                 <p class="text-center text-muted-foreground mt-10">Chargement de la liste...</p>
-            </div>
-
-            <!-- Shopping Mode Trash Modal -->
-            <div id="shopping-trash-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden" role="dialog">
-                <div class="bg-white rounded-xl p-5 w-11/12 max-w-md relative max-h-[80vh] flex flex-col">
-                    <button id="close-shopping-trash-modal" class="absolute top-3 right-3 text-gray-400 hover:text-muted-foreground p-2">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                    <div class="flex justify-between items-center mb-4 pr-8">
-                        <h3 class="text-lg font-bold text-foreground"><i class="fas fa-trash-alt mr-2"></i> Corbeille</h3>
-                        <button id="shopping-empty-trash-btn" class="text-sm text-red-500 hover:text-red-700 font-medium hover:underline hidden">
-                            Vider
-                        </button>
-                    </div>
-                    <div id="shopping-trash-list" class="flex-grow overflow-y-auto pr-1">
-                        <!-- Deleted items will be generated here -->
-                    </div>
-                </div>
             </div>
         </div>
         `,
