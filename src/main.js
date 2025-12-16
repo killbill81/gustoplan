@@ -3,34 +3,34 @@ import { protectPage, getCurrentUser } from './auth.js';
 import { initNotifications } from './notifications.js';
 
 function startApp() {
-  const currentUser = getCurrentUser();
-  if (currentUser) {
-      const displayNameElement = document.getElementById('user-display-name');
-      if (displayNameElement) {
-          displayNameElement.textContent = currentUser.displayName || currentUser.email;
-      }
-  }
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+        const displayNameElement = document.getElementById('user-display-name');
+        if (displayNameElement) {
+            displayNameElement.textContent = currentUser.displayName || currentUser.email;
+        }
+    }
 
-  const navButtons = document.querySelectorAll('.nav-btn');
-  navButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-          const path = e.currentTarget.dataset.path;
-          navigateTo(path);
+    const navButtons = document.querySelectorAll('.nav-btn');
+    navButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const path = e.currentTarget.dataset.path;
+            navigateTo(path);
 
-          // Update active button style
-          navButtons.forEach(btn => {
-              btn.classList.remove('bg-tomato', 'text-white');
-              btn.classList.add('bg-white', 'text-tomato');
-          });
-          e.currentTarget.classList.add('bg-tomato', 'text-white');
-          e.currentTarget.classList.remove('bg-white', 'text-tomato');
-      });
-  });
+            // Update active button style
+            navButtons.forEach(btn => {
+                btn.classList.remove('bg-tomato', 'text-white');
+                btn.classList.add('bg-white', 'text-tomato');
+            });
+            e.currentTarget.classList.add('bg-tomato', 'text-white');
+            e.currentTarget.classList.remove('bg-white', 'text-tomato');
+        });
+    });
 
-  // Load default page
-  navigateTo('menu');
-  console.log("DEBUG: Calling initNotifications...");
-  initNotifications();
+    // Load default page
+    navigateTo('menu');
+    console.log("DEBUG: Calling initNotifications...");
+    initNotifications();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -43,17 +43,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Profile dropdown
     const profileBtn = document.getElementById('profile-btn');
     const profileMenu = document.getElementById('profile-menu');
+    const userDisplayName = document.getElementById('user-display-name');
 
     if (profileBtn && profileMenu) {
-        profileBtn.addEventListener('click', (event) => {
+        const toggleMenu = (event) => {
             event.stopPropagation();
             profileMenu.classList.toggle('hidden');
             const isExpanded = !profileMenu.classList.contains('hidden');
             profileBtn.setAttribute('aria-expanded', isExpanded);
-        });
+        };
+
+        profileBtn.addEventListener('click', toggleMenu);
+
+        if (userDisplayName) {
+            userDisplayName.addEventListener('click', toggleMenu);
+            // Make it look clickable via JS if we can't edit HTML CSS easily right now, 
+            // but we will edit HTML next.
+            userDisplayName.style.cursor = 'pointer';
+        }
 
         document.addEventListener('click', (event) => {
-            const isClickInside = profileMenu.contains(event.target) || profileBtn.contains(event.target);
+            const isClickInside = profileMenu.contains(event.target) ||
+                profileBtn.contains(event.target) ||
+                (userDisplayName && userDisplayName.contains(event.target));
+
             if (!isClickInside && !profileMenu.classList.contains('hidden')) {
                 profileMenu.classList.add('hidden');
                 profileBtn.setAttribute('aria-expanded', 'false');
@@ -71,10 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyTheme = (theme) => {
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-            if(darkModeToggle) darkModeToggle.checked = true;
+            if (darkModeToggle) darkModeToggle.checked = true;
         } else {
             document.documentElement.classList.remove('dark');
-            if(darkModeToggle) darkModeToggle.checked = false;
+            if (darkModeToggle) darkModeToggle.checked = false;
         }
     };
 
@@ -90,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyTheme('light');
         }
     }
-    
+
     if (settingsLink && settingsModal) {
         settingsLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -103,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             settingsModal.classList.add('hidden');
         });
     }
-    
+
     // Also close modal on outside click
     if (settingsModal) {
         settingsModal.addEventListener('click', (event) => {
@@ -128,10 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (mobileMenuBtn && mobileMenuSource) {
         console.log("Mobile menu initialized (Overlay Mode)");
-        
+
         mobileMenuBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            
+
             if (mobileMenuOverlay) {
                 // Close
                 mobileMenuOverlay.remove();
@@ -140,10 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Open - Create Overlay
                 mobileMenuOverlay = document.createElement('div');
                 mobileMenuOverlay.id = 'mobile-menu-overlay-container'; // Unique ID
-                
+
                 // Copy content
                 mobileMenuOverlay.innerHTML = mobileMenuSource.innerHTML;
-                
+
                 // Style Overlay
                 Object.assign(mobileMenuOverlay.style, {
                     position: 'fixed',
@@ -156,14 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     padding: '1rem',
                     display: 'block'
                 });
-                
+
                 // Handle clicks directly for known actions
                 mobileMenuOverlay.addEventListener('click', (ev) => {
                     const target = ev.target.closest('button');
                     if (!target) return;
-                    
+
                     const path = target.dataset.path;
-                    
+
                     if (path) {
                         console.log("Overlay: Navigating directly to", path);
                         navigateTo(path);
@@ -176,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (target.id) {
                             original = document.getElementById(target.id);
                         }
-                        
+
                         if (original) {
                             console.log("Overlay: Delegating click to original:", original);
                             original.click();
@@ -184,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.warn("Overlay: No action found for", target);
                         }
                     }
-                    
+
                     // Close menu safely
                     if (mobileMenuOverlay) {
                         mobileMenuOverlay.remove();
@@ -216,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const mobileNavButtons = document.querySelectorAll('.nav-btn-mobile');
     mobileNavButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const path = e.currentTarget.dataset.path;

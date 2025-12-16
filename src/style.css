@@ -81,17 +81,18 @@
     .dark {
         /* Background: #121212 */
         --background: 0 0% 7%;
-        /* Text Main: #E0E0E0 */
-        --foreground: 0 0% 88%;
+        /* Text Main: #FFFFFF */
+        --foreground: 0 0% 100%;
 
         /* Surface/Cards: #2C2C2C */
         --card: 0 0% 17%;
-        --card-foreground: 0 0% 88%;
+        --card-foreground: 0 0% 100%;
 
         --popover: 0 0% 17%;
         --popover-foreground: 0 0% 88%;
 
-        --primary: 13 68% 63%; /* Tomato kept vivid */
+        --primary: 13 68% 63%;
+        /* Tomato kept vivid */
         --primary-foreground: 0 0% 100%;
 
         --secondary: 151 24% 60%;
@@ -131,4 +132,9 @@
         background-color: var(--color-background);
         color: var(--color-foreground);
     }
+}
+
+/* Force profile menu links to be white in dark mode */
+.dark #profile-menu a {
+    color: #ffffff !important;
 }

@@ -618,7 +618,7 @@ export default function init() {
 
             // Day title
             const dayTitle = document.createElement('h3');
-            dayTitle.className = 'text-xl font-bold text-gray-800 mb-3';
+            dayTitle.className = 'text-xl font-bold text-gray-800 dark:text-gray-800 mb-3';
             dayTitle.textContent = dayName.toUpperCase();
             dayCard.appendChild(dayTitle);
 
@@ -744,7 +744,7 @@ export default function init() {
             dayRow.className = 'grid grid-cols-[100px_35px_repeat(5,_minmax(0,_1fr))_35px_repeat(5,_minmax(0,_1fr))] items-stretch border-b border-gray-300';
 
             const dayHeader = document.createElement('div');
-            dayHeader.className = 'font-bold p-2 flex items-center justify-center bg-gray-100 text-sm border-r border-gray-300';
+            dayHeader.className = 'font-bold p-2 flex items-center justify-center bg-gray-100 dark:bg-gray-100 text-sm border-r border-gray-300 text-gray-800 dark:text-gray-800';
             dayHeader.textContent = dayName.toUpperCase();
             dayRow.appendChild(dayHeader);
 
@@ -1738,7 +1738,7 @@ export default function init() {
         }
 
         const nameSpan = document.createElement('span');
-        nameSpan.className = 'text-xs font-medium p-1 break-words w-full';
+        nameSpan.className = 'text-xs font-medium p-1 break-words w-full text-gray-800 dark:text-gray-800';
         nameSpan.textContent = meal.name;
 
         card.appendChild(nameSpan);
