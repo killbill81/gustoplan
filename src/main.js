@@ -1,6 +1,7 @@
 import { navigateTo } from './router.js';
 import { protectPage, getCurrentUser } from './auth.js';
 import { initNotifications } from './notifications.js';
+import { initSettingsUI } from './settings-ui.js';
 
 function startApp() {
     const currentUser = getCurrentUser();
@@ -31,6 +32,7 @@ function startApp() {
     navigateTo('menu');
     console.log("DEBUG: Calling initNotifications...");
     initNotifications();
+    initSettingsUI();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

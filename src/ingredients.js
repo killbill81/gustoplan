@@ -1,5 +1,6 @@
 import { db } from './firebase-config.js';
 import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
+import { seasonManager } from './season-manager.js';
 
 export default function init() {
     // --- DOM Elements ---
@@ -326,26 +327,83 @@ export default function init() {
             ingredientsForCategory = ingredientsForCategory.filter(ing => ing.name.toLowerCase().includes(lowerCaseSearchTerm));
         }
 
+        // --- Seasonality Sorting ---
+        // Scores: 2 = Full Season, 1 = Partial (not used yet), 0 = Out
+        ingredientsForCategory.forEach(ing => ing.seasonScore = seasonManager.getIngredientScore(ing));
+
+        // Off-season behavior: Hide?
+        if (seasonManager.config.offSeasonBehavior === 'hide') {
+            ingredientsForCategory = ingredientsForCategory.filter(ing => ing.seasonScore > 0);
+        }
+
         if (ingredientsForCategory.length === 0) {
-            listContainer.innerHTML = '<p class="text-center text-gray-500 p-10">Aucun ingrédient dans cette catégorie.</p>';
+            listContainer.innerHTML = '<p class="text-center text-gray-500 p-10">Aucun ingrédient dans cette catégorie (ou tout est masqué).</p>';
             return;
         }
 
-        ingredientsForCategory.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+        // Sort: Score DESC, then Name ASC
+        // If sorting "last" for off-season is enabled (which is implicitly handled by score sorting if we sort by score first)
+        // If behavior is "dim" but order matters:
+        if (seasonManager.config.offSeasonBehavior === 'last' || seasonManager.config.offSeasonBehavior === 'dim') {
+            ingredientsForCategory.sort((a, b) => {
+                if (b.seasonScore !== a.seasonScore) return b.seasonScore - a.seasonScore;
+                return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+            });
+        } else {
+            // Just alpha sort if seasonality disabled or other logic
+            ingredientsForCategory.sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }));
+        }
+
 
         const grid = document.createElement('div');
         grid.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4';
 
         ingredientsForCategory.forEach(ing => {
+            const isOutOfSeason = ing.seasonScore === 0;
+            const dimStyle = isOutOfSeason && seasonManager.config.offSeasonBehavior === 'dim' ? 'opacity-50 grayscale transition-all hover:grayscale-0 hover:opacity-100' : '';
+
             const card = document.createElement('div');
-            card.className = 'p-3 bg-white shadow-sm rounded-lg flex flex-col items-start space-y-2';
+            // Add 'relative' for badges
+            card.className = `p-3 bg-white shadow-sm rounded-lg flex flex-col items-start space-y-2 relative border border-transparent ${dimStyle}`;
 
             if (ing.imageUrl) {
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'relative w-full h-24 mb-2';
+
                 const image = document.createElement('img');
                 image.src = ing.imageUrl;
                 image.alt = ing.name;
-                image.className = 'w-full h-24 object-cover rounded-md mb-2'; // Style pour une petite image
-                card.appendChild(image);
+                image.className = 'w-full h-full object-cover rounded-md';
+                imageContainer.appendChild(image);
+
+                // Badge on Image
+                if (ing.seasonScore === 2) {
+                    const badge = document.createElement('div');
+                    badge.className = 'absolute top-1 right-1 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm z-10';
+                    badge.textContent = 'De saison';
+                    imageContainer.appendChild(badge);
+                } else if (isOutOfSeason) {
+                    const badge = document.createElement('div');
+                    badge.className = 'absolute top-1 right-1 bg-gray-500/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm backdrop-blur-sm z-10';
+                    badge.textContent = 'Hors saison';
+                    imageContainer.appendChild(badge);
+                }
+
+                card.appendChild(imageContainer);
+            } else {
+                // Badge on Card (No Image)
+                if (ing.seasonScore === 2) {
+                    card.classList.add('border-green-100');
+                    const badge = document.createElement('div');
+                    badge.className = 'absolute top-2 right-2 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-green-200 shadow-sm z-10';
+                    badge.textContent = 'De saison';
+                    card.appendChild(badge);
+                } else if (isOutOfSeason) {
+                    const badge = document.createElement('div');
+                    badge.className = 'absolute top-2 right-2 bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200 shadow-sm z-10';
+                    badge.textContent = 'Hors saison';
+                    card.appendChild(badge);
+                }
             }
 
             const infoDiv = document.createElement('div');
@@ -446,6 +504,10 @@ export default function init() {
     }
 
     // --- Event Listeners ---
+    window.addEventListener('seasonality-config-changed', () => {
+        renderIngredients();
+    });
+
     searchBar.addEventListener('input', (e) => {
         const newSearchTerm = e.target.value.toLowerCase();
 

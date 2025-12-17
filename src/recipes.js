@@ -1,6 +1,7 @@
 // GustoPlan - recipes.js
 import { db } from './firebase-config.js';
-import { collection, onSnapshot, doc, setDoc, addDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, writeBatch, query, where, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
+import { seasonManager } from './season-manager.js';
 import { RecipeFormHandler } from './form-handler.js';
 
 let recipeFormHandler = null;
@@ -139,16 +140,37 @@ export default function init() {
         // 1. Filter by the active category first
         let recipesForCategory = allRecipes.filter(r => (r.category || 'Non classé') === activeCategory);
 
-        // 2. Then, filter by the search term if it exists
+        // 2. Filter by the search term
         if (searchTerm) {
             const lowerCaseSearchTerm = searchTerm.toLowerCase();
             recipesForCategory = recipesForCategory.filter(recipe => recipe.name.toLowerCase().includes(lowerCaseSearchTerm));
         }
 
-        recipesForCategory.sort((a, b) => a.name.localeCompare(b.name));
+        // 3. Seasonality Logic
+        recipesForCategory.forEach(recipe => recipe.seasonScore = seasonManager.getRecipeScore(recipe));
+
+        // Off-season behavior for recipes?
+        // User said: "Aucune recette bloquée", "Hors saison -> dépriorisée"
+        // But also "Masqués" in general settings might apply?
+        // Let's stick to "Dépriorisée" (Sort Last) as default, unless "Hide" is strictly requested for products (maybe recipes too?)
+        // The user spec said: "Hors saison visibles selon paramètres" for global search but for recipes "Indicateur visible / Aucune recette bloquée".
+        // Let's hide ONLY if explictly set to 'hide' in global config, otherwise just sort last.
+        if (seasonManager.config.offSeasonBehavior === 'hide') {
+            recipesForCategory = recipesForCategory.filter(r => r.seasonScore > 0);
+        }
+
+        // Sort: Score DESC (2=In, 0=Out), then Name ASC
+        if (seasonManager.config.recipeRules.prioritizeSeasonal) {
+            recipesForCategory.sort((a, b) => {
+                if (b.seasonScore !== a.seasonScore) return b.seasonScore - a.seasonScore;
+                return a.name.localeCompare(b.name);
+            });
+        } else {
+            recipesForCategory.sort((a, b) => a.name.localeCompare(b.name));
+        }
 
         if (recipesForCategory.length === 0) {
-            recipeListContainer.innerHTML = `<p class="text-gray-500 text-center p-10">Aucune recette trouvée.</p>`;
+            recipeListContainer.innerHTML = `<p class="text-gray-500 text-center p-10">Aucune recette trouvée (ou masquée par la saison).</p>`;
             return;
         }
 
@@ -166,12 +188,38 @@ export default function init() {
         card.className = 'bg-white dark:bg-gray-800 shadow-md rounded-lg flex flex-col p-3';
 
         // --- Image Section ---
+        // --- Image Section ---
         if (recipe.imageUrl) {
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'relative w-full h-24 mb-2';
+
             const image = document.createElement('img');
             image.src = recipe.imageUrl;
             image.alt = recipe.name;
-            image.className = 'w-full h-24 object-cover rounded-md mb-2';
-            card.appendChild(image);
+            image.className = 'w-full h-full object-cover rounded-md';
+
+            imageContainer.appendChild(image);
+
+            // Seasonality Badge
+            const score = recipe.seasonScore !== undefined ? recipe.seasonScore : seasonManager.getRecipeScore(recipe);
+            if (score === 2 && seasonManager.config.mode !== 'disabled') {
+                const badge = document.createElement('div');
+                badge.className = 'absolute top-1 right-1 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm';
+                badge.textContent = 'De saison';
+                imageContainer.appendChild(badge);
+            } else if (score === 0 && seasonManager.config.mode !== 'disabled' && seasonManager.config.recipeRules.warnOffSeason) {
+                const badge = document.createElement('div');
+                badge.className = 'absolute top-1 right-1 bg-gray-500/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm backdrop-blur-sm';
+                badge.textContent = 'Hors saison';
+                imageContainer.appendChild(badge);
+                // Optional: Dim image
+                image.classList.add('grayscale-[50%]');
+            }
+
+            card.appendChild(imageContainer);
+        } else {
+            // If no image, maybe put badge near title or just skip? 
+            // Let's add top spacing if no image to align better
         }
 
         // --- Header Section ---

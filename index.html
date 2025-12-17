@@ -117,7 +117,12 @@
 
                     <span id="user-display-name"
                         class="text-sm font-bold bg-gray-100 text-gray-800 px-3 py-1 rounded-full hidden md:inline-block mr-4 shadow-sm cursor-pointer hover:bg-gray-200 transition-colors"></span>
-                    <!-- Profile Dropdown -->
+
+                    <button id="header-settings-btn"
+                        class="w-10 h-10 flex items-center justify-center bg-white text-gray-600 rounded-full hover:bg-gray-100 shadow-sm transition-colors mr-2"
+                        aria-label="Paramètres">
+                        <i class="fas fa-cog"></i>
+                    </button>
 
                     <button id="logout-btn"
                         class="inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm">
@@ -862,7 +867,9 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
             <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white">Paramètres</h3>
-            <div class="space-y-4">
+            <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+
+                <!-- Dark Mode -->
                 <div class="flex items-center justify-between p-3 border rounded-lg dark:border-gray-700">
                     <span class="font-medium text-gray-900 dark:text-gray-300">Mode Sombre</span>
                     <label for="dark-mode-toggle" class="relative inline-flex items-center cursor-pointer">
@@ -872,6 +879,75 @@
                         </div>
                     </label>
                 </div>
+
+                <!-- Seasonality Section -->
+                <div class="border-t pt-4 dark:border-gray-700">
+                    <h4 class="text-md font-bold text-gray-900 dark:text-white mb-2 flex items-center">
+                        <span class="mr-2">🌱</span> Saisonnalité Intelligente
+                    </h4>
+
+                    <!-- Mode -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mode de
+                            saison</label>
+                        <div class="flex flex-col space-y-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="season-mode" value="auto" class="form-radio text-tomato">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Automatique (Date du
+                                    jour)</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="season-mode" value="forced" class="form-radio text-tomato">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Forcée</span>
+                            </label>
+                            <div id="forced-season-selector" class="ml-6 hidden">
+                                <select id="forced-season-select"
+                                    class="form-select block w-full mt-1 sm:text-sm rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring focus:ring-tomato focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600">
+                                    <option value="Printemps">🌸 Printemps</option>
+                                    <option value="Eté">☀️ Eté</option>
+                                    <option value="Automne">🍂 Automne</option>
+                                    <option value="Hiver">❄️ Hiver</option>
+                                </select>
+                            </div>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="season-mode" value="disabled" class="form-radio text-tomato">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Désactivée</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Hors Saison Behavior -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Produits hors
+                            saison</label>
+                        <select id="off-season-behavior"
+                            class="form-select block w-full mt-1 sm:text-sm rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring focus:ring-tomato focus:ring-opacity-50 dark:bg-gray-700 dark:border-gray-600">
+                            <option value="last">Afficher en dernier (défaut)</option>
+                            <option value="dim">Afficher normalement (grisé)</option>
+                            <option value="hide">Masquer complètement</option>
+                        </select>
+                    </div>
+
+                    <!-- Recipe Rules -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Recettes</label>
+                        <div class="space-y-2">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="rule-prioritize-seasonal"
+                                    class="form-checkbox text-tomato rounded">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Prioriser les recettes de
+                                    saison</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="rule-warn-off-season"
+                                    class="form-checkbox text-tomato rounded">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Avertir si hors
+                                    saison</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
