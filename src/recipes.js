@@ -206,22 +206,61 @@ export default function init() {
         card.appendChild(details);
 
         // --- Seasons Section ---
+        // --- Seasonality Display ---
+        const seasonalityContainer = document.createElement('div');
+        seasonalityContainer.className = 'w-full flex flex-col gap-1 mt-1 px-1';
+
+        let hasSeasonality = false;
+
+        // 1. Seasons Row
         if (recipe.seasons && recipe.seasons.length > 0) {
-            const seasonsDiv = document.createElement('div');
-            seasonsDiv.className = 'w-full flex flex-wrap gap-1 mt-1 px-1';
+            hasSeasonality = true;
+            const seasonsRow = document.createElement('div');
+            seasonsRow.className = 'flex flex-wrap gap-1';
+
             const icons = { 'Printemps': '🌸', 'Eté': '☀️', 'Automne': '🍂', 'Hiver': '❄️' };
             const order = ['Printemps', 'Eté', 'Automne', 'Hiver'];
-
             recipe.seasons.sort((a, b) => order.indexOf(a) - order.indexOf(b)).forEach(s => {
                 const span = document.createElement('span');
                 span.textContent = `${icons[s] || ''} ${s}`;
                 span.title = s;
-                // Use a smaller, badge-like style similar to ingredients
                 span.className = 'text-[10px] text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full border border-gray-200 dark:border-gray-600 whitespace-nowrap';
-                seasonsDiv.appendChild(span);
+                seasonsRow.appendChild(span);
             });
-            card.appendChild(seasonsDiv);
+            seasonalityContainer.appendChild(seasonsRow);
         }
+
+        // 2. Months Row
+        if (recipe.months && recipe.months.length > 0) {
+            hasSeasonality = true;
+            const monthsRow = document.createElement('div');
+            monthsRow.className = 'flex flex-wrap gap-1';
+
+            // Use stored months directly
+            const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+            let monthsToDisplay = [...recipe.months];
+            monthsToDisplay.sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+            monthsToDisplay.forEach(m => {
+                const span = document.createElement('span');
+                span.textContent = m.slice(0, 3) + '.'; // Abbrev
+                span.title = m;
+                span.className = 'text-[10px] text-gray-600 dark:text-gray-300 bg-blue-50 dark:bg-gray-700 px-1.5 py-0.5 rounded-full border border-blue-100 dark:border-gray-600 whitespace-nowrap';
+                monthsRow.appendChild(span);
+            });
+            seasonalityContainer.appendChild(monthsRow);
+        }
+
+        if (!hasSeasonality) {
+            const fallbackRow = document.createElement('div');
+            fallbackRow.className = 'flex flex-wrap gap-1';
+            const span = document.createElement('span');
+            span.textContent = "Toute l'année 🌍";
+            span.className = 'text-[10px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-200 whitespace-nowrap';
+            fallbackRow.appendChild(span);
+            seasonalityContainer.appendChild(fallbackRow);
+        }
+        card.appendChild(seasonalityContainer);
 
         // --- Spacer ---
         const flexGrow = document.createElement('div');

@@ -350,41 +350,94 @@ const routes = {
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Saisonnalité (Optionnel)</label>
                         <!-- Seasons -->
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            <label class="flex items-center space-x-2 cursor-pointer bg-green-50 px-2 py-1 rounded-md border border-green-200">
-                                <input type="checkbox" id="season-printemps" value="Printemps" class="form-checkbox h-4 w-4 text-green-600 focus:ring-green-500 season-checkbox" data-months="avril,mai,juin">
-                                <span class="text-sm text-green-800">Printemps 🌸</span>
-                            </label>
-                            <label class="flex items-center space-x-2 cursor-pointer bg-yellow-50 px-2 py-1 rounded-md border border-yellow-200">
-                                <input type="checkbox" id="season-ete" value="Eté" class="form-checkbox h-4 w-4 text-yellow-600 focus:ring-yellow-500 season-checkbox" data-months="juillet,aout,septembre">
-                                <span class="text-sm text-yellow-800">Eté ☀️</span>
-                            </label>
-                            <label class="flex items-center space-x-2 cursor-pointer bg-orange-50 px-2 py-1 rounded-md border border-orange-200">
-                                <input type="checkbox" id="season-automne" value="Automne" class="form-checkbox h-4 w-4 text-orange-600 focus:ring-orange-500 season-checkbox" data-months="octobre,novembre,decembre">
-                                <span class="text-sm text-orange-800">Automne 🍂</span>
-                            </label>
-                            <label class="flex items-center space-x-2 cursor-pointer bg-blue-50 px-2 py-1 rounded-md border border-blue-200">
-                                <input type="checkbox" id="season-hiver" value="Hiver" class="form-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 season-checkbox" data-months="janvier,fevrier,mars">
-                                <span class="text-sm text-blue-800">Hiver ❄️</span>
-                            </label>
-                        </div>
-                        <!-- Months -->
-                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-2 border-t border-gray-100">
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-janvier" value="Janvier" class="form-checkbox h-3 w-3 text-blue-500 month-checkbox" data-season="Hiver"><span class="text-xs text-gray-600">Janvier</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-fevrier" value="Février" class="form-checkbox h-3 w-3 text-blue-500 month-checkbox" data-season="Hiver"><span class="text-xs text-gray-600">Février</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-mars" value="Mars" class="form-checkbox h-3 w-3 text-blue-500 month-checkbox" data-season="Hiver"><span class="text-xs text-gray-600">Mars</span></label>
-                            
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-avril" value="Avril" class="form-checkbox h-3 w-3 text-green-500 month-checkbox" data-season="Printemps"><span class="text-xs text-gray-600">Avril</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-mai" value="Mai" class="form-checkbox h-3 w-3 text-green-500 month-checkbox" data-season="Printemps"><span class="text-xs text-gray-600">Mai</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-juin" value="Juin" class="form-checkbox h-3 w-3 text-green-500 month-checkbox" data-season="Printemps"><span class="text-xs text-gray-600">Juin</span></label>
-                            
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-juillet" value="Juillet" class="form-checkbox h-3 w-3 text-yellow-500 month-checkbox" data-season="Eté"><span class="text-xs text-gray-600">Juillet</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-aout" value="Août" class="form-checkbox h-3 w-3 text-yellow-500 month-checkbox" data-season="Eté"><span class="text-xs text-gray-600">Août</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-septembre" value="Septembre" class="form-checkbox h-3 w-3 text-yellow-500 month-checkbox" data-season="Eté"><span class="text-xs text-gray-600">Sept</span></label>
-                            
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-octobre" value="Octobre" class="form-checkbox h-3 w-3 text-orange-500 month-checkbox" data-season="Automne"><span class="text-xs text-gray-600">Octobre</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-novembre" value="Novembre" class="form-checkbox h-3 w-3 text-orange-500 month-checkbox" data-season="Automne"><span class="text-xs text-gray-600">Nov</span></label>
-                            <label class="flex items-center space-x-1 cursor-pointer"><input type="checkbox" id="month-decembre" value="Décembre" class="form-checkbox h-3 w-3 text-orange-500 month-checkbox" data-season="Automne"><span class="text-xs text-gray-600">Déc</span></label>
+                        <div class="grid grid-cols-2 gap-4 mb-2">
+                            <!-- Printemps -->
+                            <div class="border border-green-200 rounded-md p-3 bg-green-50">
+                                <label class="flex items-center space-x-2 cursor-pointer mb-2 font-medium">
+                                    <input type="checkbox" id="season-printemps" value="Printemps" class="form-checkbox h-4 w-4 text-green-600 focus:ring-green-500 season-checkbox" data-months="avril,mai,juin">
+                                    <span class="text-sm text-green-800">Printemps 🌸</span>
+                                </label>
+                                <div class="ml-6 space-y-1 flex flex-col">
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-green-700">
+                                        <input type="checkbox" id="month-avril" value="Avril" class="form-checkbox h-3 w-3 text-green-500 month-checkbox rounded-sm" data-season="Printemps">
+                                        <span>Avril</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-green-700">
+                                        <input type="checkbox" id="month-mai" value="Mai" class="form-checkbox h-3 w-3 text-green-500 month-checkbox rounded-sm" data-season="Printemps">
+                                        <span>Mai</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-green-700">
+                                        <input type="checkbox" id="month-juin" value="Juin" class="form-checkbox h-3 w-3 text-green-500 month-checkbox rounded-sm" data-season="Printemps">
+                                        <span>Juin</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Eté -->
+                            <div class="border border-yellow-200 rounded-md p-3 bg-yellow-50">
+                                <label class="flex items-center space-x-2 cursor-pointer mb-2 font-medium">
+                                    <input type="checkbox" id="season-ete" value="Eté" class="form-checkbox h-4 w-4 text-yellow-600 focus:ring-yellow-500 season-checkbox" data-months="juillet,aout,septembre">
+                                    <span class="text-sm text-yellow-800">Eté ☀️</span>
+                                </label>
+                                <div class="ml-6 space-y-1 flex flex-col">
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-yellow-700">
+                                        <input type="checkbox" id="month-juillet" value="Juillet" class="form-checkbox h-3 w-3 text-yellow-500 month-checkbox rounded-sm" data-season="Eté">
+                                        <span>Juillet</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-yellow-700">
+                                        <input type="checkbox" id="month-aout" value="Août" class="form-checkbox h-3 w-3 text-yellow-500 month-checkbox rounded-sm" data-season="Eté">
+                                        <span>Août</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-yellow-700">
+                                        <input type="checkbox" id="month-septembre" value="Septembre" class="form-checkbox h-3 w-3 text-yellow-500 month-checkbox rounded-sm" data-season="Eté">
+                                        <span>Septembre</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Automne -->
+                            <div class="border border-orange-200 rounded-md p-3 bg-orange-50">
+                                <label class="flex items-center space-x-2 cursor-pointer mb-2 font-medium">
+                                    <input type="checkbox" id="season-automne" value="Automne" class="form-checkbox h-4 w-4 text-orange-600 focus:ring-orange-500 season-checkbox" data-months="octobre,novembre,decembre">
+                                    <span class="text-sm text-orange-800">Automne 🍂</span>
+                                </label>
+                                <div class="ml-6 space-y-1 flex flex-col">
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-orange-700">
+                                        <input type="checkbox" id="month-octobre" value="Octobre" class="form-checkbox h-3 w-3 text-orange-500 month-checkbox rounded-sm" data-season="Automne">
+                                        <span>Octobre</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-orange-700">
+                                        <input type="checkbox" id="month-novembre" value="Novembre" class="form-checkbox h-3 w-3 text-orange-500 month-checkbox rounded-sm" data-season="Automne">
+                                        <span>Novembre</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-orange-700">
+                                        <input type="checkbox" id="month-decembre" value="Décembre" class="form-checkbox h-3 w-3 text-orange-500 month-checkbox rounded-sm" data-season="Automne">
+                                        <span>Décembre</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Hiver -->
+                            <div class="border border-blue-200 rounded-md p-3 bg-blue-50">
+                                <label class="flex items-center space-x-2 cursor-pointer mb-2 font-medium">
+                                    <input type="checkbox" id="season-hiver" value="Hiver" class="form-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 season-checkbox" data-months="janvier,fevrier,mars">
+                                    <span class="text-sm text-blue-800">Hiver ❄️</span>
+                                </label>
+                                <div class="ml-6 space-y-1 flex flex-col">
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-blue-700">
+                                        <input type="checkbox" id="month-janvier" value="Janvier" class="form-checkbox h-3 w-3 text-blue-500 month-checkbox rounded-sm" data-season="Hiver">
+                                        <span>Janvier</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-blue-700">
+                                        <input type="checkbox" id="month-fevrier" value="Février" class="form-checkbox h-3 w-3 text-blue-500 month-checkbox rounded-sm" data-season="Hiver">
+                                        <span>Février</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 cursor-pointer text-xs text-gray-700 hover:text-blue-700">
+                                        <input type="checkbox" id="month-mars" value="Mars" class="form-checkbox h-3 w-3 text-blue-500 month-checkbox rounded-sm" data-season="Hiver">
+                                        <span>Mars</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div>

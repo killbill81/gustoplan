@@ -360,20 +360,61 @@ export default function init() {
             infoDiv.appendChild(unitSpan);
             card.appendChild(infoDiv);
 
+            // Seasonality Display
+            const seasonalityContainer = document.createElement('div');
+            seasonalityContainer.className = 'w-full flex flex-col gap-1 mt-1 px-1';
+
+            let hasSeasonality = false;
+
+            // 1. Seasons Row
             if (ing.seasons && ing.seasons.length > 0) {
-                const seasonsDiv = document.createElement('div');
-                seasonsDiv.className = 'w-full flex flex-wrap gap-1 mt-1 px-1'; // Changed to flex-wrap and gap-1
+                hasSeasonality = true;
+                const seasonsRow = document.createElement('div');
+                seasonsRow.className = 'flex flex-wrap gap-1';
+
                 const icons = { 'Printemps': '🌸', 'Eté': '☀️', 'Automne': '🍂', 'Hiver': '❄️' };
                 const order = ['Printemps', 'Eté', 'Automne', 'Hiver'];
                 ing.seasons.sort((a, b) => order.indexOf(a) - order.indexOf(b)).forEach(s => {
                     const span = document.createElement('span');
-                    span.textContent = `${icons[s] || ''} ${s}`; // Icon + Name
+                    span.textContent = `${icons[s] || ''} ${s}`;
                     span.title = s;
-                    span.className = 'text-[10px] text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200 whitespace-nowrap'; // Styled as badge
-                    seasonsDiv.appendChild(span);
+                    span.className = 'text-[10px] text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200 whitespace-nowrap';
+                    seasonsRow.appendChild(span);
                 });
-                card.appendChild(seasonsDiv);
+                seasonalityContainer.appendChild(seasonsRow);
             }
+
+            // 2. Months Row
+            if (ing.months && ing.months.length > 0) {
+                hasSeasonality = true;
+                const monthsRow = document.createElement('div');
+                monthsRow.className = 'flex flex-wrap gap-1';
+
+                // Sort months chronologically
+                const monthOrder = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+                ing.months.sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+                ing.months.forEach(m => {
+                    const span = document.createElement('span');
+                    span.textContent = m.slice(0, 3) + '.'; // Abbreviate: Jan., Fév., etc.
+                    span.title = m;
+                    span.className = 'text-[10px] text-gray-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100 whitespace-nowrap';
+                    monthsRow.appendChild(span);
+                });
+                seasonalityContainer.appendChild(monthsRow);
+            }
+
+            // 3. Fallback
+            if (!hasSeasonality) {
+                const fallbackRow = document.createElement('div');
+                fallbackRow.className = 'flex flex-wrap gap-1';
+                const span = document.createElement('span');
+                span.textContent = "Toute l'année 🌍";
+                span.className = 'text-[10px] text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-200 whitespace-nowrap';
+                fallbackRow.appendChild(span);
+                seasonalityContainer.appendChild(fallbackRow);
+            }
+            card.appendChild(seasonalityContainer);
 
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'w-full flex justify-end items-center space-x-2 border-t pt-2 mt-2';

@@ -33,6 +33,38 @@ class RecipeFormHandler {
         this.closeButton.addEventListener('click', this.boundCloseForm);
         this.cancelButton.addEventListener('click', this.boundCloseForm);
         this.saveRecipeBtn.addEventListener('click', this.boundHandleSubmit);
+
+        this.initSeasonalityListeners();
+    }
+
+    initSeasonalityListeners() {
+        const seasonCheckboxes = document.querySelectorAll('.recipe-season-checkbox');
+        const monthCheckboxes = document.querySelectorAll('.recipe-month-checkbox');
+
+        seasonCheckboxes.forEach(sc => {
+            sc.addEventListener('change', (e) => {
+                const season = e.target.value;
+                const relatedMonths = document.querySelectorAll(`.recipe-month-checkbox[data-season="${season}"]`);
+                relatedMonths.forEach(mc => mc.checked = e.target.checked);
+            });
+        });
+
+        monthCheckboxes.forEach(mc => {
+            mc.addEventListener('change', (e) => {
+                const season = e.target.dataset.season;
+                const seasonCheckbox = document.querySelector(`.recipe-season-checkbox[value="${season}"]`);
+
+                if (e.target.checked) {
+                    if (seasonCheckbox) seasonCheckbox.checked = true;
+                } else {
+                    // If unchecked, check if any other month of this season is checked
+                    const relatedMonths = document.querySelectorAll(`.recipe-month-checkbox[data-season="${season}"]:checked`);
+                    if (seasonCheckbox && relatedMonths.length === 0) {
+                        seasonCheckbox.checked = false;
+                    }
+                }
+            });
+        });
     }
 
     setActivityUpdater(updaterFn) {
@@ -88,6 +120,12 @@ class RecipeFormHandler {
                 if (checkbox) checkbox.checked = seasons.includes(season);
             });
 
+            // Handle Months
+            const months = recipe.months || [];
+            document.querySelectorAll('.recipe-month-checkbox').forEach(cb => {
+                cb.checked = months.includes(cb.value);
+            });
+
             if (recipe.ingredients && recipe.ingredients.length > 0) {
                 recipe.ingredients.forEach(ing => this.addIngredientInput({ ...ing }, ingredients));
             } else {
@@ -101,6 +139,7 @@ class RecipeFormHandler {
                 const checkbox = document.getElementById(seasonId);
                 if (checkbox) checkbox.checked = false;
             });
+            document.querySelectorAll('.recipe-month-checkbox').forEach(cb => cb.checked = false);
             this.addIngredientInput(undefined, ingredients);
         }
         this.modal.classList.remove('hidden');
@@ -253,13 +292,19 @@ class RecipeFormHandler {
             if (checkbox && checkbox.checked) selectedSeasons.push(season);
         });
 
+        const selectedMonths = [];
+        document.querySelectorAll('.recipe-month-checkbox:checked').forEach(cb => {
+            selectedMonths.push(cb.value);
+        });
+
         const recipeData = {
             name: this.recipeNameInput.value,
             category: this.recipeCategoryInput.value,
             servings: parseInt(this.recipeServingsInput.value) || 0,
             prepTime: parseInt(this.recipePrepTimeInput.value) || 0,
             difficulty: this.recipeDifficultyInput.value,
-            seasons: selectedSeasons, // Add seasons to data
+            seasons: selectedSeasons,
+            months: selectedMonths,
             steps: this.recipeStepsTextarea.value,
             ingredients: ingredients,
             imageUrl: this.recipeImageUrlInput.value || `https://tse2.mm.bing.net/th?q=${encodeURIComponent(this.recipeNameInput.value)}%20recette&w=400&h=300&c=7&rs=1&p=0`
