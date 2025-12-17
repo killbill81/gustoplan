@@ -458,10 +458,17 @@ export default function init() {
 
     monthCheckboxes.forEach(mc => {
         mc.addEventListener('change', (e) => {
+            const season = e.target.dataset.season;
+            const seasonCheckbox = document.querySelector(`.season-checkbox[value="${season}"]`);
+
             if (e.target.checked) {
-                const season = e.target.dataset.season;
-                const seasonCheckbox = document.querySelector(`.season-checkbox[value="${season}"]`);
                 if (seasonCheckbox) seasonCheckbox.checked = true;
+            } else {
+                // If unchecked, check if any other month of this season is checked
+                const relatedMonths = document.querySelectorAll(`.month-checkbox[data-season="${season}"]:checked`);
+                if (seasonCheckbox && relatedMonths.length === 0) {
+                    seasonCheckbox.checked = false;
+                }
             }
         });
     });
