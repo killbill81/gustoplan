@@ -1,7 +1,7 @@
 import { navigateTo } from './router.js';
 import { protectPage, getCurrentUser } from './auth.js';
 import { initNotifications } from './notifications.js';
-import { initSettingsUI } from './settings-ui.js';
+import { initSettingsUI } from './settings-ui.js?v=1.2';
 
 function startApp() {
     const currentUser = getCurrentUser();

@@ -7,6 +7,7 @@ import { openShareModal, openInviteParticipantModal } from './sharing.js';
 import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory, saveOrUpdatePlanSaveByName } from './plans.js';
 import { toggleFavoriteStatus } from './recipes.js';
 import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
+import { seasonManager } from './season-manager.js';
 
 let editRecipeFormHandler = null;
 
@@ -877,12 +878,41 @@ export default function init() {
                 return;
             }
 
-            const filtered = masterIngredientList.filter(i => i.name.toLowerCase().includes(searchTerm));
+            let filtered = masterIngredientList.filter(i => i.name.toLowerCase().includes(searchTerm));
+
+            // Seasonality Logic
+            filtered.forEach(item => item.seasonScore = seasonManager.getIngredientScore(item));
+
+            // Sort: Score DESC, then Name ASC
+            filtered.sort((a, b) => {
+                if (b.seasonScore !== a.seasonScore) return b.seasonScore - a.seasonScore;
+                return a.name.localeCompare(b.name);
+            });
 
             filtered.forEach(item => {
                 const resultItem = document.createElement('div');
-                resultItem.className = 'p-2 hover:bg-gray-100 cursor-pointer';
-                resultItem.textContent = item.name;
+                resultItem.className = 'p-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center'; // Flex for badge
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = item.name;
+                resultItem.appendChild(textSpan);
+
+                // Season Badge
+                if (seasonManager.config.mode !== 'disabled') {
+                    if (item.seasonScore === 2) {
+                        const badge = document.createElement('span');
+                        badge.className = 'text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200 ml-2 whitespace-nowrap';
+                        badge.textContent = 'De saison'; // Simple text
+                        resultItem.appendChild(badge);
+                    } else if (item.seasonScore === 0) {
+                        const badge = document.createElement('span');
+                        badge.className = 'text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full border border-gray-200 ml-2 whitespace-nowrap';
+                        badge.textContent = 'Hors saison';
+                        resultItem.appendChild(badge);
+                        resultItem.classList.add('opacity-75'); // Slight dim
+                    }
+                }
+
                 resultItem.addEventListener('click', () => {
                     addIngredientToShoppingList(item.name, 1, item.unit);
                     elements.addItemInput.value = '';
