@@ -8,6 +8,7 @@ import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory, sa
 import { toggleFavoriteStatus } from './recipes.js';
 import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
 import { seasonManager } from './season-manager.js';
+import { ingredientModalManager } from './ingredient-modal.js';
 
 let editRecipeFormHandler = null;
 
@@ -924,16 +925,18 @@ export default function init() {
             const createItem = document.createElement('div');
             createItem.className = 'p-2 bg-green-50 hover:bg-green-200 cursor-pointer font-bold text-green-700';
             createItem.textContent = `+ Créer "${elements.addItemInput.value}"`;
-            createItem.addEventListener('click', async () => {
+
+            createItem.addEventListener('click', () => {
                 const newName = elements.addItemInput.value;
-                try {
-                    const newUnit = await promptForUnit(newName);
-                    await addDoc(collection(db, "ingredients"), { name: newName, unit: newUnit });
-                    await fetchMasterIngredients();
-                    addIngredientToShoppingList(newName, 1, newUnit);
+                ingredientModalManager.open(newName, async () => {
+                    await fetchMasterIngredients(); // Refresh master list
+                    // Find the new ingredient to get its unit
+                    const newIng = masterIngredientList.find(i => i.name === newName);
+                    const unit = newIng ? newIng.unit : '';
+                    addIngredientToShoppingList(newName, 1, unit);
                     elements.addItemInput.value = '';
                     resultsContainer.classList.add('hidden');
-                } catch { }
+                });
             });
             resultsContainer.appendChild(createItem);
             resultsContainer.classList.remove('hidden');

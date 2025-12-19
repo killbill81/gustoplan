@@ -1,6 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
 import { seasonManager } from './season-manager.js';
+import { ingredientModalManager } from './ingredient-modal.js';
 
 export default function init() {
     // --- DOM Elements ---
@@ -8,17 +9,6 @@ export default function init() {
     const addIngredientBtn = document.getElementById('add-ingredient-btn');
     const tabsContainer = document.getElementById('category-tabs');
     const searchBar = document.getElementById('search-bar');
-
-    // Ingredient Modal
-    const ingredientModal = document.getElementById('ingredient-form-modal');
-    const ingredientModalTitle = document.getElementById('ingredient-modal-title');
-    const closeIngredientModalBtn = document.getElementById('close-ingredient-modal');
-    const cancelIngredientModalBtn = document.getElementById('cancel-ingredient-btn');
-    const ingredientForm = document.getElementById('ingredient-form');
-    const ingredientIdInput = document.getElementById('ingredient-id');
-    const ingredientNameInput = document.getElementById('ingredient-name');
-    const ingredientUnitSelect = document.getElementById('ingredient-unit');
-    const ingredientCategorySelect = document.getElementById('ingredient-category');
 
     // Category Management Modal
     const manageCategoriesBtn = document.getElementById('manage-categories-btn');
@@ -35,7 +25,6 @@ export default function init() {
     let activeCategory = '';
     let searchTerm = '';
     let previousActiveCategory = null;
-    const units = ['g', 'kg', 'ml', 'l', 'pièce(s)', 'c.à.s.', 'c.à.c.', 'pincée(s)'];
 
     // --- Main Data Loading ---
     async function fetchAllData() {
@@ -63,113 +52,6 @@ export default function init() {
             renderIngredients();
         } catch (error) {
             console.error("Erreur de chargement des ingrédients: ", error);
-        }
-    }
-
-    // --- Ingredient Modal Logic ---
-    function openIngredientModal(ingredient = null) {
-        ingredientForm.reset();
-
-        ingredientUnitSelect.innerHTML = '';
-        units.forEach(unit => {
-            const option = document.createElement('option');
-            option.value = unit;
-            option.textContent = unit;
-            ingredientUnitSelect.appendChild(option);
-        });
-
-        const officialCategoryNames = ingredientCategories.map(c => c.name);
-        const usedCategoryNames = [...new Set(allIngredients.map(i => i.category).filter(Boolean))];
-        const allAvailableCategories = [...new Set([...officialCategoryNames, ...usedCategoryNames])];
-        allAvailableCategories.sort((a, b) => a.localeCompare(b.name));
-
-        ingredientCategorySelect.innerHTML = '';
-        if (allAvailableCategories.length === 0) {
-        }
-        allAvailableCategories.forEach(catName => {
-            const option = document.createElement('option');
-            option.value = catName;
-            option.textContent = catName;
-            ingredientCategorySelect.appendChild(option);
-        });
-
-        if (ingredient) {
-            ingredientModalTitle.textContent = "Modifier l'ingrédient";
-            ingredientIdInput.value = ingredient.id;
-            ingredientNameInput.value = ingredient.name;
-            ingredientUnitSelect.value = ingredient.unit || ''; // Set to empty if no unit
-            ingredientCategorySelect.value = ingredient.category || (allAvailableCategories.length > 0 ? allAvailableCategories[0] : '');
-            document.getElementById('ingredient-image-url').value = ingredient.imageUrl || '';
-        } else {
-            ingredientModalTitle.textContent = "Ajouter un ingrédient";
-            ingredientIdInput.value = '';
-            ingredientUnitSelect.value = units[0];
-            ingredientCategorySelect.value = activeCategory || (allAvailableCategories.length > 0 ? allAvailableCategories[0] : '');
-        }
-
-        // Handle Season Checkboxes
-        const seasons = ingredient ? (ingredient.seasons || []) : [];
-        const months = ingredient ? (ingredient.months || []) : [];
-
-        ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
-            const id = `season-${season.toLowerCase().replace('é', 'e')}`;
-            const checkbox = document.getElementById(id);
-            if (checkbox) checkbox.checked = seasons.includes(season);
-        });
-
-        // Handle Month Checkboxes
-        const allMonthCheckboxes = document.querySelectorAll('.month-checkbox');
-        allMonthCheckboxes.forEach(cb => {
-            cb.checked = months.includes(cb.value);
-        });
-
-        ingredientModal.classList.remove('hidden');
-    }
-
-    function closeIngredientModal() {
-        ingredientModal.classList.add('hidden');
-    }
-
-    async function handleIngredientFormSubmit(e) {
-        e.preventDefault();
-        const id = ingredientIdInput.value;
-
-        const selectedSeasons = [];
-        ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
-            const id = `season-${season.toLowerCase().replace('é', 'e')}`;
-            const checkbox = document.getElementById(id);
-            if (checkbox && checkbox.checked) selectedSeasons.push(season);
-        });
-
-        const selectedMonths = [];
-        document.querySelectorAll('.month-checkbox:checked').forEach(cb => {
-            selectedMonths.push(cb.value);
-        });
-
-        const ingredientData = {
-            name: ingredientNameInput.value,
-            unit: ingredientUnitSelect.value,
-            category: ingredientCategorySelect.value,
-            seasons: selectedSeasons,
-            months: selectedMonths,
-            imageUrl: document.getElementById('ingredient-image-url').value || `https://tse2.mm.bing.net/th?q=${encodeURIComponent(ingredientNameInput.value)}%20ingredient&w=400&h=300&c=7&rs=1&p=0`
-        };
-
-        if (!ingredientData.name || !ingredientData.category) { // Unit is optional now
-            alert("Le nom et la catégorie sont requis.");
-            return;
-        }
-
-        try {
-            if (id) {
-                await setDoc(doc(db, "ingredients", id), ingredientData);
-            } else {
-                await addDoc(collection(db, "ingredients"), ingredientData);
-            }
-            closeIngredientModal();
-            await fetchAllIngredients();
-        } catch (error) {
-            console.error("Erreur de sauvegarde de l'ingrédient: ", error);
         }
     }
 
@@ -479,7 +361,7 @@ export default function init() {
             const editBtn = document.createElement('button');
             editBtn.className = 'text-blue-500 hover:bg-blue-50 text-xs px-2 py-1 rounded-md';
             editBtn.innerHTML = '<i class="fas fa-edit"></i>';
-            editBtn.addEventListener('click', () => openIngredientModal(ing));
+            editBtn.addEventListener('click', () => ingredientModalManager.open(ing, fetchAllIngredients));
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'text-red-500 hover:bg-red-50 text-xs px-2 py-1 rounded-md';
             deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
@@ -535,46 +417,12 @@ export default function init() {
         renderIngredients();
     });
 
-    addIngredientBtn.addEventListener('click', () => openIngredientModal());
-    closeIngredientModalBtn.addEventListener('click', closeIngredientModal);
-    cancelIngredientModalBtn.addEventListener('click', closeIngredientModal);
-    ingredientForm.addEventListener('submit', handleIngredientFormSubmit);
+    addIngredientBtn.addEventListener('click', () => ingredientModalManager.open(null, fetchAllIngredients));
 
     manageCategoriesBtn.addEventListener('click', openCategoryModal);
     closeCategoryModalBtn.addEventListener('click', closeCategoryModal);
     doneCategoryModalBtn.addEventListener('click', closeCategoryModal);
     addCategoryForm.addEventListener('submit', handleAddCategory);
-
-    // Seasonality Bindings
-    const seasonCheckboxes = document.querySelectorAll('.season-checkbox');
-    const monthCheckboxes = document.querySelectorAll('.month-checkbox');
-
-    seasonCheckboxes.forEach(sc => {
-        sc.addEventListener('change', (e) => {
-            const season = e.target.value;
-            const isChecked = e.target.checked;
-            // Find related months
-            const relatedMonths = document.querySelectorAll(`.month-checkbox[data-season="${season}"]`);
-            relatedMonths.forEach(mc => mc.checked = isChecked);
-        });
-    });
-
-    monthCheckboxes.forEach(mc => {
-        mc.addEventListener('change', (e) => {
-            const season = e.target.dataset.season;
-            const seasonCheckbox = document.querySelector(`.season-checkbox[value="${season}"]`);
-
-            if (e.target.checked) {
-                if (seasonCheckbox) seasonCheckbox.checked = true;
-            } else {
-                // If unchecked, check if any other month of this season is checked
-                const relatedMonths = document.querySelectorAll(`.month-checkbox[data-season="${season}"]:checked`);
-                if (seasonCheckbox && relatedMonths.length === 0) {
-                    seasonCheckbox.checked = false;
-                }
-            }
-        });
-    });
 
     fetchAllData();
 }
