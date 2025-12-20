@@ -552,16 +552,16 @@ const routes = {
 // Manual module map for standard browser compatibility (no bundler required)
 // This ensures the code runs directly on XAMPP/Apache without Vite's import.meta.glob
 const moduleMap = {
-    './script.js': () => import('./script.js?v=' + Date.now()),
-    './recipes.js': () => import('./recipes.js?v=' + Date.now()),
-    './ingredients.js': () => import('./ingredients.js?v=' + Date.now()),
-    './lists.js': () => import('./lists.js?v=' + Date.now()),
-    './friends.js': () => import('./friends.js?v=' + Date.now()),
-    './shared.js': () => import('./shared.js?v=' + Date.now()),
-    './all-plans.js': () => import('./all-plans.js?v=' + Date.now()),
-    './view-plan.js': () => import('./view-plan.js?v=' + Date.now()),
-    './shopping-mode.js': () => import('./shopping-mode.js?v=' + Date.now()),
-    './ingredient-modal.js': () => import('./ingredient-modal.js?v=' + Date.now()),
+    './script.js': () => import('./script.js'),
+    './recipes.js': () => import('./recipes.js'),
+    './ingredients.js': () => import('./ingredients.js'),
+    './lists.js': () => import('./lists.js'),
+    './friends.js': () => import('./friends.js'),
+    './shared.js': () => import('./shared.js'),
+    './all-plans.js': () => import('./all-plans.js'),
+    './view-plan.js': () => import('./view-plan.js'),
+    './shopping-mode.js': () => import('./shopping-mode.js'),
+    './ingredient-modal.js': () => import('./ingredient-modal.js'),
 };
 
 let currentCleanup = null;
