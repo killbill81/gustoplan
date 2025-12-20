@@ -9,6 +9,28 @@ let availableMeals = [];
 let masterIngredientList = [];
 let checkedItems = {}; // Key: itemName_unit, Value: boolean
 
+const categoryIcons = {
+    'fruits & légumes': 'fa-carrot',
+    'produits laitiers': 'fa-cheese',
+    'fromagerie': 'fa-cheese',
+    'boucherie': 'fa-drumstick-bite',
+    'viande': 'fa-drumstick-bite',
+    'poissonnerie': 'fa-fish',
+    'poisson': 'fa-fish',
+    'épicerie': 'fa-box',
+    'boissons': 'fa-wine-glass',
+    'boulangerie': 'fa-bread-slice',
+    'pain': 'fa-bread-slice',
+    'dph': 'fa-soap',
+    'hygiène': 'fa-soap',
+    'surgelés': 'fa-snowflake',
+    'entrée': 'fa-utensils',
+    'plat': 'fa-concierge-bell',
+    'accompagnement': 'fa-plate-wheat',
+    'dessert': 'fa-ice-cream',
+    'inconnue': 'fa-question'
+};
+
 function sanitizeForFirebaseKey(str) {
     if (!str) return '';
     return str.replace(/\./g, '_');
@@ -202,7 +224,7 @@ export default function init() {
                 renderShoppingList();
             } else {
                 console.log('[DEBUG] Plan not found');
-                if (container) container.innerHTML = '<p class="text-center p-4 text-red-500">Plan introuvable.</p>';
+                if (container) container.innerHTML = '<p class="text-center p-4 text-red-500">Menu introuvable.</p>';
             }
         });
     }
@@ -213,7 +235,7 @@ export default function init() {
             return;
         }
 
-        console.log(`[DEBUG] Rendering shopping list for plan: ${currentPlan.name} (${currentPlan.id})`);
+        console.log(`[DEBUG] Rendering shopping list for menu: ${currentPlan.name} (${currentPlan.id})`);
         const { active: shoppingList, deleted: deletedItems } = generateList(currentPlan);
 
         console.log(`[DEBUG] Computed deletedItems: ${deletedItems.length} items`);
@@ -238,7 +260,7 @@ export default function init() {
         });
 
         if (uncheckedItems.length === 0 && checkedItemsList.length === 0) {
-            container.innerHTML = '<p class="text-center p-10 text-gray-500">Votre liste de courses est vide pour ce plan.</p>';
+            container.innerHTML = '<p class="text-center p-10 text-gray-500">Votre liste de courses est vide pour ce menu.</p>';
             return;
         }
 
@@ -257,25 +279,36 @@ export default function init() {
         });
 
         // Create and inject the tabs container at the top of the main list container
+        const tabsWrapper = document.createElement('div');
+        tabsWrapper.className = 'sticky top-0 z-30 glass-header px-4 mb-4';
+
         const tabsContainer = document.createElement('div');
         tabsContainer.id = 'shopping-category-tabs';
-        tabsContainer.className = 'flex overflow-x-auto space-x-2 py-2 bg-white z-20 mb-4';
-        container.appendChild(tabsContainer);
+        tabsContainer.className = 'flex overflow-x-auto space-x-3 py-3 items-center';
+
+        tabsWrapper.appendChild(tabsContainer);
+        container.appendChild(tabsWrapper);
 
         const sanitizeForId = (text) => 'category-' + text.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
 
         // --- Create and add category tabs ---
+        const tabElements = {};
+
         categories.forEach(cat => {
             const tab = document.createElement('button');
-            tab.className = 'btn btn-sm btn-outline flex-shrink-0';
-            tab.textContent = cat;
+            tab.className = 'category-tab btn-outline flex-shrink-0';
+
+            const iconClass = categoryIcons[cat.toLowerCase()] || 'fa-tag';
+            tab.innerHTML = `<i class="fas ${iconClass}"></i> <span>${cat}</span>`;
+
             tab.onclick = () => {
                 const headerElement = document.getElementById(sanitizeForId(cat));
                 if (headerElement) {
                     const mainHeader = document.querySelector('header');
                     const headerOffset = mainHeader ? mainHeader.offsetHeight : 0;
+                    const tabsOffset = tabsWrapper.offsetHeight;
                     const elementPosition = headerElement.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset - 40; // 40px for extra padding
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset - tabsOffset - 10;
 
                     window.scrollTo({
                         top: offsetPosition,
@@ -284,14 +317,41 @@ export default function init() {
                 }
             };
             tabsContainer.appendChild(tab);
+            tabElements[cat] = tab;
         });
+
+        // --- Scroll Spy Logic ---
+        const observerOptions = {
+            root: null,
+            rootMargin: '-10% 0px -80% 0px', // Adjust margin to trigger when header is near the top
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const catName = entry.target.dataset.categoryName;
+                    // Update active state
+                    Object.values(tabElements).forEach(t => t.classList.remove('category-tab-active'));
+                    const activeTab = tabElements[catName];
+                    if (activeTab) {
+                        activeTab.classList.add('category-tab-active');
+                        // Scroll active tab into view in the horizontal container
+                        activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
+                }
+            });
+        }, observerOptions);
 
         categories.forEach(cat => {
             const catHeader = document.createElement('h3');
-            catHeader.className = 'font-bold text-lg text-gray-700 mt-6 mb-3 border-b border-gray-200 pb-1 sticky top-0 bg-white z-10';
+            catHeader.className = 'font-bold text-lg text-gray-700 mt-6 mb-3 border-b border-gray-200 pb-1 scroll-mt-24';
             catHeader.textContent = cat;
             catHeader.id = sanitizeForId(cat); // Assign ID for anchor link
+            catHeader.dataset.categoryName = cat; // For Scroll Spy
             container.appendChild(catHeader);
+
+            observer.observe(catHeader); // Start observing each header
 
             const ul = document.createElement('ul');
             ul.className = 'space-y-3';
@@ -671,7 +731,7 @@ export default function init() {
             currentSelect.innerHTML = '';
 
             if (plans.length === 0) {
-                if (container) container.innerHTML = '<p class="text-center p-4">Aucun plan trouvé.</p>';
+                if (container) container.innerHTML = '<p class="text-center p-4">Aucun menu trouvé.</p>';
                 return;
             }
 

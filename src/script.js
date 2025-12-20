@@ -1093,7 +1093,7 @@ export default function init() {
 
     async function exportPlanToPDF() {
         if (!currentPlan) {
-            alert("Veuillez sélectionner un plan à exporter.");
+            alert("Veuillez sélectionner un menu à exporter.");
             return;
         }
 
@@ -1109,12 +1109,12 @@ export default function init() {
             const fullPlan = planSnap.exists() ? planSnap.data() : null;
 
             if (!fullPlan || !fullPlan.weeks) {
-                alert("Ce plan est vide et ne peut pas être exporté.");
+                alert("Ce menu est vide et ne peut pas être exporté.");
                 return;
             }
 
             pdfDoc.setFontSize(18);
-            pdfDoc.text(`Plan de Repas: ${fullPlan.name}`, 14, 20);
+            pdfDoc.text(`Menu de Repas : ${fullPlan.name}`, 14, 20);
 
             const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
             const categories = { '0': 'E', '1': 'P', '2': 'A', '3': 'D' }; // Abrégé pour la clarté
@@ -1175,7 +1175,7 @@ export default function init() {
                 firstTable = false;
             }
 
-            pdfDoc.save(`plan_${fullPlan.name.replace(/ /g, '_')}.pdf`);
+            pdfDoc.save(`menu_${fullPlan.name.replace(/ /g, '_')}.pdf`);
 
         } catch (error) {
             console.error("Erreur lors de la génération du PDF du plan :", error);
@@ -1184,14 +1184,14 @@ export default function init() {
             if (loadingOverlay) loadingOverlay.classList.add('hidden');
         }
     } async function addIngredientToShoppingList(name, quantity, unit, isAdjustment = false) {
-        if (!currentPlan) return alert("Veuillez sélectionner un plan.");
+        if (!currentPlan) return alert("Veuillez sélectionner un menu.");
 
         const planRef = doc(db, "plans", currentPlan.id);
         try {
             await runTransaction(db, async (transaction) => {
                 const planDoc = await transaction.get(planRef);
                 if (!planDoc.exists()) {
-                    throw "Le plan n'existe plus.";
+                    throw "Le menu n'existe plus.";
                 }
 
                 const currentItems = planDoc.data().manualItems || [];
@@ -1795,7 +1795,7 @@ export default function init() {
             const deleteButton = document.createElement('button');
             deleteButton.className = 'delete-meal-btn text-red-700 hover:text-red-900 hidden px-1 py-0.5';
             deleteButton.innerHTML = '<i class="fas fa-times-circle fa-xs"></i>';
-            deleteButton.title = 'Retirer du planning';
+            deleteButton.title = 'Retirer du menu';
             deleteButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 handleDeleteMeal(slotId, index);
@@ -2042,7 +2042,7 @@ export default function init() {
             // Créer un objet de plan vide en conservant les paramètres de l'utilisateur
             const emptyPlan = {
                 id: availablePlans.length > 0 ? availablePlans[0].id : `${getCurrentUserId()}_semaine-${currentWeek}`,
-                name: availablePlans.length > 0 ? availablePlans[0].name : "Mon plan",
+                name: availablePlans.length > 0 ? availablePlans[0].name : "Mon menu",
                 menuData: {},
                 servingsData: {},
                 remarksData: {},
@@ -2131,7 +2131,7 @@ export default function init() {
 
         elements.sharePlanBtn?.addEventListener('click', () => {
             if (!currentPlan) {
-                alert("Veuillez sélectionner un plan à partager.");
+                alert("Veuillez sélectionner un menu à partager.");
                 return;
             }
             openShareModal({ plan: currentPlan });
@@ -2139,7 +2139,7 @@ export default function init() {
 
         elements.inviteParticipantBtn?.addEventListener('click', () => {
             if (!currentPlan) {
-                alert("Veuillez sélectionner un plan pour inviter des participants.");
+                alert("Veuillez sélectionner un menu pour inviter des participants.");
                 return;
             }
             openInviteParticipantModal(currentPlan);
@@ -2161,7 +2161,7 @@ export default function init() {
 
         elements.savePlanBtn?.addEventListener('click', async () => {
             if (!currentPlan) {
-                alert("Veuillez sélectionner un plan de travail avant de sauvegarder.");
+                alert("Veuillez sélectionner un menu de travail avant de sauvegarder.");
                 return;
             }
             const saveModal = document.getElementById('save-plan-as-modal');

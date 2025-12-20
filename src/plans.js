@@ -37,7 +37,7 @@ function closeRenamePlanModal() {
 export function openDeleteConfirmModal(planId, planName) {
     planToDeleteId = planId;
     if (deleteConfirmTitle) deleteConfirmTitle.textContent = 'Confirmer la suppression';
-    if (deleteConfirmMessage) deleteConfirmMessage.textContent = `Êtes-vous sûr de vouloir supprimer le plan "${planName}" ? Cette action est irréversible.`;
+    if (deleteConfirmMessage) deleteConfirmMessage.textContent = `Êtes-vous sûr de vouloir supprimer le menu "${planName}" ? Cette action est irréversible.`;
     if (deleteConfirmModal) deleteConfirmModal.classList.remove('hidden');
 }
 
@@ -66,7 +66,7 @@ async function createPlan(name) {
         closeCreatePlanModal();
     } catch (error) {
         console.error("Error creating plan: ", error);
-        alert("Erreur lors de la création du plan.");
+        alert("Erreur lors de la création du menu.");
     }
 }
 
@@ -78,7 +78,7 @@ async function renamePlan(planId, newName) {
         closeRenamePlanModal();
     } catch (error) {
         console.error("Error renaming plan: ", error);
-        alert("Erreur lors du renommage du plan.");
+        alert("Erreur lors du renommage du menu.");
     }
 }
 
@@ -86,7 +86,7 @@ async function leavePlan(planId) {
     const userId = getCurrentUser()?.uid;
     if (!planId || !userId) return;
 
-    if (confirm("Voulez-vous vraiment quitter ce plan partagé ? Il n'apparaîtra plus dans votre liste.")) {
+    if (confirm("Voulez-vous vraiment quitter ce menu partagé ? Il n'apparaîtra plus dans votre liste.")) {
         try {
             const planRef = doc(db, 'plans', planId);
             await updateDoc(planRef, {
@@ -106,13 +106,13 @@ async function deletePlan(planId) {
         await deleteDoc(doc(db, 'plans', planId));
     } catch (error) {
         console.error("Error deleting plan: ", error);
-        alert("Erreur lors de la suppression du plan.");
+        alert("Erreur lors de la suppression du menu.");
     }
 }
 
 function getUserPlans(callback) {
     const user = getCurrentUser();
-    if (!user) return () => {};
+    if (!user) return () => { };
 
     let allPlans = new Map();
 
@@ -179,7 +179,7 @@ function populatePlanSelector(plans) {
     if (plans.length === 0) {
         const option = document.createElement('option');
         option.value = '';
-        option.textContent = 'Aucun plan personnel';
+        option.textContent = 'Aucun menu personnel';
         option.disabled = true;
         planSelect.appendChild(option);
         return;
@@ -217,7 +217,7 @@ export function initPlanManagement() {
     cancelCreatePlanBtn = document.getElementById('cancel-create-plan-btn');
     createPlanForm = document.getElementById('create-plan-form');
     planSelect = document.getElementById('plan-select');
-    
+
     renamePlanModal = document.getElementById('rename-plan-modal');
     closeRenamePlanModalBtn = document.getElementById('close-rename-plan-modal');
     cancelRenamePlanBtn = document.getElementById('cancel-rename-plan-btn');
@@ -264,7 +264,7 @@ export function initPlanManagement() {
             const selectedOption = planSelect.options[planSelect.selectedIndex];
             openRenamePlanModal(planSelect.value, selectedOption.text);
         } else {
-            alert("Veuillez sélectionner un plan à renommer.");
+            alert("Veuillez sélectionner un menu à renommer.");
         }
     };
 
@@ -272,7 +272,7 @@ export function initPlanManagement() {
         if (planSelect && planSelect.value) {
             leavePlan(planSelect.value);
         } else {
-            alert("Veuillez sélectionner un plan.");
+            alert("Veuillez sélectionner un menu.");
         }
     };
 
@@ -281,7 +281,7 @@ export function initPlanManagement() {
             const selectedPlanName = planSelect.options[planSelect.selectedIndex].text;
             openDeleteConfirmModal(planSelect.value, selectedPlanName);
         } else {
-            alert("Veuillez sélectionner un plan à supprimer.");
+            alert("Veuillez sélectionner un menu à supprimer.");
         }
     };
 
@@ -362,7 +362,7 @@ export async function saveOrUpdatePlanSaveByName(saveName, planData) {
     try {
         const savesRef = collection(db, 'plan_saves');
         const q = query(savesRef, where("userId", "==", user.uid), where("name", "==", saveName));
-        
+
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
@@ -401,6 +401,6 @@ export async function savePlanWeek(planId, weekNumber, weekData) {
         // On pourrait aussi appeler saveHistory ici si nécessaire
     } catch (error) {
         console.error("Error saving plan week:", error);
-        alert("Erreur lors de la sauvegarde du plan.");
+        alert("Erreur lors de la sauvegarde du menu.");
     }
 }

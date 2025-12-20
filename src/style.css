@@ -138,3 +138,45 @@
 .dark #profile-menu a {
     color: #ffffff !important;
 }
+
+/* --- Shopping Category Tabs Custom Styles --- */
+#shopping-category-tabs {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    @apply border-b border-gray-200;
+}
+
+#shopping-category-tabs::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+}
+
+.category-tab {
+    @apply transition-all duration-200 px-4 py-2.5 rounded-t-lg text-sm font-medium border border-stone-400/60 border-b-0 bg-stone-300/40 text-stone-700 flex items-center space-x-2 whitespace-nowrap;
+}
+
+.category-tab:hover {
+    @apply bg-stone-300 text-stone-900 border-stone-500/60;
+}
+
+.category-tab-active {
+    @apply bg-white text-tomato border-t-2 border-t-tomato border-x-stone-400 border-b-white font-bold -mb-[1px] z-10 opacity-100;
+}
+
+.dark .category-tab {
+    @apply bg-white/5 border-white/10 text-gray-400;
+}
+
+.dark .category-tab-active {
+    @apply bg-black text-tomato border-t-tomato border-x-white/10 border-b-black;
+}
+
+.glass-header {
+    @apply bg-background;
+}
+
+.dark .glass-header {
+    @apply bg-background;
+}
