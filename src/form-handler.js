@@ -2,39 +2,80 @@ import { doc, setDoc, addDoc, collection, getDocs } from "firebase/firestore";
 import { db } from './firebase-config.js';
 
 class RecipeFormHandler {
-    constructor(db, modalId, formId, titleId, recipeIdInputId, recipeNameInputId, recipeCategoryInputId, recipeServingsInputId, recipePrepTimeInputId, recipeDifficultyInputId, recipeStepsTextareaId, ingredientsListDivId, addIngredientBtnId, saveRecipeBtnId, closeButtonId, cancelButtonId) {
+    constructor() {
         this.db = db;
-        this.modal = document.getElementById(modalId);
-        this.form = document.getElementById(formId);
-        this.modalTitle = document.getElementById(titleId);
-        this.recipeIdInput = document.getElementById(recipeIdInputId);
-        this.recipeNameInput = document.getElementById(recipeNameInputId);
-        this.recipeCategoryInput = document.getElementById(recipeCategoryInputId);
-        this.recipeServingsInput = document.getElementById(recipeServingsInputId);
-        this.recipePrepTimeInput = document.getElementById(recipePrepTimeInputId);
-        this.recipeDifficultyInput = document.getElementById(recipeDifficultyInputId);
-        this.recipeImageUrlInput = document.getElementById('edit-recipe-image-url'); // Ajout de l'input pour l'URL de l'image
-        this.recipeStepsTextarea = document.getElementById(recipeStepsTextareaId);
-        this.ingredientsListDiv = document.getElementById(ingredientsListDivId);
-        this.addIngredientBtn = document.getElementById(addIngredientBtnId);
-        this.saveRecipeBtn = document.getElementById(saveRecipeBtnId);
-        this.closeButton = document.getElementById(closeButtonId);
-        this.cancelButton = document.getElementById(cancelButtonId);
-
         this.masterIngredientList = [];
-        this.activityUpdater = null; // Pour le suivi d'activité
+        this.activityUpdater = null;
+        this.onSaveCallback = null;
 
-        // Bind methods to ensure 'this' context is correct and allow for removal
-        this.boundAddIngredient = () => this.addIngredientInput(undefined, this.form.ingredients);
-        this.boundCloseForm = () => this.closeForm();
-        this.boundHandleSubmit = (e) => this.handleSubmit(e);
+        // State for listeners
+        this.listenersAttached = false;
 
-        this.addIngredientBtn.addEventListener('click', this.boundAddIngredient);
-        this.closeButton.addEventListener('click', this.boundCloseForm);
-        this.cancelButton.addEventListener('click', this.boundCloseForm);
-        this.saveRecipeBtn.addEventListener('click', this.boundHandleSubmit);
+        // IDs map (hardcoded as they are unique in index.html)
+        this.elementIds = {
+            modal: 'edit-recipe-form-modal',
+            form: 'edit-recipe-form',
+            title: 'edit-recipe-modal-title',
+            idInput: 'edit-recipe-id',
+            nameInput: 'edit-recipe-name',
+            categoryInput: 'edit-recipe-category',
+            servingsInput: 'edit-recipe-servings',
+            prepTimeInput: 'edit-recipe-prep-time',
+            difficultyInput: 'edit-recipe-difficulty',
+            stepsTextarea: 'edit-recipe-steps',
+            ingredientsList: 'edit-ingredients-list',
+            addIngredientBtn: 'edit-add-ingredient-btn',
+            saveBtn: 'edit-save-recipe-btn',
+            closeBtn: 'close-edit-recipe-modal',
+            cancelBtn: 'edit-cancel-recipe-btn',
+            imageUrlInput: 'edit-recipe-image-url'
+        };
+
+        this.init();
+    }
+
+    init() {
+        // Try to bind immediately but don't fail if DOM isn't ready
+        this.bindElements();
+        // If elements found, attach listeners
+        if (this.modal) {
+            this.attachListeners();
+        }
+    }
+
+    bindElements() {
+        if (this.modal) return; // Already bound
+
+        this.modal = document.getElementById(this.elementIds.modal);
+        if (!this.modal) return; // DOM might not be ready
+
+        this.form = document.getElementById(this.elementIds.form);
+        this.modalTitle = document.getElementById(this.elementIds.title);
+        this.recipeIdInput = document.getElementById(this.elementIds.idInput);
+        this.recipeNameInput = document.getElementById(this.elementIds.nameInput);
+        this.recipeCategoryInput = document.getElementById(this.elementIds.categoryInput);
+        this.recipeServingsInput = document.getElementById(this.elementIds.servingsInput);
+        this.recipePrepTimeInput = document.getElementById(this.elementIds.prepTimeInput);
+        this.recipeDifficultyInput = document.getElementById(this.elementIds.difficultyInput);
+        this.recipeImageUrlInput = document.getElementById(this.elementIds.imageUrlInput);
+        this.recipeStepsTextarea = document.getElementById(this.elementIds.stepsTextarea);
+        this.ingredientsListDiv = document.getElementById(this.elementIds.ingredientsList);
+        this.addIngredientBtn = document.getElementById(this.elementIds.addIngredientBtn);
+        this.saveRecipeBtn = document.getElementById(this.elementIds.saveBtn);
+        this.closeButton = document.getElementById(this.elementIds.closeBtn);
+        this.cancelButton = document.getElementById(this.elementIds.cancelBtn);
+    }
+
+    attachListeners() {
+        if (this.listenersAttached || !this.modal) return;
+
+        this.addIngredientBtn?.addEventListener('click', () => this.addIngredientInput(undefined, this.form.ingredients));
+        this.closeButton?.addEventListener('click', () => this.closeForm());
+        this.cancelButton?.addEventListener('click', () => this.closeForm());
+        this.saveRecipeBtn?.addEventListener('click', (e) => this.handleSubmit(e));
 
         this.initSeasonalityListeners();
+        this.listenersAttached = true;
     }
 
     initSeasonalityListeners() {
@@ -57,7 +98,6 @@ class RecipeFormHandler {
                 if (e.target.checked) {
                     if (seasonCheckbox) seasonCheckbox.checked = true;
                 } else {
-                    // If unchecked, check if any other month of this season is checked
                     const relatedMonths = document.querySelectorAll(`.recipe-month-checkbox[data-season="${season}"]:checked`);
                     if (seasonCheckbox && relatedMonths.length === 0) {
                         seasonCheckbox.checked = false;
@@ -71,14 +111,15 @@ class RecipeFormHandler {
         this.activityUpdater = updaterFn;
     }
 
-    destroy() {
-        this.addIngredientBtn.removeEventListener('click', this.boundAddIngredient);
-        this.closeButton.removeEventListener('click', this.boundCloseForm);
-        this.cancelButton.removeEventListener('click', this.boundCloseForm);
-        this.saveRecipeBtn.removeEventListener('click', this.boundHandleSubmit);
-    }
-
     async openForm(recipe = null, title = 'Ajouter une recette') {
+        this.bindElements();
+        this.attachListeners();
+
+        if (!this.modal) {
+            console.error("Recipe modal elements not found!");
+            return;
+        }
+
         if (this.activityUpdater) {
             this.activityUpdater('editing_recipe');
         }
@@ -236,22 +277,22 @@ class RecipeFormHandler {
             const createItem = document.createElement('div');
             createItem.className = 'p-2 bg-blue-50 hover:bg-blue-200 cursor-pointer font-bold text-blue-700';
             createItem.textContent = `+ Créer "${nameInput.value}"`;
-            createItem.addEventListener('click', async () => {
+            createItem.addEventListener('click', () => {
                 const newName = nameInput.value;
-                const newUnit = 'pièce(s)'; // Default unit for on-the-fly creation
-                try {
-                    const docRef = await addDoc(collection(this.db, "ingredients"), { name: newName, unit: newUnit });
-                    await this.fetchMasterIngredients(); // Refresh master list
-                    nameInput.value = newName;
-                    unitDisplay.value = newUnit;
-                    resultsDiv.classList.add('hidden');
-                    ingredientsArray[index].name = newName;
-                    ingredientsArray[index].unit = newUnit;
-                    ingredientsArray[index].id = docRef.id;
-                } catch (error) {
-                    console.error("Erreur d'ajout d'ingrédient", error);
-                    alert("L'ingrédient n'a pas pu être créé.");
-                }
+                import('./ingredient-modal.js').then(({ ingredientModalManager }) => {
+                    ingredientModalManager.open(newName, (newIngredient) => {
+                        // On success callback
+                        this.fetchMasterIngredients().then(() => {
+                            nameInput.value = newIngredient.name;
+                            unitDisplay.value = newIngredient.unit;
+                            resultsDiv.classList.add('hidden');
+
+                            ingredientsArray[index].name = newIngredient.name;
+                            ingredientsArray[index].unit = newIngredient.unit;
+                            ingredientsArray[index].id = newIngredient.id;
+                        });
+                    });
+                });
             });
             resultsDiv.appendChild(createItem);
 
@@ -338,4 +379,4 @@ class RecipeFormHandler {
     }
 }
 
-export { RecipeFormHandler };
+export const recipeFormHandler = new RecipeFormHandler();

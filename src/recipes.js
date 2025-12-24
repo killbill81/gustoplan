@@ -1,10 +1,7 @@
-// GustoPlan - recipes.js
 import { db } from './firebase-config.js';
 import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, writeBatch, query, where, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
 import { seasonManager } from './season-manager.js';
-import { RecipeFormHandler } from './form-handler.js';
-
-let recipeFormHandler = null;
+import { recipeFormHandler } from './form-handler.js';
 
 export async function toggleFavoriteStatus(recipeId, currentStatus) {
     if (!recipeId) return;
@@ -24,29 +21,6 @@ export default function init() {
     const tabsContainer = document.getElementById('category-tabs');
     const recipeListContainer = document.getElementById('recipe-list-container');
     const addRecipeBtn = document.getElementById('add-recipe-btn');
-
-    // --- Recipe Form Handler Instance ---
-    if (recipeFormHandler) {
-        recipeFormHandler.destroy();
-    }
-    recipeFormHandler = new RecipeFormHandler(
-        db,
-        'edit-recipe-form-modal', // Correct modal ID
-        'edit-recipe-form',       // Correct form ID
-        'edit-recipe-modal-title',
-        'edit-recipe-id',
-        'edit-recipe-name',
-        'edit-recipe-category',
-        'edit-recipe-servings',
-        'edit-recipe-prep-time',
-        'edit-recipe-difficulty',
-        'edit-recipe-steps',
-        'edit-ingredients-list',
-        'edit-add-ingredient-btn',
-        'edit-save-recipe-btn',
-        'close-edit-recipe-modal',
-        'edit-cancel-recipe-btn'
-    );
 
     // The onSnapshot listener will handle updates, so the callback is less critical
     // but we can keep it for an explicit refresh if needed after a form save.

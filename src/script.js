@@ -1,7 +1,7 @@
 // Importe les fonctions Firebase
 import { db } from './firebase-config.js';
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, where, updateDoc, runTransaction, onSnapshot, orderBy } from "firebase/firestore";
-import { RecipeFormHandler } from './form-handler.js';
+import { recipeFormHandler } from './form-handler.js';
 import { getCurrentUserId } from './auth.js';
 import { openShareModal, openInviteParticipantModal } from './sharing.js';
 import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory, saveOrUpdatePlanSaveByName } from './plans.js';
@@ -9,8 +9,6 @@ import { toggleFavoriteStatus } from './recipes.js';
 import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
 import { seasonManager } from './season-manager.js';
 import { ingredientModalManager } from './ingredient-modal.js';
-
-let editRecipeFormHandler = null;
 
 export default function init() {
 
@@ -147,32 +145,9 @@ export default function init() {
         return container;
     }
 
-    // --- Recipe Form Handler Instance ---
-    if (editRecipeFormHandler) {
-        editRecipeFormHandler.destroy();
-    }
-    editRecipeFormHandler = new RecipeFormHandler(
-        db,
-        'edit-recipe-form-modal',
-        'edit-recipe-form',
-        'edit-recipe-modal-title',
-        'edit-recipe-id',
-        'edit-recipe-name',
-        'edit-recipe-category',
-        'edit-recipe-servings',
-        'edit-recipe-prep-time',
-        'edit-recipe-difficulty',
-        'edit-recipe-steps',
-        'edit-ingredients-list',
-        'edit-add-ingredient-btn',
-        'edit-save-recipe-btn',
-        'close-edit-recipe-modal',
-        'edit-cancel-recipe-btn'
-    );
+    recipeFormHandler.setActivityUpdater(updateUserActivity);
 
-    editRecipeFormHandler.setActivityUpdater(updateUserActivity);
-
-    editRecipeFormHandler.setOnSaveCallback(async () => {
+    recipeFormHandler.setOnSaveCallback(async () => {
         // The real-time recipe listener will now handle updates.
         // No need to manually reload everything here.
     });
@@ -1787,7 +1762,7 @@ export default function init() {
             editButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const latestMeal = availableMeals.find(m => m.id === meal.id);
-                editRecipeFormHandler.openForm(latestMeal || meal, 'Modifier la recette');
+                recipeFormHandler.openForm(latestMeal || meal, 'Modifier la recette');
             });
             editButton.addEventListener('mousedown', e => e.stopPropagation());
             hoverButtonsDiv.appendChild(editButton);
@@ -2094,8 +2069,8 @@ export default function init() {
 
         elements.closeMealSelectModalBtn?.addEventListener('click', closeMealSelectModal);
         elements.mealSelectModal?.addEventListener('click', (e) => { if (e.target === elements.mealSelectModal) closeMealSelectModal(); });
-        elements.closeRecipeModalBtn?.addEventListener('click', () => editRecipeFormHandler.closeForm());
-        elements.cancelRecipeBtn?.addEventListener('click', () => editRecipeFormHandler.closeForm());
+        elements.closeRecipeModalBtn?.addEventListener('click', () => recipeFormHandler.closeForm());
+        elements.cancelRecipeBtn?.addEventListener('click', () => recipeFormHandler.closeForm());
 
         elements.importListBtn?.addEventListener('click', openImportListModal);
         elements.closeImportListModalBtn?.addEventListener('click', closeImportListModal);
