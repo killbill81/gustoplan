@@ -159,7 +159,7 @@ export default function init() {
     function createRecipeCard(recipe) {
         const card = document.createElement('div');
         // Use the standard white card style, consistent with other pages
-        card.className = 'bg-white dark:bg-gray-800 shadow-md rounded-lg flex flex-col p-3';
+        card.className = 'bg-white shadow-md rounded-lg flex flex-col p-3';
 
         // --- Image Section ---
         // --- Image Section ---
@@ -201,7 +201,7 @@ export default function init() {
         header.className = 'w-full flex justify-between items-start';
 
         const name = document.createElement('h4');
-        name.className = 'font-bold text-gray-800 dark:text-gray-200 pr-2'; // Added padding-right
+        name.className = 'font-bold text-gray-800 pr-2'; // Added padding-right
         name.textContent = recipe.name;
         name.title = recipe.name;
         header.appendChild(name);
@@ -212,7 +212,7 @@ export default function init() {
         if (recipe.isFavorite) {
             heartBtn.classList.add('text-red-500');
         } else {
-            heartBtn.classList.add('text-gray-300', 'dark:text-gray-500', 'hover:text-red-400');
+            heartBtn.classList.add('text-gray-300', 'hover:text-red-400');
         }
         heartBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -223,7 +223,7 @@ export default function init() {
 
         // --- Details Section ---
         const details = document.createElement('p');
-        details.className = 'text-sm text-gray-600 dark:text-gray-400 mt-1 w-full';
+        details.className = 'text-sm text-gray-600 mt-1 w-full';
         details.textContent = `${recipe.difficulty || ''} - Pour ${recipe.servings || '?'} pers.`;
         card.appendChild(details);
 
@@ -246,7 +246,7 @@ export default function init() {
                 const span = document.createElement('span');
                 span.textContent = `${icons[s] || ''} ${s}`;
                 span.title = s;
-                span.className = 'text-[10px] text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full border border-gray-200 dark:border-gray-600 whitespace-nowrap';
+                span.className = 'text-[10px] text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded-full border border-gray-200 whitespace-nowrap';
                 seasonsRow.appendChild(span);
             });
             seasonalityContainer.appendChild(seasonsRow);
@@ -267,7 +267,7 @@ export default function init() {
                 const span = document.createElement('span');
                 span.textContent = m.slice(0, 3) + '.'; // Abbrev
                 span.title = m;
-                span.className = 'text-[10px] text-gray-600 dark:text-gray-300 bg-blue-50 dark:bg-gray-700 px-1.5 py-0.5 rounded-full border border-blue-100 dark:border-gray-600 whitespace-nowrap';
+                span.className = 'text-[10px] text-gray-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100 whitespace-nowrap';
                 monthsRow.appendChild(span);
             });
             seasonalityContainer.appendChild(monthsRow);
@@ -291,17 +291,17 @@ export default function init() {
 
         // --- Actions Section ---
         const actions = document.createElement('div');
-        actions.className = 'w-full flex justify-end items-center space-x-2 border-t dark:border-gray-700 pt-2 mt-2';
+        actions.className = 'w-full flex justify-end items-center space-x-2 border-t pt-2 mt-2';
 
         const editButton = document.createElement('button');
-        editButton.className = 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-sm px-3 py-1 rounded-md';
+        editButton.className = 'text-blue-500 hover:bg-blue-50 text-sm px-3 py-1 rounded-md';
         editButton.innerHTML = '<i class="fas fa-edit"></i>';
         editButton.title = 'Modifier';
         editButton.addEventListener('click', () => recipeFormHandler.openForm(recipe, 'Modifier la recette'));
         actions.appendChild(editButton);
 
         const deleteButton = document.createElement('button');
-        deleteButton.className = 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/50 text-sm px-3 py-1 rounded-md';
+        deleteButton.className = 'text-red-500 hover:bg-red-50 text-sm px-3 py-1 rounded-md';
         deleteButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
         deleteButton.title = 'Supprimer';
         deleteButton.addEventListener('click', () => handleDeleteRecipe(recipe.id, recipe.name));
