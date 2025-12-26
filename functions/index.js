@@ -204,3 +204,60 @@ exports.debugFetch = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', e.message);
     }
 });
+// --- Ingredient Audit Function ---
+exports.auditIngredients = functions.https.onCall(async (data, context) => {
+    logger.info("auditIngredients raw input:", data);
+
+    // Robust extraction: onCall might wrap data in data.data or data
+    const ingredients = data?.ingredients || (data?.data && data.data.ingredients);
+
+    if (!ingredients || !Array.isArray(ingredients)) {
+        logger.error("auditIngredients: Missing ingredients in payload", data);
+        throw new functions.https.HttpsError('invalid-argument', 'Liste d\'ingrédients manquante ou invalide');
+    }
+
+    const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
+    const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        generationConfig: { responseMimeType: "application/json" }
+    });
+
+    const prompt = `
+    Analyze this ingredient list. For each, suggest the most appropriate standard unit for a shopping list and its supermarket category.
+    
+    Allowed Units: 'g', 'kg', 'ml', 'l', 'pièce(s)', 'c.à.s.', 'c.à.c.', 'pincée(s)'.
+    Rule: Prefer 'g' for solids, 'pièce(s)' for fruits/veg sold individually.
+    
+    Data: ${JSON.stringify(ingredients.map(i => ({ name: i.name, u: i.unit, c: i.category })))}
+
+    CRITICAL: ONLY respond with valid JSON. NO markdown.
+    Format:
+    {
+        "suggestions": [
+            { "name": "original name", "unit": "unit", "cat": "category", "reason": "why" }
+        ]
+    }
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let text = response.text();
+
+        // Clean markdown backticks if AI ignores prompt instructions
+        text = text.replace(/```json\n?|```/g, '').trim();
+
+        try {
+            return JSON.parse(text);
+        } catch (parseError) {
+            logger.error("JSON Parse Error. Raw text snippet:", text.substring(0, 500));
+            throw parseError;
+        }
+    } catch (error) {
+        logger.error("Audit failed", error);
+        throw new functions.https.HttpsError('internal', 'Échec de l\'audit IA: ' + error.message);
+    }
+});

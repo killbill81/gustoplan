@@ -185,6 +185,33 @@ class RecipeFormHandler {
         }
     }
 
+    async askAiForConversion(name, quantity, fromUnit, toUnit) {
+        const prompt = `Convertis cette quantité d'ingrédient de son unité actuelle vers l'unité cible.
+        Ingrédient: ${name}
+        Quantité d'origine: ${quantity}
+        Unité d'origine: ${fromUnit}
+        Unité cible: ${toUnit}
+        
+        Réponds UNIQUEMENT avec le chiffre (nombre ou fraction) correspondant à la nouvelle quantité. Pas de texte, pas d'unité. Ex: "3" ou "0.5".`;
+
+        try {
+            const generateRecipe = httpsCallable(this.functions, 'generateRecipe'); // Reuse generic generation
+            const result = await generateRecipe({ prompt });
+            // The result will be a JSON, but we asked for just a number in the prompt. 
+            // We might need a more specialized function or just parse the text.
+            // Let's assume the prompt returns a JSON or text we can clean.
+            const response = result.data.data || result.data;
+            const text = response.steps || response.toString(); // Fallback to steps if it's the recipe object
+
+            // Clean non-numeric characters except . and /
+            const cleaned = text.replace(/[^0-9./]/g, '').trim();
+            return cleaned;
+        } catch (error) {
+            console.error("AI Conversion error:", error);
+            return null;
+        }
+    }
+
     populateFormFromAi(data) {
         if (data.name) this.recipeNameInput.value = data.name;
         if (data.servings) this.recipeServingsInput.value = data.servings;
@@ -212,6 +239,7 @@ class RecipeFormHandler {
                     name: name,
                     quantity: ing.quantity,
                     unit: ing.unit || 'pièce',
+                    originalUnit: ing.unit || 'pièce', // Store for AI Unit Adapter
                     originalName: name // Store the AI's original suggestion
                 }, this.currentIngredientsArray, !isKnown);
             });
@@ -373,6 +401,9 @@ class RecipeFormHandler {
         unitDisplay.placeholder = 'Unité';
         unitDisplay.readOnly = true;
         unitDisplay.value = newIngredient.unit || '';
+        unitDisplay.addEventListener('change', (e) => {
+            ingredientsArray[index].unit = e.target.value;
+        });
 
         const nameInputContainer = document.createElement('div');
         nameInputContainer.className = 'w-1/2 flex items-center space-x-1';
@@ -391,7 +422,7 @@ class RecipeFormHandler {
             nameInput.select();
         });
 
-        const updateValidity = (val) => {
+        const updateValidity = async (val) => {
             const lowVal = val.toLowerCase();
             const exists = this.masterIngredientList.some(i => i.name.toLowerCase() === lowVal);
 
@@ -404,16 +435,36 @@ class RecipeFormHandler {
                 const k = this.masterIngredientList.find(i => i.name.toLowerCase() === lowVal);
                 if (k) {
                     unitDisplay.value = k.unit;
+                    unitDisplay.readOnly = true;
+                    unitDisplay.classList.add('bg-gray-100');
                     ingredientsArray[index].id = k.id;
                     ingredientsArray[index].unit = k.unit;
+
+                    // --- AI Unit Adapter Logic ---
+                    // If ingredient came from AI and had a different unit, show convert button
+                    if (newIngredient.originalUnit && newIngredient.originalUnit !== k.unit && newIngredient.quantity) {
+                        convertBtn.classList.remove('hidden');
+                        convertBtn.title = `L'IA suggère ${newIngredient.quantity} ${newIngredient.originalUnit}, mais votre unité standard est ${k.unit}. Cliquer pour convertir.`;
+                        nameInput.classList.add('border-orange-500', 'bg-orange-50'); // Keep orange to force conversion
+                    } else {
+                        convertBtn.classList.add('hidden');
+                    }
                 }
             } else if (val.trim() !== "") {
                 nameInput.classList.add('border-orange-500', 'bg-orange-50');
                 nameInput.title = "Ingrédient inconnu. Cliquez sur '+' pour créer ou restaurez l'original.";
                 createBtn.classList.remove('hidden');
+                convertBtn.classList.add('hidden');
+
+                // Allow editing unit for unknown ingredients
+                unitDisplay.readOnly = false;
+                unitDisplay.classList.remove('bg-gray-100');
             } else {
                 nameInput.classList.remove('border-orange-500', 'bg-orange-50');
                 createBtn.classList.add('hidden');
+                convertBtn.classList.add('hidden');
+                unitDisplay.readOnly = false;
+                unitDisplay.classList.remove('bg-gray-100');
             }
 
             // Show/Hide Restore button
@@ -431,6 +482,41 @@ class RecipeFormHandler {
         // Structure the elements
         inputWrapper.appendChild(nameInput);
         nameInputContainer.appendChild(inputWrapper);
+
+        // Convert Button (AI Unit Adapter)
+        const convertBtn = document.createElement('button');
+        convertBtn.type = 'button';
+        convertBtn.className = 'ml-1 p-1 rounded-full text-tomato bg-tomato/10 hover:bg-tomato/20 border border-tomato/30 hidden transition-all';
+        convertBtn.innerHTML = '<i class="fas fa-calculator"></i>';
+        convertBtn.addEventListener('click', async () => {
+            const currentName = nameInput.value;
+            const targetUnit = unitDisplay.value;
+            const sourceQty = quantityInput.value;
+            const sourceUnit = newIngredient.originalUnit;
+
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            convertBtn.disabled = true;
+
+            try {
+                const suggestion = await this.askAiForConversion(currentName, sourceQty, sourceUnit, targetUnit);
+                if (suggestion) {
+                    quantityInput.value = suggestion;
+                    ingredientsArray[index].quantity = suggestion;
+                    alert(`Conversion effectuée : ${sourceQty} ${sourceUnit} de ${currentName} vaut environ ${suggestion} ${targetUnit}.`);
+
+                    // Now matches standard, clear warning
+                    newIngredient.originalUnit = targetUnit;
+                    updateValidity(currentName);
+                }
+            } catch (e) {
+                console.error("Conversion failed", e);
+                alert("Échec de la conversion IA.");
+            } finally {
+                convertBtn.innerHTML = '<i class="fas fa-calculator"></i>';
+                convertBtn.disabled = false;
+            }
+        });
+        nameInputContainer.appendChild(convertBtn);
 
         // Restore Original Button
         const restoreBtn = document.createElement('button');

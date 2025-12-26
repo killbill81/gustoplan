@@ -1,5 +1,6 @@
 import { db } from './firebase-config.js';
 import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, writeBatch, query, where } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { seasonManager } from './season-manager.js';
 import { ingredientModalManager } from './ingredient-modal.js';
 
@@ -18,6 +19,13 @@ export default function init() {
     const addCategoryForm = document.getElementById('add-category-form');
     const newCategoryNameInput = document.getElementById('new-category-name');
     const categoryListDiv = document.getElementById('category-list');
+
+    // Audit IA Elements
+    const auditBtn = document.getElementById('audit-ingredients-btn');
+    const auditModal = document.getElementById('audit-modal');
+    const closeAuditBtn = document.getElementById('close-audit-modal');
+    const applyAuditBtn = document.getElementById('apply-audit-btn');
+    const auditListBody = document.getElementById('audit-results-list');
 
     // --- State ---
     let allIngredients = [];
@@ -385,6 +393,170 @@ export default function init() {
         }
     }
 
+    // --- Audit IA Logic ---
+    async function handleAudit() {
+        if (allIngredients.length === 0) {
+            alert("Aucun ingrédient à auditer.");
+            return;
+        }
+
+        auditBtn.disabled = true;
+        auditBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Audit en cours...';
+        auditListBody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-500 italic"><i class="fas fa-spinner fa-spin mr-2"></i> Analyse en cours (cela peut prendre du temps si vous avez beaucoup d\'ingrédients)...</td></tr>';
+
+        try {
+            const functions = getFunctions();
+            const auditIngredientsFn = httpsCallable(functions, 'auditIngredients');
+
+            // Batch process if there are many ingredients (to avoid AI response limits)
+            const batchSize = 50;
+            let allSuggestions = [];
+
+            for (let i = 0; i < allIngredients.length; i += batchSize) {
+                const chunk = allIngredients.slice(i, i + batchSize);
+                const result = await auditIngredientsFn({ ingredients: chunk });
+                if (result.data && result.data.suggestions) {
+                    allSuggestions = allSuggestions.concat(result.data.suggestions);
+                }
+            }
+
+            renderAuditResults(allSuggestions);
+            auditModal.classList.remove('hidden');
+        } catch (error) {
+            console.error("Audit failed:", error);
+            alert("Erreur lors de l'audit : " + error.message);
+        } finally {
+            auditBtn.disabled = false;
+            auditBtn.innerHTML = '<i class="fas fa-stethoscope mr-2"></i> Audit Qualité IA';
+        }
+    }
+
+    function renderAuditResults(suggestions) {
+        auditListBody.innerHTML = '';
+        suggestions.forEach(s => {
+            const original = allIngredients.find(i => i.name === s.name);
+            if (!original) return;
+
+            const hasDiff = (s.unit !== (original.unit || '')) ||
+                (s.cat !== (original.category || ''));
+
+            if (!hasDiff) return;
+
+            const row = document.createElement('tr');
+            row.className = "hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors";
+            row.innerHTML = `
+                <td class="px-4 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">${s.name}</td>
+                <td class="px-4 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    <div class="flex flex-col gap-1">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-[10px] font-medium text-gray-600 dark:text-gray-400">U: ${original.unit || 'n/a'}</span>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-[10px] font-medium text-gray-600 dark:text-gray-400">C: ${original.category || 'n/a'}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-4 text-sm">
+                    <div class="flex flex-col gap-1">
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-tomato/10 text-tomato text-[10px] font-bold border border-tomato/20">${s.unit}</span>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-tomato/10 text-tomato text-[10px] font-bold border border-tomato/20">${s.cat}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-4 text-xs text-gray-500 dark:text-gray-400 italic font-medium leading-relaxed max-w-[200px] break-words" title="${s.reason}">${s.reason}</td>
+                <td class="px-4 py-4 text-center">
+                    <div class="flex items-center justify-center">
+                        <input type="checkbox" class="audit-apply-checkbox w-6 h-6 border-2 border-gray-300 dark:border-gray-600 rounded cursor-pointer accent-tomato" 
+                            data-id="${original.id}" 
+                            data-unit="${s.unit}" 
+                            data-cat="${s.cat}" checked>
+                    </div>
+                </td>
+            `;
+            auditListBody.appendChild(row);
+        });
+
+        if (auditListBody.innerHTML === '') {
+            auditListBody.innerHTML = '<tr><td colspan="5" class="p-12 text-center text-gray-500 dark:text-gray-400 italic text-lg font-medium">✨ Aucune amélioration suggérée. Vos données sont parfaites !</td></tr>';
+            applyAuditBtn.classList.add('hidden');
+        } else {
+            applyAuditBtn.classList.remove('hidden');
+        }
+    }
+
+    async function applySuggestions() {
+        const checkboxes = auditListBody.querySelectorAll('.audit-apply-checkbox:checked');
+        if (checkboxes.length === 0) {
+            auditModal.classList.add('hidden');
+            return;
+        }
+
+        const confirmMsg = `Vous allez mettre à jour ${checkboxes.length} ingrédients. \n\nIMPORTANT : Ces changements seront également propagés à toutes vos recettes existantes pour garantir la cohérence des unités. \n\nSouhaitez-vous continuer ?`;
+        if (!confirm(confirmMsg)) return;
+
+        applyAuditBtn.disabled = true;
+        applyAuditBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Application...';
+
+        try {
+            const batch = writeBatch(db);
+            const changes = [];
+
+            checkboxes.forEach(cb => {
+                const id = cb.dataset.id;
+                const unit = cb.dataset.unit;
+                const category = cb.dataset.cat;
+
+                // Find original name for propagation
+                const original = allIngredients.find(i => i.id === id);
+                if (original) {
+                    changes.push({ name: original.name, oldUnit: original.unit, newUnit: unit });
+                }
+
+                batch.update(doc(db, "ingredients", id), { unit, category });
+            });
+
+            await batch.commit();
+
+            // Propagate to recipes
+            await propagateChangesToRecipes(changes);
+
+            alert(`${checkboxes.length} ingrédients mis à jour et propagés aux recettes !`);
+            auditModal.classList.add('hidden');
+            await fetchAllData();
+        } catch (error) {
+            console.error("Batch update failed:", error);
+            alert("Erreur lors de la mise à jour : " + error.message);
+        } finally {
+            applyAuditBtn.disabled = false;
+            applyAuditBtn.innerHTML = 'Enregistrer les sélectionnés';
+        }
+    }
+
+    async function propagateChangesToRecipes(changes) {
+        // We only care about name and newUnit
+        const recipesSnap = await getDocs(collection(db, "recipes"));
+        const batch = writeBatch(db);
+        let updatedCount = 0;
+
+        recipesSnap.forEach(recipeDoc => {
+            const recipeData = recipeDoc.data();
+            let recipeModified = false;
+            const updatedIngredients = (recipeData.ingredients || []).map(ing => {
+                const change = changes.find(c => c.name === ing.name);
+                if (change && ing.unit !== change.newUnit) {
+                    recipeModified = true;
+                    return { ...ing, unit: change.newUnit };
+                }
+                return ing;
+            });
+
+            if (recipeModified) {
+                batch.update(recipeDoc.ref, { ingredients: updatedIngredients });
+                updatedCount++;
+            }
+        });
+
+        if (updatedCount > 0) {
+            await batch.commit();
+            console.log(`Propagatated changes to ${updatedCount} recipes.`);
+        }
+    }
+
     // --- Event Listeners ---
     window.addEventListener('seasonality-config-changed', () => {
         renderIngredients();
@@ -423,6 +595,11 @@ export default function init() {
     closeCategoryModalBtn.addEventListener('click', closeCategoryModal);
     doneCategoryModalBtn.addEventListener('click', closeCategoryModal);
     addCategoryForm.addEventListener('submit', handleAddCategory);
+
+    // Audit IA Listeners
+    if (auditBtn) auditBtn.addEventListener('click', handleAudit);
+    if (closeAuditBtn) closeAuditBtn.addEventListener('click', () => auditModal.classList.add('hidden'));
+    if (applyAuditBtn) applyAuditBtn.addEventListener('click', applySuggestions);
 
     fetchAllData();
 }

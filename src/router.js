@@ -304,12 +304,45 @@ const routes = {
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl md:text-3xl font-bold text-foreground">Mes Ingrédients</h2>
             <div class="flex space-x-2">
+                <button id="audit-ingredients-btn" class="btn btn-secondary">
+                    <i class="fas fa-stethoscope mr-2"></i> Audit Qualité IA
+                </button>
                 <button id="manage-categories-btn" class="btn btn-outline">
                     <i class="fas fa-tags mr-2"></i> Gérer les catégories
                 </button>
                 <button id="add-ingredient-btn" class="btn btn-primary">
                     <i class="fas fa-plus mr-2"></i> Ajouter un ingrédient
                 </button>
+            </div>
+        </div>
+
+        <!-- Audit Results Modal -->
+        <div id="audit-modal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-[150] hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto relative border border-gray-200 dark:border-gray-700 shadow-2xl">
+                <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Audit de qualité des ingrédients</h3>
+                <p class="text-gray-700 dark:text-gray-300 mb-6">L'IA a analysé vos ingrédients pour suggérer des unités et catégories standards. Cela facilitera la création des listes de courses.</p>
+                
+                <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-100 dark:bg-gray-700/50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Ingrédient</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Actuel</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Suggéré</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Raison</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">Appliquer</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-results-list" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end space-x-4 mt-8 sticky bottom-0 bg-white dark:bg-gray-800 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <button id="close-audit-modal" class="px-5 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors">Annuler</button>
+                    <button id="apply-audit-btn" class="btn btn-primary px-6 py-2">Enregistrer les sélectionnés</button>
+                </div>
             </div>
         </div>
 
