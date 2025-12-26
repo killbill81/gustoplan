@@ -6,7 +6,8 @@ import { navigateTo } from './router.js';
 // In a larger application, this rendering logic would be shared in a separate module.
 
 export default function initViewPlanPage() {
-    const planId = localStorage.getItem('selectedPlanId'); // This is now a saveId
+    const planId = localStorage.getItem('selectedPlanId');
+    const planCollection = localStorage.getItem('selectedPlanCollection') || 'plan_saves';
     const planViewName = document.getElementById('plan-view-name');
     const mealPlanGrid = document.getElementById('meal-plan-grid');
     const closeBtn = document.getElementById('close-view-plan-btn');
@@ -14,48 +15,58 @@ export default function initViewPlanPage() {
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             localStorage.removeItem('selectedPlanId');
+            localStorage.removeItem('selectedPlanCollection');
             navigateTo('plans');
         });
     }
 
     if (!planId) {
-        if (planViewName) planViewName.textContent = "Aucune sauvegarde sélectionnée";
-        if (mealPlanGrid) mealPlanGrid.innerHTML = '<p class="text-center text-red-500">Erreur : Aucun ID de sauvegarde trouvé. Veuillez retourner à la page \'Mes Plans Sauvegardés\' et en sélectionner une.</p>';
-        return () => {}; // Return empty cleanup function
+        if (planViewName) planViewName.textContent = "Aucun plan sélectionné";
+        if (mealPlanGrid) mealPlanGrid.innerHTML = '<p class="text-center text-red-500">Erreur : Aucun ID trouvé. Veuillez retourner à la page \'Mes Plans\' et en sélectionner un.</p>';
+        return () => { };
     }
 
-    async function fetchAndRenderSave() {
+    async function fetchAndRenderPlan() {
         try {
-            const saveRef = doc(db, "plan_saves", planId);
-            const saveSnap = await getDoc(saveRef);
+            const planRef = doc(db, planCollection, planId);
+            const planSnap = await getDoc(planRef);
 
-            if (!saveSnap.exists()) {
-                throw new Error("Sauvegarde non trouvée");
+            if (!planSnap.exists()) {
+                throw new Error("Plan non trouvé");
             }
 
-            const saveData = saveSnap.data();
-            const planData = saveData.planData;
+            const data = planSnap.data();
+            let planData = data;
+            let displayName = data.name;
 
-            if (!planData) {
-                throw new Error("Les données du plan sauvegardé sont corrompues ou manquantes.");
+            // Adapte selon la collection (plan_saves encapsule dans planData)
+            if (planCollection === 'plan_saves') {
+                planData = data.planData;
+                displayName = `Sauvegarde : ${data.name}`;
             }
 
-            if (planViewName) planViewName.textContent = `Vue de : ${saveData.name}`;
-            
+            if (!planData || !planData.weeks) {
+                // If the live plan is empty (no weeks yet)
+                if (planViewName) planViewName.textContent = displayName;
+                mealPlanGrid.innerHTML = '<p class="text-center text-gray-500 p-10 col-span-full">Ce plan ne contient aucune planification enregistrée.</p>';
+                return;
+            }
+
+            if (planViewName) planViewName.textContent = displayName;
             renderFullPlanner(mealPlanGrid, planData);
 
         } catch (error) {
-            console.error("Error fetching save:", error);
+            console.error("Error fetching plan:", error);
             if (planViewName) planViewName.textContent = "Erreur";
             if (mealPlanGrid) mealPlanGrid.innerHTML = `<p class="text-center text-red-500">${error.message}</p>`;
         }
     }
 
-    fetchAndRenderSave();
+    fetchAndRenderPlan();
 
-    // Return empty cleanup function as there are no persistent listeners
     return () => {
         localStorage.removeItem('selectedPlanId');
+        localStorage.removeItem('selectedPlanCollection');
     };
 }
 
@@ -72,7 +83,7 @@ function renderFullPlanner(container, planData) {
 
     sortedWeeks.forEach(weekNumber => {
         const weekData = planData.weeks[weekNumber];
-        
+
         const weekHeader = document.createElement('h3');
         weekHeader.className = 'text-lg font-bold text-gray-700 mt-6 mb-2 col-span-full';
         weekHeader.textContent = `Semaine ${weekNumber}`;
@@ -97,7 +108,7 @@ function renderPlannerForWeek(container, weekData, startDay, defaultNumPeople) {
         const dayOriginalIndex = allDays.indexOf(dayName);
         const dayRow = document.createElement('div');
         dayRow.className = 'grid grid-cols-[100px_35px_repeat(5,_minmax(0,_1fr))_35px_repeat(5,_minmax(0,_1fr))] items-stretch border-b border-gray-300';
-        
+
         const dayHeader = document.createElement('div');
         dayHeader.className = 'font-bold p-2 flex items-center justify-center bg-gray-100 text-sm border-r border-gray-300';
         dayHeader.textContent = dayName.toUpperCase();
@@ -106,7 +117,7 @@ function renderPlannerForWeek(container, weekData, startDay, defaultNumPeople) {
         ['lunch', 'dinner'].forEach(mealType => {
             const servingsKey = `${dayOriginalIndex}-${mealType}`;
             const numPeople = planServingsData[servingsKey] || defaultNumPeople || 1;
-            
+
             const servingsCell = document.createElement('div');
             servingsCell.className = 'border-r border-gray-300 flex items-center justify-center';
             servingsCell.innerHTML = `<div class="text-center"><i class="fas fa-users fa-xs mb-1"></i><br>${numPeople}</div>`;

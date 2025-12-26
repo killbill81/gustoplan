@@ -11,8 +11,8 @@ const routes = {
                                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
                                         <h2 id="meal-planning-heading" class="text-xl md:text-2xl font-bold text-foreground">Menu de la semaine</h2>
                                         <div class="mt-3 md:mt-0 flex items-center space-x-2 md:space-x-3 plan-actions">
-                                            <button id="generate-plan-ai-btn" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-robot mr-1 md:mr-2"></i> IA Semaine
+                                            <button id="smart-plan-btn" class="btn btn-primary btn-sm" title="Générer un menu hebdomadaire intelligent avec l'IA">
+                                                <i class="fas fa-magic mr-1 md:mr-2"></i> Menu Intelligent
                                             </button>
                                             <button id="clear-menu-btn" class="btn btn-outline btn-sm text-red-800 hover:bg-red-100">
                                                 <i class="fas fa-trash-alt mr-1 md:mr-2"></i> Vider le menu
@@ -55,6 +55,9 @@ const routes = {
                                             </button>
                                             <button id="history-plan-btn" class="text-purple-500 hover:bg-purple-100 text-sm px-3 py-1 rounded-md" title="Historique des modifications">
                                                 <i class="fas fa-history"></i>
+                                            </button>
+                                            <button id="archive-plan-btn" class="text-gray-500 hover:bg-gray-100 text-sm px-3 py-1 rounded-md" title="Archiver le menu (le masquer sans le supprimer)">
+                                                <i class="fas fa-archive"></i>
                                             </button>
                                             <button id="leave-plan-btn" class="text-yellow-600 hover:bg-yellow-100 text-sm px-3 py-1 rounded-md" title="Quitter le menu collaboratif">
                                                 <i class="fas fa-door-open"></i>
@@ -506,9 +509,17 @@ const routes = {
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl md:text-3xl font-bold text-foreground">Mes Plans Sauvegardés</h2>
         </div>
-        <div id="all-plans-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="all-plans-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             <!-- La liste des plans sera chargée ici -->
             <p class="text-center text-muted-foreground p-10 col-span-full">Chargement de vos plans...</p>
+        </div>
+
+        <div class="border-t border-gray-200 pt-8">
+            <h2 class="text-2xl font-bold text-foreground mb-6">Menus Archivés</h2>
+            <div id="archived-plans-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Les plans archivés seront chargés ici -->
+                <p class="text-center text-muted-foreground p-10 col-span-full">Chargement de vos archives...</p>
+            </div>
         </div>
         `,
         script: './all-plans.js'

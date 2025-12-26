@@ -1,10 +1,11 @@
 // Importe les fonctions Firebase
-import { db } from './firebase-config.js';
+import { db, functions } from './firebase-config.js';
+import { httpsCallable } from "firebase/functions";
 import { doc, getDoc, setDoc, collection, getDocs, addDoc, deleteDoc, query, where, updateDoc, runTransaction, onSnapshot, orderBy } from "firebase/firestore";
 import { recipeFormHandler } from './form-handler.js';
 import { getCurrentUserId } from './auth.js';
 import { openShareModal, openInviteParticipantModal } from './sharing.js';
-import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory, saveOrUpdatePlanSaveByName } from './plans.js';
+import { initPlanManagement, getUserPlans, populatePlanSelector, saveHistory, saveOrUpdatePlanSaveByName, archivePlan, createPlan } from './plans.js';
 import { toggleFavoriteStatus } from './recipes.js';
 import { connectToPresenceChannel, disconnectFromPresenceChannel, updateUserActivity } from './presence.js';
 import { seasonManager } from './season-manager.js';
@@ -54,6 +55,8 @@ export default function init() {
         closeTrashModalBtn: document.getElementById('close-trash-modal'),
         trashListContainer: document.getElementById('trash-list-container'),
         emptyTrashBtn: document.getElementById('empty-trash-btn'),
+        smartPlanBtn: document.getElementById('smart-plan-btn'),
+        archivePlanBtn: document.getElementById('archive-plan-btn'),
     };
 
     // --- New UI Component Functions ---
@@ -419,8 +422,12 @@ export default function init() {
                 startDay = planToSave.startDay;
 
                 // Update the in-memory representation and re-render
-                availablePlans[0] = { ...availablePlans[0], ...planToSave };
-                loadPlan(availablePlans[0]);
+                renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+                const mobilePlanContainer = document.getElementById('mobile-meal-plan');
+                if (mobilePlanContainer) {
+                    renderMobilePlanner(mobilePlanContainer, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+                }
+                generateShoppingListFromPlan();
 
             } catch (error) {
                 console.error("Erreur lors de l'intégration du plan:", error);
@@ -544,10 +551,131 @@ export default function init() {
                 historyItem.appendChild(buttonsDiv);
                 elements.planHistoryList.appendChild(historyItem);
             });
-
         } catch (error) {
             console.error("Erreur de chargement de l'historique:", error);
             elements.planHistoryList.innerHTML = '<p class="text-red-500">Impossible de charger l\'historique.</p>';
+        }
+    }
+
+    async function handleSmartPlan() {
+        if (!currentPlan) return alert("Veuillez d'abord sélectionner un menu.");
+
+        // Choice logic
+        if (Object.keys(menuData).length > 0) {
+            const createNew = confirm("Un menu existe déjà. Voulez-vous créer un NOUVEAU menu pour cette suggestion ?\n(OK = Nouveau menu, Annuler = Écraser l'actuel)");
+            if (createNew) {
+                const name = prompt("Nom du nouveau menu :", `Menu Intelligent - ${new Date().toLocaleDateString('fr-FR')}`);
+                if (!name) return; // Exit if user cancels name prompt
+
+                elements.smartPlanBtn.disabled = true;
+                elements.smartPlanBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Création du menu...';
+
+                const newId = await createPlan(name);
+                if (!newId) {
+                    elements.smartPlanBtn.disabled = false;
+                    elements.smartPlanBtn.innerHTML = '<i class="fas fa-magic mr-1 md:mr-2"></i> Menu Intelligent';
+                    return;
+                }
+
+                // We must select the new plan. 
+                // Since the listener updates allPlans, we might need to find it once it arrives.
+                // But for the sake of the next steps, we can forge it.
+                const newPlan = { id: newId, name: name, userId: getCurrentUserId(), weeks: {}, isOwner: true };
+                allPlans.push(newPlan);
+                elements.planSelect.value = newId;
+                loadPlanFromSelection();
+            } else {
+                if (!confirm("Voulez-vous vraiment ÉCRASER le menu actuel ?")) return;
+            }
+        }
+
+        elements.smartPlanBtn.disabled = true;
+        const originalContent = elements.smartPlanBtn.innerHTML;
+        elements.smartPlanBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Chef Gusto réfléchit...';
+
+        try {
+            // 1. Get all recipes
+            const recipesSnap = await getDocs(collection(db, "recipes"));
+            const allRecipesForSmart = recipesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            // 2. Get history (last 3 weeks)
+            const userId = getCurrentUserId();
+            const plansSnap = await getDocs(query(collection(db, "plans"), where("userId", "==", userId), orderBy("lastUpdated", "desc")));
+            const recentHistory = [];
+            plansSnap.docs.slice(0, 3).forEach(doc => {
+                const data = doc.data();
+                if (data.weeks) {
+                    Object.values(data.weeks).forEach(w => {
+                        if (w.menuData) {
+                            Object.values(w.menuData).forEach(day => {
+                                if (day.MIDI) recentHistory.push(day.MIDI);
+                                if (day.SOIR) recentHistory.push(day.SOIR);
+                            });
+                        }
+                    });
+                }
+            });
+
+            // 3. Call AI
+            const suggestMenu = httpsCallable(functions, 'suggestMenu');
+            const result = await suggestMenu({
+                recipes: allRecipesForSmart,
+                history: [...new Set(recentHistory)],
+                season: seasonManager.getCurrentSeason()
+            });
+
+            const suggestedMenu = result.data.menu;
+            const description = result.data.description;
+
+            // 4. Update menuData locally with correct slot mapping
+            // Slot format: "dayIndex-mealType-categoryIndex"
+            // categoryIndex for "Plat" is 1
+            const daysMap = { "Lundi": 0, "Mardi": 1, "Mercredi": 2, "Jeudi": 3, "Vendredi": 4, "Samedi": 5, "Dimanche": 6 };
+            const newMenuData = JSON.parse(JSON.stringify(menuData)); // Keep existing if we only want to overwrite plats
+
+            for (const [dayName, meals] of Object.entries(suggestedMenu)) {
+                const dayIndex = daysMap[dayName];
+                if (dayIndex === undefined) continue;
+
+                const mapMeal = (recipeName, mealType) => {
+                    const slotId = `${dayIndex}-${mealType === 'MIDI' ? 'lunch' : 'dinner'}-1`;
+                    if (recipeName) {
+                        const recipe = allRecipesForSmart.find(r => r.name === recipeName);
+                        if (recipe) {
+                            newMenuData[slotId] = [{ id: recipe.id }];
+                        } else {
+                            // Fallback if AI used a slightly different name (unlikely with constraints)
+                            console.warn(`Recipe not found for Smart Plan: ${recipeName}`);
+                        }
+                    } else {
+                        delete newMenuData[slotId];
+                    }
+                };
+
+                mapMeal(meals.MIDI, 'MIDI');
+                mapMeal(meals.SOIR, 'SOIR');
+            }
+
+            // 5. Save to Firestore
+            await updateCurrentPlan({ [`weeks.${currentWeek}.menuData`]: newMenuData }, description || "Génération Smart Plan par l'IA");
+
+            // 6. Immediate UI Refresh
+            menuData = newMenuData;
+            renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+            const mobilePlanContainer = document.getElementById('mobile-meal-plan');
+            if (mobilePlanContainer) {
+                renderMobilePlanner(mobilePlanContainer, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+            }
+            generateShoppingListFromPlan();
+
+            alert(description || "Menu généré avec succès !");
+
+        } catch (error) {
+            console.error("Smart Plan error:", error);
+            alert("Erreur lors de la génération : " + error.message);
+        } finally {
+            elements.smartPlanBtn.disabled = false;
+            elements.smartPlanBtn.innerHTML = originalContent;
         }
     }
 
@@ -562,12 +690,24 @@ export default function init() {
             servingsData = {};
             remarksData = {};
 
-            // Re-render the empty plan
+            // 1. Re-render the empty plan (Desktop)
             renderPlanner(elements.mealPlanGrid, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
 
-            // Save the cleared week
-            await saveCurrentPlan();
-            await generateShoppingListFromPlan();
+            // 2. Refresh Mobile UI if needed
+            const mobilePlanContainer = document.getElementById('mobile-meal-plan');
+            if (mobilePlanContainer) {
+                renderMobilePlanner(mobilePlanContainer, { menuData, servingsData, remarksData, defaultNumPeople, startDay }, false);
+            }
+
+            // 3. Save the cleared week data to Firestore
+            await updateCurrentPlan({
+                [`weeks.${currentWeek}.menuData`]: {},
+                [`weeks.${currentWeek}.servingsData`]: {},
+                [`weeks.${currentWeek}.remarksData`]: {}
+            }, "a vidé le menu de la semaine");
+
+            // 4. Update shopping list
+            generateShoppingListFromPlan();
         }
     }
 
@@ -2012,34 +2152,6 @@ export default function init() {
         // The onSnapshot listener will handle the UI update for everyone.
     }
 
-    async function clearMenu() {
-        if (confirm("Voulez-vous vraiment vider le menu de cette semaine ?")) {
-            // Créer un objet de plan vide en conservant les paramètres de l'utilisateur
-            const emptyPlan = {
-                id: availablePlans.length > 0 ? availablePlans[0].id : `${getCurrentUserId()}_semaine-${currentWeek}`,
-                name: availablePlans.length > 0 ? availablePlans[0].name : "Mon menu",
-                menuData: {},
-                servingsData: {},
-                remarksData: {},
-                defaultNumPeople: defaultNumPeople,
-                startDay: startDay,
-                lastUpdated: new Date()
-            };
-
-            // Charger le plan vide dans l'état global et l'interface utilisateur
-            loadPlan(emptyPlan);
-
-            // Mettre à jour la représentation en mémoire du plan
-            if (availablePlans.length > 0) {
-                availablePlans[0] = emptyPlan;
-            } else {
-                availablePlans.push(emptyPlan);
-            }
-
-            // Sauvegarder le plan vidé dans Firebase
-            await updateCurrentPlan({ [`weeks.${currentWeek}`]: { menuData: {}, servingsData: {}, remarksData: {} } }, `a vidé le menu de la semaine ${currentWeek}`);
-        }
-    }
 
     function changeWeek(weekNumber) {
         if (weekNumber >= 1 && weekNumber <= 52) {
@@ -2122,6 +2234,16 @@ export default function init() {
 
         elements.historyPlanBtn?.addEventListener('click', openHistoryModal);
         elements.closePlanHistoryModalBtn?.addEventListener('click', closePlanHistoryModal);
+        elements.smartPlanBtn?.addEventListener('click', handleSmartPlan);
+        elements.archivePlanBtn?.addEventListener('click', async () => {
+            const msg = currentPlan && currentPlan.isOwner
+                ? "Voulez-vous archiver ce menu ? Il sera masqué pour vous mais restera accessible par Chef Gusto pour ses recommandations."
+                : "Voulez-vous masquer ce menu collaboratif de votre liste ? Il restera accessible aux autres membres et Chef Gusto pourra toujours s'y référer.";
+            if (currentPlan && confirm(msg)) {
+                await archivePlan(currentPlan.id, true);
+                alert("Menu masqué/archivé avec succès.");
+            }
+        });
         elements.planHistoryModal?.addEventListener('click', (e) => { if (e.target === elements.planHistoryModal) closePlanHistoryModal(); });
 
         elements.openTrashBtn?.addEventListener('click', () => {
@@ -2324,10 +2446,12 @@ export default function init() {
         const leavePlanBtn = document.getElementById('leave-plan-btn');
         const inviteParticipantBtn = document.getElementById('invite-participant-btn');
         const historyPlanBtn = document.getElementById('history-plan-btn');
+        const archivePlanBtn = document.getElementById('archive-plan-btn');
 
         if (deletePlanBtn) deletePlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
         if (renamePlanBtn) renamePlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
         if (historyPlanBtn) historyPlanBtn.style.display = currentPlan && currentPlan.isOwner ? 'inline-flex' : 'none';
+        if (archivePlanBtn) archivePlanBtn.style.display = currentPlan ? 'inline-flex' : 'none';
         if (leavePlanBtn) leavePlanBtn.style.display = currentPlan && !currentPlan.isOwner ? 'inline-flex' : 'none';
         if (inviteParticipantBtn) {
             const isCollaborative = currentPlan && (currentPlan.type === 'collaborative' || (currentPlan.collaborators && currentPlan.collaborators.length > 0));

@@ -47,12 +47,12 @@ function closeDeleteConfirmModal() {
 }
 
 // --- Firestore Functions ---
-async function createPlan(name) {
+export async function createPlan(name) {
     const user = getCurrentUser();
-    if (!user) return;
+    if (!user) return null;
 
     try {
-        await addDoc(collection(db, 'plans'), {
+        const docRef = await addDoc(collection(db, 'plans'), {
             userId: user.uid,
             name: name,
             type: 'personal',
@@ -61,12 +61,15 @@ async function createPlan(name) {
             checkedItems: {},
             defaultNumPeople: 1,
             startDay: 'Lundi',
+            archivedBy: [],
             lastUpdated: new Date()
         });
         closeCreatePlanModal();
+        return docRef.id;
     } catch (error) {
         console.error("Error creating plan: ", error);
         alert("Erreur lors de la création du menu.");
+        return null;
     }
 }
 
@@ -107,6 +110,24 @@ async function deletePlan(planId) {
     } catch (error) {
         console.error("Error deleting plan: ", error);
         alert("Erreur lors de la suppression du menu.");
+    }
+}
+
+async function archivePlan(planId, isArchived = true) {
+    if (!planId) return;
+    const user = getCurrentUser();
+    if (!user) return;
+
+    try {
+        const planRef = doc(db, 'plans', planId);
+        if (isArchived) {
+            await updateDoc(planRef, { archivedBy: arrayUnion(user.uid) });
+        } else {
+            await updateDoc(planRef, { archivedBy: arrayRemove(user.uid) });
+        }
+    } catch (error) {
+        console.error("Error archiving plan: ", error);
+        alert("Erreur lors de l'archivage du menu.");
     }
 }
 
@@ -185,7 +206,10 @@ function populatePlanSelector(plans) {
         return;
     }
 
+    const user = getCurrentUser();
     plans.forEach(plan => {
+        if (plan.isArchived) return; // Legacy support
+        if (user && plan.archivedBy && plan.archivedBy.includes(user.uid)) return;
         const option = document.createElement('option');
         option.value = plan.id;
 
@@ -316,7 +340,7 @@ export function initPlanManagement() {
     };
 }
 
-export { getUserPlans, populatePlanSelector };
+export { getUserPlans, populatePlanSelector, archivePlan, deletePlan };
 
 export async function addCollaborator(planId, userId) {
     if (!planId || !userId) return;

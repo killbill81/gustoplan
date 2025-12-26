@@ -261,3 +261,79 @@ exports.auditIngredients = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('internal', 'Échec de l\'audit IA: ' + error.message);
     }
 });
+
+// --- Smart Plan Suggestion Function ---
+exports.suggestMenu = functions.https.onCall(async (data, context) => {
+    logger.info("suggestMenu called", data);
+
+    const recipes = data?.recipes || (data?.data && data.data.recipes);
+    const history = data?.history || (data?.data && data.data.history); // Last 3 weeks of names
+    const currentSeason = data?.season || (data?.data && data.data.season);
+
+    if (!recipes || !Array.isArray(recipes)) {
+        throw new functions.https.HttpsError('invalid-argument', 'Liste de recettes manquante');
+    }
+
+    const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
+    const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        generationConfig: { responseMimeType: "application/json" }
+    });
+
+    const prompt = `
+    Tu es Chef Gusto, un expert en planification de repas. 
+    Génère un menu hebdomadaire (7 jours : Lundi à Dimanche) avec 1 repas (PLAT) pour le MIDI et 1 pour le SOIR par jour.
+    
+    CONTRAINTES :
+    1. Utilise UNIQUEMENT les noms de recettes fournis dans la "Liste de Recettes".
+    2. Évite les recettes présentes dans l'historique récent pour assurer la variété.
+    3. Respecte la saison "${currentSeason}" si précisé (priorise les recettes de saison).
+    4. Propose un menu équilibré.
+    
+    DONNÉES :
+    - Liste de Recettes : ${JSON.stringify(recipes.map(r => ({ name: r.name, cat: r.category, s: r.seasonScore })))}
+    - Historique Récent (à éviter) : ${JSON.stringify(history)}
+    - Saison Actuelle : ${currentSeason}
+
+    CRITICAL: ONLY respond with valid JSON. NO markdown.
+    Format attendu :
+    {
+        "menu": {
+            "Lundi": { "MIDI": "Nom Recette", "SOIR": "Nom Recette" },
+            "Mardi": { "MIDI": "Nom Recette", "SOIR": "Nom Recette" },
+            ...
+        },
+        "description": "Bref résumé de l'esprit du menu"
+    }
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+
+        // Handle potential blockage or empty response
+        if (!response) {
+            throw new Error("Gemini a retourné une réponse vide.");
+        }
+
+        let text = response.text();
+        logger.info("Raw Gemini response:", text);
+
+        // Sanitize response: remove markdown and trim
+        text = text.replace(/```json\n?|```/g, '').trim();
+
+        try {
+            return JSON.parse(text);
+        } catch (parseErr) {
+            logger.error("Failed to parse Gemini JSON:", text);
+            throw new functions.https.HttpsError('internal', 'La réponse de Chef Gusto n\'est pas un JSON valide.');
+        }
+
+    } catch (error) {
+        logger.error("Erreur suggestMenu CRITICAL", error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
