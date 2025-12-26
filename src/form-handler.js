@@ -1,15 +1,18 @@
 import { doc, setDoc, addDoc, collection, getDocs } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { db } from './firebase-config.js';
 
 class RecipeFormHandler {
     constructor() {
         this.db = db;
+        this.functions = getFunctions();
         this.masterIngredientList = [];
         this.activityUpdater = null;
         this.onSaveCallback = null;
 
         // State for listeners
         this.listenersAttached = false;
+        this.currentIngredientsArray = []; // Reference to the active ingredients array
 
         // IDs map (hardcoded as they are unique in index.html)
         this.elementIds = {
@@ -28,54 +31,172 @@ class RecipeFormHandler {
             saveBtn: 'edit-save-recipe-btn',
             closeBtn: 'close-edit-recipe-modal',
             cancelBtn: 'edit-cancel-recipe-btn',
-            imageUrlInput: 'edit-recipe-image-url'
+            imageUrlInput: 'edit-recipe-image-url',
+            // Magic Import
+            magicImportUrl: 'magic-import-url',
+            magicImportBtn: 'btn-magic-import',
+            magicImportStatus: 'magic-import-status',
+            // AI Generator
+            aiGeneratePrompt: 'ai-generate-prompt',
+            aiGenerateBtn: 'btn-ai-generate',
+            aiGenerateStatus: 'ai-generate-status'
         };
+
+        this.boundHandleMagicImport = this.handleMagicImport.bind(this);
+        this.boundHandleAiGenerate = this.handleAiGenerate.bind(this);
+        // Bind existing methods for consistent event listener removal/addition
+        this.boundCloseForm = this.closeForm.bind(this);
+        this.boundHandleSubmit = null; // Will be bound in openForm
+        this.boundAddIngredient = null;
 
         this.init();
     }
 
     init() {
-        // Try to bind immediately but don't fail if DOM isn't ready
         this.bindElements();
-        // If elements found, attach listeners
         if (this.modal) {
             this.attachListeners();
         }
     }
 
     bindElements() {
-        if (this.modal) return; // Already bound
-
         this.modal = document.getElementById(this.elementIds.modal);
-        if (!this.modal) return; // DOM might not be ready
+        if (!this.modal) return;
 
         this.form = document.getElementById(this.elementIds.form);
-        this.modalTitle = document.getElementById(this.elementIds.title);
+        this.title = document.getElementById(this.elementIds.title);
         this.recipeIdInput = document.getElementById(this.elementIds.idInput);
         this.recipeNameInput = document.getElementById(this.elementIds.nameInput);
         this.recipeCategoryInput = document.getElementById(this.elementIds.categoryInput);
         this.recipeServingsInput = document.getElementById(this.elementIds.servingsInput);
         this.recipePrepTimeInput = document.getElementById(this.elementIds.prepTimeInput);
         this.recipeDifficultyInput = document.getElementById(this.elementIds.difficultyInput);
-        this.recipeImageUrlInput = document.getElementById(this.elementIds.imageUrlInput);
         this.recipeStepsTextarea = document.getElementById(this.elementIds.stepsTextarea);
         this.ingredientsListDiv = document.getElementById(this.elementIds.ingredientsList);
         this.addIngredientBtn = document.getElementById(this.elementIds.addIngredientBtn);
         this.saveRecipeBtn = document.getElementById(this.elementIds.saveBtn);
         this.closeButton = document.getElementById(this.elementIds.closeBtn);
         this.cancelButton = document.getElementById(this.elementIds.cancelBtn);
+        this.recipeImageUrlInput = document.getElementById(this.elementIds.imageUrlInput);
+
+        // Magic Import
+        this.magicImportUrl = document.getElementById(this.elementIds.magicImportUrl);
+        this.magicImportBtn = document.getElementById(this.elementIds.magicImportBtn);
+        this.magicImportStatus = document.getElementById(this.elementIds.magicImportStatus);
+
+        // AI Generator
+        this.aiGeneratePrompt = document.getElementById(this.elementIds.aiGeneratePrompt);
+        this.aiGenerateBtn = document.getElementById(this.elementIds.aiGenerateBtn);
+        this.aiGenerateStatus = document.getElementById(this.elementIds.aiGenerateStatus);
     }
 
     attachListeners() {
-        if (this.listenersAttached || !this.modal) return;
+        if (this.listenersAttached) return;
 
-        this.addIngredientBtn?.addEventListener('click', () => this.addIngredientInput(undefined, this.form.ingredients));
-        this.closeButton?.addEventListener('click', () => this.closeForm());
-        this.cancelButton?.addEventListener('click', () => this.closeForm());
-        this.saveRecipeBtn?.addEventListener('click', (e) => this.handleSubmit(e));
+        this.closeButton.addEventListener('click', this.boundCloseForm);
+        this.cancelButton.addEventListener('click', this.boundCloseForm);
+
+        if (this.magicImportBtn) {
+            this.magicImportBtn.addEventListener('click', this.boundHandleMagicImport);
+        }
+        if (this.aiGenerateBtn) {
+            this.aiGenerateBtn.addEventListener('click', this.boundHandleAiGenerate);
+        }
 
         this.initSeasonalityListeners();
         this.listenersAttached = true;
+    }
+
+    async handleAiGenerate() {
+        const prompt = this.aiGeneratePrompt.value.trim();
+        if (!prompt) {
+            alert("Veuillez décrire votre envie ou vos ingrédients.");
+            return;
+        }
+
+        this.aiGenerateStatus.classList.remove('hidden');
+        this.aiGenerateBtn.disabled = true;
+        this.aiGenerateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        try {
+            const generateRecipe = httpsCallable(this.functions, 'generateRecipe');
+            const result = await generateRecipe({ prompt });
+            const data = result.data.data || result.data;
+
+            if (data.error) throw new Error(data.error);
+
+            this.populateFormFromAi(data);
+
+            this.aiGenerateStatus.classList.add('hidden');
+            alert("Recette générée avec succès !");
+
+        } catch (error) {
+            console.error("Generation failed", error);
+            alert("Erreur de génération : " + error.message);
+            this.aiGenerateStatus.classList.add('hidden');
+        } finally {
+            this.aiGenerateBtn.disabled = false;
+            this.aiGenerateBtn.innerHTML = '<i class="fas fa-lightbulb mr-2"></i> Créer';
+        }
+    }
+
+    async handleMagicImport() {
+        const url = this.magicImportUrl.value.trim();
+        if (!url) {
+            alert("Veuillez entrer une URL valide.");
+            return;
+        }
+
+        this.magicImportStatus.classList.remove('hidden');
+        this.magicImportBtn.disabled = true;
+        this.magicImportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        try {
+            const extractRecipe = httpsCallable(this.functions, 'extractRecipeFromUrl');
+            const result = await extractRecipe({ url });
+            const data = result.data.data || result.data;
+
+            if (data.error) throw new Error(data.error);
+
+            this.populateFormFromAi(data);
+
+            this.magicImportStatus.classList.add('hidden');
+            alert("Recette importée avec succès !");
+
+        } catch (error) {
+            console.error("Import failed", error);
+            alert("Erreur lors de l'import : " + error.message);
+            this.magicImportStatus.classList.add('hidden');
+        } finally {
+            this.magicImportBtn.disabled = false;
+            this.magicImportBtn.innerHTML = '<i class="fas fa-magic mr-2"></i> Importer';
+        }
+    }
+
+    populateFormFromAi(data) {
+        if (data.name) this.recipeNameInput.value = data.name;
+        if (data.servings) this.recipeServingsInput.value = data.servings;
+        if (data.prepTime) this.recipePrepTimeInput.value = data.prepTime;
+        if (data.steps) this.recipeStepsTextarea.value = Array.isArray(data.steps) ? data.steps.join('\n') : data.steps;
+
+        if (data.category) {
+            const options = Array.from(this.recipeCategoryInput.options).map(o => o.value);
+            const upperCat = data.category.toUpperCase();
+            if (options.includes(upperCat)) this.recipeCategoryInput.value = upperCat;
+        }
+
+        if (this.currentIngredientsArray && data.ingredients) {
+            this.currentIngredientsArray.length = 0;
+            this.ingredientsListDiv.innerHTML = '';
+
+            data.ingredients.forEach(ing => {
+                this.addIngredientInput({
+                    name: ing.name,
+                    quantity: ing.quantity,
+                    unit: ing.unit || 'pièce'
+                }, this.currentIngredientsArray);
+            });
+        }
     }
 
     initSeasonalityListeners() {
@@ -85,7 +206,7 @@ class RecipeFormHandler {
         seasonCheckboxes.forEach(sc => {
             sc.addEventListener('change', (e) => {
                 const season = e.target.value;
-                const relatedMonths = document.querySelectorAll(`.recipe-month-checkbox[data-season="${season}"]`);
+                const relatedMonths = document.querySelectorAll(`.recipe - month - checkbox[data - season="${season}"]`);
                 relatedMonths.forEach(mc => mc.checked = e.target.checked);
             });
         });
@@ -93,12 +214,12 @@ class RecipeFormHandler {
         monthCheckboxes.forEach(mc => {
             mc.addEventListener('change', (e) => {
                 const season = e.target.dataset.season;
-                const seasonCheckbox = document.querySelector(`.recipe-season-checkbox[value="${season}"]`);
+                const seasonCheckbox = document.querySelector(`.recipe - season - checkbox[value = "${season}"]`);
 
                 if (e.target.checked) {
                     if (seasonCheckbox) seasonCheckbox.checked = true;
                 } else {
-                    const relatedMonths = document.querySelectorAll(`.recipe-month-checkbox[data-season="${season}"]:checked`);
+                    const relatedMonths = document.querySelectorAll(`.recipe - month - checkbox[data - season="${season}"]: checked`);
                     if (seasonCheckbox && relatedMonths.length === 0) {
                         seasonCheckbox.checked = false;
                     }
@@ -113,12 +234,7 @@ class RecipeFormHandler {
 
     async openForm(recipe = null, title = 'Ajouter une recette') {
         this.bindElements();
-        this.attachListeners();
-
-        if (!this.modal) {
-            console.error("Recipe modal elements not found!");
-            return;
-        }
+        if (!this.modal) return;
 
         if (this.activityUpdater) {
             this.activityUpdater('editing_recipe');
@@ -129,12 +245,16 @@ class RecipeFormHandler {
         console.log("openForm called with recipe:", recipe, "and title:", title);
         this.form.reset();
         this.ingredientsListDiv.innerHTML = '';
-        this.modalTitle.textContent = title;
+        this.title.textContent = title;
 
-        // New: Create a local ingredients array and store it on the form element
-        const ingredients = [];
-        this.form.ingredients = ingredients; // Attach to form for access in handleSubmit
+        // Reset Magic Import
+        if (this.magicImportUrl) this.magicImportUrl.value = '';
+        if (this.magicImportStatus) this.magicImportStatus.classList.add('hidden');
+        // Reset AI Generator
+        if (this.aiGeneratePrompt) this.aiGeneratePrompt.value = '';
+        if (this.aiGenerateStatus) this.aiGenerateStatus.classList.add('hidden');
 
+        let ingredients = [];
         if (recipe) {
             this.recipeIdInput.value = recipe.id || '';
             this.recipeNameInput.value = recipe.name || '';
@@ -156,7 +276,7 @@ class RecipeFormHandler {
             ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
                 // Note: ID logic must match what was added to router.js
                 // In router.js I added IDs: recipe-season-printemps, recipe-season-ete, recipe-season-automne, recipe-season-hiver
-                const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
+                const seasonId = `recipe - season - ${season.toLowerCase().replace('é', 'e')} `;
                 const checkbox = document.getElementById(seasonId);
                 if (checkbox) checkbox.checked = seasons.includes(season);
             });
@@ -176,7 +296,7 @@ class RecipeFormHandler {
             this.recipeIdInput.value = '';
             // Reset Seasonality
             ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
-                const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
+                const seasonId = `recipe - season - ${season.toLowerCase().replace('é', 'e')} `;
                 const checkbox = document.getElementById(seasonId);
                 if (checkbox) checkbox.checked = false;
             });
@@ -328,7 +448,7 @@ class RecipeFormHandler {
         // Collect checked seasons
         const selectedSeasons = [];
         ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
-            const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
+            const seasonId = `recipe - season - ${season.toLowerCase().replace('é', 'e')} `;
             const checkbox = document.getElementById(seasonId);
             if (checkbox && checkbox.checked) selectedSeasons.push(season);
         });
