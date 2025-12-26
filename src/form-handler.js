@@ -103,6 +103,18 @@ class RecipeFormHandler {
             this.aiGenerateBtn.addEventListener('click', this.boundHandleAiGenerate);
         }
 
+        // --- NEW BINDINGS ---
+        if (this.form) {
+            this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        }
+
+        if (this.addIngredientBtn) {
+            this.addIngredientBtn.addEventListener('click', () => {
+                this.addIngredientInput(undefined, this.currentIngredientsArray);
+            });
+        }
+        // --------------------
+
         this.initSeasonalityListeners();
         this.listenersAttached = true;
     }
@@ -190,11 +202,18 @@ class RecipeFormHandler {
             this.ingredientsListDiv.innerHTML = '';
 
             data.ingredients.forEach(ing => {
+                const name = ing.name;
+                // Check if known
+                const isKnown = this.masterIngredientList.some(
+                    known => known.name.toLowerCase() === name.toLowerCase()
+                );
+
                 this.addIngredientInput({
-                    name: ing.name,
+                    name: name,
                     quantity: ing.quantity,
-                    unit: ing.unit || 'pièce'
-                }, this.currentIngredientsArray);
+                    unit: ing.unit || 'pièce',
+                    originalName: name // Store the AI's original suggestion
+                }, this.currentIngredientsArray, !isKnown);
             });
         }
     }
@@ -206,7 +225,7 @@ class RecipeFormHandler {
         seasonCheckboxes.forEach(sc => {
             sc.addEventListener('change', (e) => {
                 const season = e.target.value;
-                const relatedMonths = document.querySelectorAll(`.recipe - month - checkbox[data - season="${season}"]`);
+                const relatedMonths = document.querySelectorAll(`.recipe-month-checkbox[data-season="${season}"]`);
                 relatedMonths.forEach(mc => mc.checked = e.target.checked);
             });
         });
@@ -214,12 +233,12 @@ class RecipeFormHandler {
         monthCheckboxes.forEach(mc => {
             mc.addEventListener('change', (e) => {
                 const season = e.target.dataset.season;
-                const seasonCheckbox = document.querySelector(`.recipe - season - checkbox[value = "${season}"]`);
+                const seasonCheckbox = document.querySelector(`.recipe-season-checkbox[value="${season}"]`);
 
                 if (e.target.checked) {
                     if (seasonCheckbox) seasonCheckbox.checked = true;
                 } else {
-                    const relatedMonths = document.querySelectorAll(`.recipe - month - checkbox[data - season="${season}"]: checked`);
+                    const relatedMonths = document.querySelectorAll(`.recipe-month-checkbox[data-season="${season}"]:checked`);
                     if (seasonCheckbox && relatedMonths.length === 0) {
                         seasonCheckbox.checked = false;
                     }
@@ -255,6 +274,9 @@ class RecipeFormHandler {
         if (this.aiGenerateStatus) this.aiGenerateStatus.classList.add('hidden');
 
         let ingredients = [];
+        this.form.ingredients = ingredients;
+        this.currentIngredientsArray = ingredients;
+
         if (recipe) {
             this.recipeIdInput.value = recipe.id || '';
             this.recipeNameInput.value = recipe.name || '';
@@ -276,7 +298,7 @@ class RecipeFormHandler {
             ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
                 // Note: ID logic must match what was added to router.js
                 // In router.js I added IDs: recipe-season-printemps, recipe-season-ete, recipe-season-automne, recipe-season-hiver
-                const seasonId = `recipe - season - ${season.toLowerCase().replace('é', 'e')} `;
+                const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
                 const checkbox = document.getElementById(seasonId);
                 if (checkbox) checkbox.checked = seasons.includes(season);
             });
@@ -296,7 +318,7 @@ class RecipeFormHandler {
             this.recipeIdInput.value = '';
             // Reset Seasonality
             ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
-                const seasonId = `recipe - season - ${season.toLowerCase().replace('é', 'e')} `;
+                const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
                 const checkbox = document.getElementById(seasonId);
                 if (checkbox) checkbox.checked = false;
             });
@@ -326,7 +348,7 @@ class RecipeFormHandler {
         }
     }
 
-    addIngredientInput(ingredient = { quantity: '', name: '', unit: '' }, ingredientsArray) {
+    addIngredientInput(ingredient = { quantity: '', name: '', unit: '', originalName: '' }, ingredientsArray, isWarning = false) {
         const ingredientRow = document.createElement('div');
         ingredientRow.className = 'relative flex items-stretch space-x-2 ingredient-row';
 
@@ -352,29 +374,113 @@ class RecipeFormHandler {
         unitDisplay.readOnly = true;
         unitDisplay.value = newIngredient.unit || '';
 
-        // --- Name Search Input ---
         const nameInputContainer = document.createElement('div');
-        nameInputContainer.className = 'relative w-1/2';
+        nameInputContainer.className = 'w-1/2 flex items-center space-x-1';
+
+        const inputWrapper = document.createElement('div');
+        inputWrapper.className = 'relative flex-1'; // Wrapper for relative positioning
+
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
-        nameInput.className = 'ingredient-name mt-1 block w-full rounded-md border-gray-300 shadow-sm';
+        nameInput.className = 'ingredient-name mt-1 block w-full rounded-md border-gray-300 shadow-sm transition-all duration-200';
         nameInput.placeholder = 'Chercher un ingrédient...';
         nameInput.value = newIngredient.name;
-        nameInputContainer.appendChild(nameInput);
+
+        // Auto-select text on focus
+        nameInput.addEventListener('focus', () => {
+            nameInput.select();
+        });
+
+        const updateValidity = (val) => {
+            const lowVal = val.toLowerCase();
+            const exists = this.masterIngredientList.some(i => i.name.toLowerCase() === lowVal);
+
+            if (exists) {
+                nameInput.classList.remove('border-orange-500', 'bg-orange-50');
+                nameInput.title = "";
+                createBtn.classList.add('hidden');
+
+                // Also update unit if possible
+                const k = this.masterIngredientList.find(i => i.name.toLowerCase() === lowVal);
+                if (k) {
+                    unitDisplay.value = k.unit;
+                    ingredientsArray[index].id = k.id;
+                    ingredientsArray[index].unit = k.unit;
+                }
+            } else if (val.trim() !== "") {
+                nameInput.classList.add('border-orange-500', 'bg-orange-50');
+                nameInput.title = "Ingrédient inconnu. Cliquez sur '+' pour créer ou restaurez l'original.";
+                createBtn.classList.remove('hidden');
+            } else {
+                nameInput.classList.remove('border-orange-500', 'bg-orange-50');
+                createBtn.classList.add('hidden');
+            }
+
+            // Show/Hide Restore button
+            if (newIngredient.originalName && val !== newIngredient.originalName) {
+                restoreBtn.classList.remove('hidden');
+            } else {
+                restoreBtn.classList.add('hidden');
+            }
+        };
+
+        if (isWarning) {
+            nameInput.classList.add('border-orange-500', 'bg-orange-50');
+        }
+
+        // Structure the elements
+        inputWrapper.appendChild(nameInput);
+        nameInputContainer.appendChild(inputWrapper);
+
+        // Restore Original Button
+        const restoreBtn = document.createElement('button');
+        restoreBtn.type = 'button';
+        restoreBtn.className = 'ml-1 p-1 rounded-full text-blue-500 hover:bg-blue-50 hidden transition-opacity';
+        restoreBtn.innerHTML = '<i class="fas fa-undo"></i>';
+        restoreBtn.title = `Restaurer l'original: ${newIngredient.originalName}`;
+        restoreBtn.addEventListener('click', () => {
+            nameInput.value = newIngredient.originalName;
+            updateValidity(newIngredient.originalName);
+            ingredientsArray[index].name = newIngredient.originalName;
+        });
+        nameInputContainer.appendChild(restoreBtn);
+
+        // Warning/Create Button for unknown ingredients
+        const createBtn = document.createElement('button');
+        createBtn.type = 'button';
+        createBtn.className = `ml-1 p-1 rounded-full text-white bg-orange-500 hover:bg-orange-600 shadow-sm transition-opacity ${isWarning ? '' : 'hidden'}`;
+        createBtn.innerHTML = '<i class="fas fa-plus"></i>';
+        createBtn.title = "Créer cet ingrédient";
+        createBtn.addEventListener('click', () => {
+            const newName = nameInput.value;
+            import('./ingredient-modal.js').then(({ ingredientModalManager }) => {
+                ingredientModalManager.open(newName, (createdIngredient) => {
+                    this.fetchMasterIngredients().then(() => {
+                        nameInput.value = createdIngredient.name;
+                        updateValidity(createdIngredient.name);
+                    });
+                });
+            });
+        });
+        nameInputContainer.appendChild(createBtn);
 
         // --- Search Results ---
         const resultsDiv = document.createElement('div');
-        resultsDiv.className = 'absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 hidden max-h-48 overflow-y-auto';
-        nameInputContainer.appendChild(resultsDiv);
+        // Added top-full and z-50 to ensure it's below input and doesn't overlap
+        resultsDiv.className = 'absolute z-50 left-0 right-0 top-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 hidden max-h-48 overflow-y-auto';
+        inputWrapper.appendChild(resultsDiv);
 
         nameInput.addEventListener('input', () => {
-            const searchTerm = nameInput.value.toLowerCase();
+            const searchTerm = nameInput.value;
+            updateValidity(searchTerm);
+
             if (!searchTerm) {
                 resultsDiv.classList.add('hidden');
                 return;
             }
 
-            const filtered = this.masterIngredientList.filter(i => i.name.toLowerCase().includes(searchTerm));
+            const lowSearch = searchTerm.toLowerCase();
+            const filtered = this.masterIngredientList.filter(i => i.name.toLowerCase().includes(lowSearch));
             resultsDiv.innerHTML = '';
 
             filtered.forEach(item => {
@@ -385,7 +491,8 @@ class RecipeFormHandler {
                     nameInput.value = item.name;
                     unitDisplay.value = item.unit; // Update the display
                     resultsDiv.classList.add('hidden');
-                    // Update the array
+                    // Update validity and array
+                    updateValidity(item.name);
                     ingredientsArray[index].name = item.name;
                     ingredientsArray[index].unit = item.unit;
                     ingredientsArray[index].id = item.id; // Store ID
@@ -438,6 +545,14 @@ class RecipeFormHandler {
 
     async handleSubmit(event) {
         event.preventDefault();
+
+        // Check for unresolved (orange) ingredients by looking for the warning class
+        const unknownIngredients = this.ingredientsListDiv.querySelectorAll('.border-orange-500');
+        if (unknownIngredients.length > 0) {
+            alert("Impossible d'enregistrer : vous avez des ingrédients inconnus (en orange).\n\nVeuillez les créer (+), les remplacer par des ingrédients existants, ou les supprimer.");
+            return;
+        }
+
         this.saveRecipeBtn.disabled = true;
         this.saveRecipeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sauvegarde...';
 
@@ -448,7 +563,7 @@ class RecipeFormHandler {
         // Collect checked seasons
         const selectedSeasons = [];
         ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
-            const seasonId = `recipe - season - ${season.toLowerCase().replace('é', 'e')} `;
+            const seasonId = `recipe-season-${season.toLowerCase().replace('é', 'e')}`;
             const checkbox = document.getElementById(seasonId);
             if (checkbox && checkbox.checked) selectedSeasons.push(season);
         });
