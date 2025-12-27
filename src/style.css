@@ -180,3 +180,50 @@
 .dark .glass-header {
     @apply bg-background;
 }
+
+/* --- Button Components --- */
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:pointer-events-none active:scale-95;
+    }
+
+    .btn:hover {
+        @apply scale-[1.02] shadow-md;
+    }
+
+    .btn-primary {
+        @apply bg-tomato text-white hover:bg-tomato-dark;
+    }
+
+    .btn-secondary {
+        @apply bg-sage text-white hover:bg-emerald-700;
+    }
+
+    .btn-outline {
+        @apply border-2 border-tomato text-tomato bg-transparent hover:bg-tomato hover:text-white;
+    }
+
+    .btn-ghost {
+        @apply bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10;
+    }
+
+    .btn-destructive {
+        @apply bg-red-500 text-white hover:bg-red-600;
+    }
+
+    .btn-icon {
+        @apply p-2 rounded-full;
+    }
+
+    .btn-sm {
+        @apply px-3 py-1 text-xs;
+    }
+
+    .btn-xs {
+        @apply px-2 py-0 h-6 min-w-[1.5rem] text-[10px] leading-none rounded-sm;
+    }
+
+    .btn-lg {
+        @apply px-6 py-3 text-base;
+    }
+}

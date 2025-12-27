@@ -8,6 +8,7 @@ let currentPlan = null;
 let availableMeals = [];
 let masterIngredientList = [];
 let checkedItems = {}; // Key: itemName_unit, Value: boolean
+let customCategoryOrder = []; // Ordered list of category names
 
 const categoryIcons = {
     'fruits & légumes': 'fa-carrot',
@@ -273,6 +274,18 @@ export default function init() {
         }, {});
 
         const categories = Object.keys(grouped).sort((a, b) => {
+            if (customCategoryOrder && customCategoryOrder.length > 0) {
+                const indexA = customCategoryOrder.indexOf(a);
+                const indexB = customCategoryOrder.indexOf(b);
+
+                // If both in custom order, use that
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                // If only one in custom order, it comes first
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+            }
+
+            // Fallback to alphabetical
             if (a === 'Inconnue') return 1;
             if (b === 'Inconnue') return -1;
             return a.localeCompare(b);
@@ -318,7 +331,42 @@ export default function init() {
             };
             tabsContainer.appendChild(tab);
             tabElements[cat] = tab;
+            tab.dataset.categoryName = cat; // Essential for sorting logic
         });
+
+        // --- Initialize SortableJS on tabs ---
+        if (window.Sortable) {
+            new Sortable(tabsContainer, {
+                animation: 150,
+                ghostClass: 'opacity-50',
+                onEnd: async () => {
+                    const newOrder = Array.from(tabsContainer.querySelectorAll('.category-tab'))
+                        .map(btn => btn.dataset.categoryName);
+
+                    console.log("[DEBUG] New category order:", newOrder);
+                    customCategoryOrder = newOrder;
+
+                    // Save to Firestore
+                    const uid = getCurrentUserId();
+                    if (uid) {
+                        const userRef = doc(db, "users", uid);
+                        try {
+                            await import('firebase/firestore').then(module => {
+                                module.updateDoc(userRef, {
+                                    shoppingCategoryOrder: newOrder,
+                                    lastUpdated: new Date()
+                                });
+                            });
+                        } catch (e) {
+                            console.error("Error saving category order", e);
+                        }
+                    }
+
+                    // Re-render to update H3 sections order
+                    renderShoppingList();
+                }
+            });
+        }
 
         // --- Scroll Spy Logic ---
         const observerOptions = {
@@ -421,7 +469,8 @@ export default function init() {
 
                     // Group sources by recipe and day
                     const groupedSources = item.sources.reduce((acc, source) => {
-                        const key = `${source.recipeName} (${source.day} ${source.time})`;
+                        const servingsText = source.servings ? ` - ${source.servings} pers.` : '';
+                        const key = `${source.recipeName} (${source.day} ${source.time})${servingsText}`;
                         if (!acc[key]) {
                             acc[key] = 0;
                         }
@@ -632,7 +681,8 @@ export default function init() {
                                     recipeName: fullMeal.name,
                                     day: allDays[parseInt(dayIndexStr, 10)],
                                     time: mealType === 'lunch' ? 'Midi' : 'Soir',
-                                    quantity: finalQty
+                                    quantity: finalQty,
+                                    servings: numPeople
                                 });
                             } else {
                                 combinedIngredients.set(key, {
@@ -644,7 +694,8 @@ export default function init() {
                                         recipeName: fullMeal.name,
                                         day: allDays[parseInt(dayIndexStr, 10)],
                                         time: mealType === 'lunch' ? 'Midi' : 'Soir',
-                                        quantity: finalQty
+                                        quantity: finalQty,
+                                        servings: numPeople
                                     }]
                                 });
                             }
@@ -706,6 +757,18 @@ export default function init() {
     }
 
     async function fetchData() {
+        // 0. Fetch User Preferences (Category Order)
+        const uid = getCurrentUserId();
+        if (uid) {
+            try {
+                const userSnap = await getDoc(doc(db, "users", uid));
+                if (userSnap.exists()) {
+                    customCategoryOrder = userSnap.data().shoppingCategoryOrder || [];
+                }
+            } catch (e) {
+                console.error("Error fetching user preferences", e);
+            }
+        }
         // 1. Fetch Master Ingredients
         try {
             const ingSnap = await getDocs(collection(db, "ingredients"));

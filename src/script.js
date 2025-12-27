@@ -1105,7 +1105,8 @@ export default function init() {
                 // Add annotations
                 if (item.sources && item.sources.length > 0) {
                     const groupedSources = item.sources.reduce((acc, source) => {
-                        const key = `${source.recipeName} (${source.day} ${source.time})`;
+                        const servingsText = source.servings ? ` - ${source.servings} pers.` : '';
+                        const key = `${source.recipeName} (${source.day} ${source.time})${servingsText}`;
                         if (!acc[key]) {
                             acc[key] = 0;
                         }
@@ -1180,7 +1181,8 @@ export default function init() {
                 // Add annotations
                 if (item.sources && item.sources.length > 0) {
                     const groupedSources = item.sources.reduce((acc, source) => {
-                        const key = `${source.recipeName} (${source.day} ${source.time})`;
+                        const servingsText = source.servings ? ` - ${source.servings} pers.` : '';
+                        const key = `${source.recipeName} (${source.day} ${source.time})${servingsText}`;
                         if (!acc[key]) {
                             acc[key] = 0;
                         }
@@ -1599,7 +1601,8 @@ export default function init() {
 
                     // Group sources by recipe and day
                     const groupedSources = item.sources.reduce((acc, source) => {
-                        const key = `${source.recipeName} (${source.day} ${source.time})`;
+                        const servingsText = source.servings ? ` - ${source.servings} pers.` : '';
+                        const key = `${source.recipeName} (${source.day} ${source.time})${servingsText}`;
                         if (!acc[key]) {
                             acc[key] = 0;
                         }
@@ -1684,7 +1687,8 @@ export default function init() {
                                 recipeName: mealToUse.name,
                                 day: `${dayName} (S${weekNumber})`,
                                 time: mealTime,
-                                quantity: finalQuantity
+                                quantity: finalQuantity,
+                                servings: numPeopleForMeal
                             };
 
                             if (combinedIngredients.has(key)) {
