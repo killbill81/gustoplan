@@ -1,5 +1,6 @@
 import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion, serverTimestamp, getDocs } from 'firebase/firestore';
 import { getCurrentUser } from './auth.js';
+import { updateProfileIncremental } from './ia-utils.js';
 
 const db = getFirestore();
 
@@ -406,6 +407,11 @@ export async function saveOrUpdatePlanSaveByName(saveName, planData) {
                 planData: planData
             });
         }
+
+        // --- MISE À JOUR IA INC RÉMENTALE ---
+        // On met à jour le profil IA avec les données du plan sauvegardé
+        await updateProfileIncremental(user.uid, planData);
+
     } catch (error) {
         console.error("Error saving or updating plan save:", error);
         alert("Erreur lors de la sauvegarde.");

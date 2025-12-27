@@ -1,4 +1,5 @@
 const functions = require("firebase-functions");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const logger = functions.logger;
 
@@ -335,5 +336,182 @@ exports.suggestMenu = functions.https.onCall(async (data, context) => {
     } catch (error) {
         logger.error("Erreur suggestMenu CRITICAL", error);
         throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+// --- Habit Analysis Function (v2) ---
+exports.analyzeHistory = onCall(async (request) => {
+    const { data, auth } = request;
+    logger.info("analyzeHistory called", data);
+
+    const profile = data?.profile || (data?.data && data.data.profile);
+
+    if (!profile || !profile.global_stats) {
+        throw new HttpsError('invalid-argument', 'Profil de données manquant');
+    }
+
+    const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
+    const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        generationConfig: { responseMimeType: "application/json" }
+    });
+
+    const prompt = `
+    Tu es Chef Gusto, coach en nutrition et expert en habitudes alimentaires. 
+    Analyse les statistiques suivantes d'un utilisateur de GustoPlan et fournis un résumé personnalisé.
+    
+    STATISTIQUES :
+    - Nombre total de repas planifiés : ${profile.global_stats.total_meals_planned}
+    - Nombre de convives moyen : ${profile.global_stats.avg_servings.toFixed(1)}
+    - Diversité (nombre de recettes différentes) : ${Object.keys(profile.recipe_frequency || {}).length}
+    - Top recettes (IDs et fréquences) : ${JSON.stringify(Object.entries(profile.recipe_frequency || {}).sort(([, a], [, b]) => b - a).slice(0, 3))}
+    
+    TON OBJECTIF :
+    1. Décris le "Style de Chef" de l'utilisateur (ex: Expert du batch-cooking, Explorateur culinaire, Routine rassurante).
+    2. Donne 2 conseils concrets pour améliorer son équilibre ou sa diversité.
+    3. Sois encourageant et chaleureux.
+    
+    FORMAT JSON UNIQUEMENT :
+    {
+        "summary": "Texte du résumé en Markdown (utilise des emojis, des gras, des listes)",
+        "style_name": "Nom du style"
+    }
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let text = response.text().replace(/```json\n?|```/g, '').trim();
+
+        return JSON.parse(text);
+    } catch (error) {
+        logger.error("Erreur analyzeHistory CRITICAL", error);
+        throw new HttpsError('internal', error.message);
+    }
+});
+
+const admin = require("firebase-admin");
+try { admin.initializeApp(); } catch (e) { }
+
+// --- Full Sync Function ---
+// --- Full Sync Function (v2) ---
+exports.syncAIProfile = onCall(async (request) => {
+    const { auth } = request;
+    // Vérification auth
+    if (!auth) {
+        logger.error("Sync Error: Unauthenticated");
+        throw new HttpsError('unauthenticated', 'User must be logged in');
+    }
+
+    const uid = auth.uid;
+    const db = admin.firestore();
+    logger.info(`Starting full sync for user: ${uid}`);
+
+    const profileData = {
+        global_stats: { total_meals_planned: 0, avg_servings: 0, top_categories: {} },
+        recipe_frequency: {},
+    };
+
+    let totalServings = 0;
+    let servingsCount = 0;
+
+    const debug_details = [];
+    const countMealsRecursive = (data, path = 'root') => {
+        if (!data) return;
+
+        // Si c'est un tableau de recettes non vide, c'est UN repas (un créneau rempli)
+        if (Array.isArray(data)) {
+            if (data.length > 0) {
+                profileData.global_stats.total_meals_planned++;
+
+                const mealInfo = {
+                    path: path,
+                    items: data.map(m => ({
+                        name: m.name || 'Sans nom',
+                        id: m.id || 'mano'
+                    }))
+                };
+                debug_details.push(mealInfo);
+
+                logger.info(`[IA-Sync] Repas à ${path}: ${mealInfo.items.map(i => i.name).join(', ')}`);
+
+                data.forEach(m => {
+                    if (m) {
+                        // Utiliser l'ID ou le nom pour la fréquence
+                        const key = m.id || m.name;
+                        if (key) {
+                            profileData.recipe_frequency[key] = (profileData.recipe_frequency[key] || 0) + 1;
+                        }
+                    }
+                });
+            }
+            return;
+        }
+
+        // Si c'est un objet, on descend d'un niveau (jour, créneau, etc.)
+        if (typeof data === 'object') {
+            // Éviter de descendre dans des objets qui ne sont pas des dictionnaires (ex: Timestamps)
+            if (data._seconds !== undefined || data.toDate !== undefined) return;
+
+            Object.entries(data).forEach(([key, val]) => countMealsRecursive(val, `${path}.${key}`));
+        }
+    };
+
+    const processPlanData = (planData) => {
+        if (!planData || !planData.weeks) return;
+        Object.values(planData.weeks).forEach(week => {
+            if (week.menuData) {
+                countMealsRecursive(week.menuData);
+            }
+            if (week.servingsData) {
+                Object.values(week.servingsData).forEach(s => {
+                    totalServings += parseInt(s, 10);
+                    servingsCount++;
+                });
+            }
+        });
+    };
+
+    try {
+        // 1. Sauvegardes
+        const savesSnap = await db.collection('plan_saves').where("userId", "==", uid).get();
+        logger.info(`[IA-Sync] Trouvé ${savesSnap.size} sauvegardes.`);
+        savesSnap.forEach(doc => processPlanData(doc.data().planData));
+
+        // 2. Plans actifs/archivés (Possédés)
+        const plansSnap = await db.collection('plans').where("userId", "==", uid).get();
+        logger.info(`[IA-Sync] Trouvé ${plansSnap.size} plans possédés.`);
+        plansSnap.forEach(doc => processPlanData(doc.data()));
+
+        // 3. Plans collaboratifs
+        const collabSnap = await db.collection('plans').where("collaborators", "array-contains", uid).get();
+        logger.info(`[IA-Sync] Trouvé ${collabSnap.size} plans collaboratifs.`);
+        collabSnap.forEach(doc => processPlanData(doc.data()));
+
+        // Stats
+        if (servingsCount > 0) {
+            profileData.global_stats.avg_servings = totalServings / servingsCount;
+        }
+
+        // 3. Update Profile
+        const profRef = db.collection('ai_profiles').doc(uid);
+        await profRef.set({
+            ...profileData,
+            debug_info: debug_details,
+            last_updated: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        return {
+            success: true,
+            count: profileData.global_stats.total_meals_planned,
+            profile: profileData,
+            debug: debug_details
+        };
+    } catch (error) {
+        logger.error("Sync Error", error);
+        throw new HttpsError('internal', error.message);
     }
 });

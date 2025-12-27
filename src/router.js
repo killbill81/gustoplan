@@ -564,6 +564,64 @@ const routes = {
         `,
         script: './view-plan.js'
     },
+    'ai-suggestions': {
+        html: `
+        <div class="max-w-4xl mx-auto p-4 md:p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900 leading-tight">Mon Profil Chef IA</h2>
+                    <p class="text-gray-500 mt-1">Découvrez vos habitudes et recevez des conseils personnalisés.</p>
+                </div>
+                <button id="refresh-ai-btn" class="btn btn-secondary shadow-sm hover:shadow-md transition-all">
+                    <i class="fas fa-sync-alt mr-2"></i> Actualiser mon analyse
+                </button>
+            </div>
+
+            <div id="ai-profile-container" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Statistiques Clés -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div id="ai-stats-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Injected by JS -->
+                    </div>
+                    
+                    <div id="ai-debug-wrapper" class="hidden">
+                        <div class="bg-gray-900 rounded-xl p-4 shadow-inner mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Diagnostics Techniques</span>
+                                <button id="close-debug-btn" class="text-gray-500 hover:text-white"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div id="ai-debug-info" class="text-green-400 text-[10px] font-mono overflow-x-auto max-h-60 space-y-1">
+                                <!-- JS Injected -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-comment-alt-dots text-tomato mr-2"></i> Analyse du Chef Gusto
+                        </h3>
+                        <div id="ai-summary-text" class="text-gray-600 leading-relaxed min-h-[100px] flex items-center justify-center bg-gray-50 rounded-xl p-4 italic">
+                            Cliquez sur "Actualiser" pour générer un résumé de vos habitudes alimentaires.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recettes Favorites -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-full">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-heart text-red-500 mr-2"></i> Vos Incontournables
+                        </h3>
+                        <ul id="ai-top-recipes" class="space-y-3">
+                            <!-- Injected by JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `,
+        script: './ai-suggestions.js'
+    },
     'shopping-mode': {
         html: `
         <div class="max-w-4xl mx-auto min-h-screen pb-20 md:pb-0 relative px-4">
@@ -606,6 +664,7 @@ const moduleMap = {
     './view-plan.js': () => import('./view-plan.js'),
     './shopping-mode.js': () => import('./shopping-mode.js'),
     './ingredient-modal.js': () => import('./ingredient-modal.js'),
+    './ai-suggestions.js': () => import('./ai-suggestions.js'),
 };
 
 let currentCleanup = null;
@@ -620,20 +679,16 @@ async function navigateTo(path) {
     if (route && mainContent) {
         mainContent.innerHTML = route.html;
         if (route.script) {
-            const loadModule = moduleMap[route.script];
-            if (loadModule) {
-                try {
-                    // Cache busting for development - optional, can be removed in prod
-                    // but helpful since the user reported issues with updates.
-                    const module = await loadModule();
-                    if (module.default && typeof module.default === 'function') {
-                        currentCleanup = module.default(); // Store the returned cleanup function
-                    }
-                } catch (e) {
-                    console.error(`Error loading module ${route.script}:`, e);
+            try {
+                // Cache busting to ensure we always load the latest version of the module script
+                // This is crucial when the user reports issues with seeing new UI elements.
+                const scriptPath = `${route.script}?v=${Date.now()}`;
+                const module = await import(scriptPath);
+                if (module.default && typeof module.default === 'function') {
+                    currentCleanup = module.default(); // Store the returned cleanup function
                 }
-            } else {
-                console.error(`Module not found in map for path: ${route.script}`);
+            } catch (e) {
+                console.error(`Error loading module ${route.script}:`, e);
             }
         }
     } else {

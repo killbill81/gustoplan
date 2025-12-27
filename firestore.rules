@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Profil utilisateur
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Plans de repas et leur historique
+    match /plans/{planId} {
+      allow read, write: if request.auth != null;
+      match /history/{histId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    
+    // Sauvegardes de plans
+    match /plan_saves/{saveId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Recettes
+    match /recipes/{recipeId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Ingrédients et catégories
+    match /ingredients/{id} {
+      allow read, write: if request.auth != null;
+    }
+    match /ingredient_categories/{id} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Listes de courses
+    match /shopping_lists/{listId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Profils IA (Habitudes)
+    match /ai_profiles/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Partages, invitations et notifications
+    match /shares/{id} {
+      allow read, write: if request.auth != null;
+    }
+    match /friend_requests/{id} {
+      allow read, write: if request.auth != null;
+    }
+    match /notifications/{id} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Par défaut : bloquer tout le reste
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
