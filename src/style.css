@@ -226,4 +226,28 @@
     .btn-lg {
         @apply px-6 py-3 text-base;
     }
+
+    /* Form Select Custom Styling */
+    .form-select {
+        @apply block w-full pl-3 pr-10 py-2 border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-tomato focus:border-tomato sm:text-sm rounded-md transition-shadow;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+    }
+
+    .dark .form-select {
+        @apply bg-gray-800 border-gray-700 text-white;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    }
+
+    /* Option styling to ensure cross-browser visibility or theme consistency */
+    .form-select option {
+        @apply bg-white text-gray-800;
+    }
+
+    .dark .form-select option {
+        @apply bg-gray-800 text-white;
+    }
 }

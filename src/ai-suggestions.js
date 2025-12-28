@@ -20,7 +20,7 @@ export default function initAISuggestions() {
             const result = await reanalyzeAllHistory(user.uid);
             // Si la fonction Cloud renvoie le profil, on l'affiche directement
             if (result && result.profile) {
-                await loadProfile(result.profile, result.debug);
+                await loadProfile(result.profile, result.debug, result);
             } else {
                 await loadProfile();
             }
@@ -33,7 +33,8 @@ export default function initAISuggestions() {
         }
     }
 
-    async function loadProfile(directProfile = null, debugData = null) {
+
+    async function loadProfile(directProfile = null, debugData = null, directResult = null) {
         if (!container) return;
 
         const profile = directProfile || await getUserAIProfile(user.uid);
@@ -61,15 +62,13 @@ export default function initAISuggestions() {
                     <span class="block text-2xl font-bold text-blue-700">${stats.total_meals_planned || 0}</span>
                     <span class="text-xs text-blue-600 uppercase font-semibold">Repas planifiés</span>
                 </div>
-                <div class="bg-green-50 p-4 rounded-lg text-center">
-                    <span class="block text-2xl font-bold text-green-700">${(stats.avg_servings || 0).toFixed(1)}</span>
-                    <span class="text-xs text-green-600 uppercase font-semibold">Convives en moyenne</span>
-                </div>
                 <div class="bg-purple-50 p-4 rounded-lg text-center">
                     <span class="block text-2xl font-bold text-purple-700">${Object.keys(profile.recipe_frequency || {}).length}</span>
                     <span class="text-xs text-purple-600 uppercase font-semibold">Recettes différentes</span>
                 </div>
             `;
+            statsContainer.classList.remove('md:grid-cols-3');
+            statsContainer.classList.add('md:grid-cols-2');
         }
 
         // Display Debug Info if available
@@ -79,20 +78,48 @@ export default function initAISuggestions() {
         const statsGrid = document.getElementById('ai-stats-grid');
 
         // prioritiser debugData (résultat direct) sinon debug_info (persistance)
-        const finalDebug = debugData || profile.debug_info;
+        const finalDebug = debugData || (profile && profile.debug_info);
 
-        console.log("[IA-Debug] Rendering profile UI. Debug available:", !!finalDebug);
+        console.log("[IA-Debug] Rendering profile UI.", {
+            hasDebugData: !!debugData,
+            hasProfileDebug: !!(profile && profile.debug_info),
+            version: directResult?.version || profile?.version || "Inconnue"
+        });
 
         if (debugInfo && debugWrapper) {
-            if (finalDebug) {
-                let debugHtml = '';
-                finalDebug.forEach(d => {
-                    const itemsStr = d.items.map(i => `${i.name} (ID: ${i.id})`).join(', ');
-                    debugHtml += `<div><span class="text-gray-500">[${d.path}]</span> ${itemsStr}</div>`;
+            const isV24 = finalDebug && !Array.isArray(finalDebug) && finalDebug.meals;
+            const meals = isV24 ? finalDebug.meals : (Array.isArray(finalDebug) ? finalDebug : []);
+            const rawStats = isV24 ? finalDebug.raw_stats : null;
+
+            if (meals.length > 0) {
+                let debugHtml = `<div class="mb-2 text-white border-b border-gray-700 pb-1 flex flex-col text-[10px] font-mono">
+                    <div class="flex justify-between w-full">
+                        <span>V: ${directResult?.version || profile?.version || "P"}</span>
+                        <span>${meals.length} repas</span>
+                    </div>`;
+
+                if (rawStats && rawStats.total_servings !== undefined) {
+                    debugHtml += `<div class="text-orange-300 mt-1">Total: ${rawStats.total_servings}p / ${rawStats.servings_count}r = ${(rawStats.total_servings / rawStats.servings_count).toFixed(2)}</div>`;
+                }
+
+                debugHtml += `</div>`;
+
+                meals.forEach((d, idx) => {
+                    const itemsStr = d.items.map(i => `${i.name}`).join(', ');
+                    debugHtml += `<div class="mb-1">
+                        <span class="text-orange-300 font-bold">${idx + 1}.</span> 
+                        <span class="text-gray-400 text-[9px]">${d.path}</span>
+                        <br>${itemsStr}
+                    </div>`;
                 });
                 debugInfo.innerHTML = debugHtml;
             } else {
-                debugInfo.innerHTML = '<div class="text-orange-400 font-mono italic">[DEBUG] Aucune donnée de comptage enregistrée. Cliquez sur "Actualiser" pour générer les diagnostics.</div>';
+                debugInfo.innerHTML = `
+                    <div class="text-orange-400 font-mono text-[10px]">
+                        [ERREUR] Aucune donnée de comptage.<br>
+                        - Version: ${directResult?.version || profile?.version || "Inconnue"}<br>
+                        - Raw: ${JSON.stringify(profile).substring(0, 100)}...
+                    </div>`;
             }
 
             if (closeDebugBtn) {

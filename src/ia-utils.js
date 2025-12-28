@@ -37,8 +37,6 @@ export async function updateProfileIncremental(uid, planData) {
         const freq = currentProfile.recipe_frequency || {};
 
         let newMealsCount = 0;
-        let totalServingsForThisPlan = 0;
-        let servingsCount = 0;
 
         if (planData.weeks) {
             Object.values(planData.weeks).forEach(week => {
@@ -46,28 +44,20 @@ export async function updateProfileIncremental(uid, planData) {
                     Object.values(week.menuData).forEach(meals => {
                         if (Array.isArray(meals)) {
                             meals.forEach(m => {
-                                if (m.id) {
-                                    freq[m.id] = (freq[m.id] || 0) + 1;
+                                // Aligné sur Cloud v2.1 : ID ou Nom, et on compte chaque instance
+                                const key = m.id || m.name;
+                                if (key) {
+                                    freq[key] = (freq[key] || 0) + 1;
                                     newMealsCount++;
                                 }
                             });
                         }
                     });
                 }
-                if (week.servingsData) {
-                    Object.values(week.servingsData).forEach(s => {
-                        totalServingsForThisPlan += parseInt(s, 10);
-                        servingsCount++;
-                    });
-                }
             });
         }
 
         stats.total_meals_planned += newMealsCount;
-        if (servingsCount > 0) {
-            const planAvg = totalServingsForThisPlan / servingsCount;
-            stats.avg_servings = stats.avg_servings === 0 ? planAvg : (stats.avg_servings + planAvg) / 2;
-        }
 
         await setDoc(profRef, {
             global_stats: stats,
@@ -90,7 +80,7 @@ export async function reanalyzeAllHistory(uid) {
     try {
         const syncAIProfile = httpsCallable(functions, 'syncAIProfile');
         const result = await syncAIProfile();
-        console.log("[IA] Synchronisation terminée avec succès.", result.data);
+        console.log("[IA] Résultat brut Cloud:", JSON.stringify(result.data, null, 2));
         return result.data;
     } catch (error) {
         console.error("[IA] ERREUR lors de la synchronisation Cloud:", error);
@@ -114,3 +104,4 @@ export async function getAIProfileSummary(uid) {
         return "Impossible de générer le résumé IA.";
     }
 }
+

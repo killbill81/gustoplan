@@ -79,13 +79,16 @@ export default function initAllPlansPage() {
         }
     });
 
-    // 2. Listener for Archived Live Plans
     const archivedPlansListContainer = document.getElementById('archived-plans-list');
     const archivedQuery = query(collection(db, "plans"), where("archivedBy", "array-contains", userId));
+
+    console.log("[Archives-Debug] Initialisation du listener pour:", userId);
 
     const unsubscribeArchived = onSnapshot(archivedQuery, (snapshot) => {
         if (!archivedPlansListContainer) return;
         archivedPlansListContainer.innerHTML = '';
+
+        console.log("[Archives-Debug] Snapshot reçu. Empty ?", snapshot.empty, "Count:", snapshot.size);
 
         if (snapshot.empty) {
             archivedPlansListContainer.innerHTML = '<p class="text-center text-gray-500 p-10 col-span-full">Aucun menu archivé.</p>';
@@ -94,6 +97,7 @@ export default function initAllPlansPage() {
 
         snapshot.docs.forEach(docSnap => {
             const plan = { id: docSnap.id, ...docSnap.data() };
+            console.log("[Archives-Debug] Plan archivé trouvé:", plan.name, plan.id);
             const card = createArchivedPlanCard(plan);
             archivedPlansListContainer.appendChild(card);
         });

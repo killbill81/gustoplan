@@ -411,24 +411,30 @@ exports.syncAIProfile = onCall(async (request) => {
     logger.info(`Starting full sync for user: ${uid}`);
 
     const profileData = {
-        global_stats: { total_meals_planned: 0, avg_servings: 0, top_categories: {} },
+        global_stats: { total_meals_planned: 0, top_categories: {} },
         recipe_frequency: {},
     };
 
-    let totalServings = 0;
-    let servingsCount = 0;
-
     const debug_details = [];
-    const countMealsRecursive = (data, path = 'root') => {
+    const countMealsRecursive = (data, path = 'root', sourceId = 'unknown', weekData = {}, defaultNum = 1) => {
         if (!data) return;
 
         // Si c'est un tableau de recettes non vide, c'est UN repas (un créneau rempli)
         if (Array.isArray(data)) {
             if (data.length > 0) {
-                profileData.global_stats.total_meals_planned++;
+                const fullPath = `[${sourceId}] ${path}`;
+                // Extraction du nombre de convives pour ce créneau
+                // path ressemble à "menu.0-lunch-0", on veut "0-lunch"
+                const pathParts = path.split('.');
+                const slotId = pathParts[pathParts.length - 1]; // "0-lunch-0"
+                const servingsKey = slotId.split('-').slice(0, 2).join('-'); // "0-lunch"
+
+                const numPeople = Math.max(1, (weekData.servingsData && weekData.servingsData[servingsKey])
+                    ? parseInt(weekData.servingsData[servingsKey], 10)
+                    : defaultNum);
 
                 const mealInfo = {
-                    path: path,
+                    path: fullPath,
                     items: data.map(m => ({
                         name: m.name || 'Sans nom',
                         id: m.id || 'mano'
@@ -436,11 +442,9 @@ exports.syncAIProfile = onCall(async (request) => {
                 };
                 debug_details.push(mealInfo);
 
-                logger.info(`[IA-Sync] Repas à ${path}: ${mealInfo.items.map(i => i.name).join(', ')}`);
-
                 data.forEach(m => {
                     if (m) {
-                        // Utiliser l'ID ou le nom pour la fréquence
+                        profileData.global_stats.total_meals_planned++;
                         const key = m.id || m.name;
                         if (key) {
                             profileData.recipe_frequency[key] = (profileData.recipe_frequency[key] || 0) + 1;
@@ -453,62 +457,53 @@ exports.syncAIProfile = onCall(async (request) => {
 
         // Si c'est un objet, on descend d'un niveau (jour, créneau, etc.)
         if (typeof data === 'object') {
-            // Éviter de descendre dans des objets qui ne sont pas des dictionnaires (ex: Timestamps)
             if (data._seconds !== undefined || data.toDate !== undefined) return;
-
-            Object.entries(data).forEach(([key, val]) => countMealsRecursive(val, `${path}.${key}`));
+            Object.entries(data).forEach(([key, val]) => countMealsRecursive(val, `${path}.${key}`, sourceId, weekData));
         }
     };
 
-    const processPlanData = (planData) => {
-        if (!planData || !planData.weeks) return;
-        Object.values(planData.weeks).forEach(week => {
+    const processPlanData = (planObject, sourceId) => {
+        if (!planObject || !planObject.weeks) return;
+
+        Object.values(planObject.weeks).forEach(week => {
             if (week.menuData) {
-                countMealsRecursive(week.menuData);
-            }
-            if (week.servingsData) {
-                Object.values(week.servingsData).forEach(s => {
-                    totalServings += parseInt(s, 10);
-                    servingsCount++;
-                });
+                countMealsRecursive(week.menuData, 'menu', sourceId, week);
             }
         });
     };
 
     try {
-        // 1. Sauvegardes
+        // 2. Tous les plans archivés par l'utilisateur (Propriétaire ou Collaborateur)
+        const archivedSnap = await db.collection('plans').where("archivedBy", "array-contains", uid).get();
+        logger.info(`[IA-Sync] Trouvé ${archivedSnap.size} plans archivés.`);
+        archivedSnap.forEach(doc => {
+            processPlanData(doc.data(), `Archive:${doc.id}`);
+        });
+
+        // 3. Anciennes sauvegardes (qui ne sont pas dans la collection 'plans')
         const savesSnap = await db.collection('plan_saves').where("userId", "==", uid).get();
         logger.info(`[IA-Sync] Trouvé ${savesSnap.size} sauvegardes.`);
-        savesSnap.forEach(doc => processPlanData(doc.data().planData));
+        savesSnap.forEach(doc => processPlanData(doc.data().planData, `Sauve:${doc.id}`));
 
-        // 2. Plans actifs/archivés (Possédés)
-        const plansSnap = await db.collection('plans').where("userId", "==", uid).get();
-        logger.info(`[IA-Sync] Trouvé ${plansSnap.size} plans possédés.`);
-        plansSnap.forEach(doc => processPlanData(doc.data()));
+        // Inclure debug_info dans l'objet profile pour qu'il soit retourné direct
+        profileData.debug_info = {
+            meals: debug_details
+        };
+        profileData.version = "2.5";
 
-        // 3. Plans collaboratifs
-        const collabSnap = await db.collection('plans').where("collaborators", "array-contains", uid).get();
-        logger.info(`[IA-Sync] Trouvé ${collabSnap.size} plans collaboratifs.`);
-        collabSnap.forEach(doc => processPlanData(doc.data()));
-
-        // Stats
-        if (servingsCount > 0) {
-            profileData.global_stats.avg_servings = totalServings / servingsCount;
-        }
-
-        // 3. Update Profile
+        // 3. Update Profile in Firestore
         const profRef = db.collection('ai_profiles').doc(uid);
         await profRef.set({
             ...profileData,
-            debug_info: debug_details,
             last_updated: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
         return {
             success: true,
-            count: profileData.global_stats.total_meals_planned,
+            version: "2.5",
             profile: profileData,
-            debug: debug_details
+            debug: profileData.debug_info,
+            count: profileData.global_stats.total_meals_planned
         };
     } catch (error) {
         logger.error("Sync Error", error);

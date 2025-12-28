@@ -1,8 +1,7 @@
-import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion, serverTimestamp, getDocs } from 'firebase/firestore';
+import { db } from './firebase-config.js';
+import { collection, addDoc, query, where, onSnapshot, doc, deleteDoc, updateDoc, getDoc, arrayRemove, arrayUnion, serverTimestamp, getDocs } from 'firebase/firestore';
 import { getCurrentUser } from './auth.js';
 import { updateProfileIncremental } from './ia-utils.js';
-
-const db = getFirestore();
 
 // --- DOM Element variables (declared but not assigned) ---
 let createPlanModal, closeCreatePlanModalBtn, cancelCreatePlanBtn, createPlanForm, planSelect;

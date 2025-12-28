@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { navigateTo } from './router.js';
 
 // NOTE: Much of this is simplified and duplicated from script.js for this specific view.
@@ -52,8 +52,14 @@ export default function initViewPlanPage() {
                 return;
             }
 
+            let availableRecipes = [];
+            if (planCollection === 'plans') {
+                const recipesSnap = await getDocs(collection(db, 'recipes'));
+                availableRecipes = recipesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            }
+
             if (planViewName) planViewName.textContent = displayName;
-            renderFullPlanner(mealPlanGrid, planData);
+            renderFullPlanner(mealPlanGrid, planData, availableRecipes);
 
         } catch (error) {
             console.error("Error fetching plan:", error);
@@ -70,7 +76,7 @@ export default function initViewPlanPage() {
     };
 }
 
-function renderFullPlanner(container, planData) {
+function renderFullPlanner(container, planData, availableRecipes = []) {
     if (!container) return;
     container.innerHTML = ''; // Clear loading message
 
@@ -90,12 +96,12 @@ function renderFullPlanner(container, planData) {
         container.appendChild(weekHeader);
 
         const weekGrid = document.createElement('div');
-        renderPlannerForWeek(weekGrid, weekData, planData.startDay, planData.defaultNumPeople);
+        renderPlannerForWeek(weekGrid, weekData, planData.startDay, planData.defaultNumPeople, availableRecipes);
         container.appendChild(weekGrid);
     });
 }
 
-function renderPlannerForWeek(container, weekData, startDay, defaultNumPeople) {
+function renderPlannerForWeek(container, weekData, startDay, defaultNumPeople, availableRecipes = []) {
     const allDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     const startDayIndex = allDays.indexOf(startDay || 'Lundi');
     const weekDays = [...allDays.slice(startDayIndex), ...allDays.slice(0, startDayIndex)];
@@ -137,7 +143,8 @@ function renderPlannerForWeek(container, weekData, startDay, defaultNumPeople) {
                         mealsInSlot.forEach(meal => {
                             const card = document.createElement('div');
                             card.className = 'p-1 bg-white rounded shadow-sm text-center text-xs font-medium';
-                            card.textContent = meal.name;
+                            const recipeData = availableRecipes.find(r => r.id === meal.id) || meal;
+                            card.textContent = recipeData.name;
                             mealSlotDiv.appendChild(card);
                         });
                     }

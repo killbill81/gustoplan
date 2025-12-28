@@ -438,49 +438,6 @@ const routes = {
         `,
         script: './lists.js'
     },
-    'friends': {
-        html: `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl md:text-3xl font-bold text-foreground">Mes Amis</h2>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="md:col-span-2 space-y-8">
-                <div>
-                    <h3 class="text-xl font-bold text-foreground mb-4">Liste d'amis</h3>
-                    <div id="friends-list-container" class="space-y-4">
-                        <!-- La liste d'amis sera chargée ici -->
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-foreground mb-4">Demandes envoyées en attente</h3>
-                    <div id="pending-requests-container" class="space-y-4">
-                        <!-- Les demandes envoyées en attente seront chargées ici -->
-                    </div>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-foreground mb-4">Demandes rejetées</h3>
-                    <div id="declined-requests-container" class="space-y-4">
-                        <!-- Les demandes rejetées seront chargées ici -->
-                    </div>
-                </div>
-            </div>
-            <div>
-                <div class="bg-card text-card-foreground rounded-xl shadow-md border border-border p-6">
-                    <h3 class="text-xl font-bold text-foreground mb-4">Rechercher un ami</h3>
-                    <div class="mb-4">
-                        <div class="flex items-center space-x-2">
-                            <input type="text" id="search-friends-input" placeholder="Nom ou email..." class="flex-grow p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-tomato focus:border-tomato">
-                            <button id="search-friends-btn" class="btn btn-primary"><i class="fas fa-search"></i></button>
-                        </div>
-                        <div id="search-results-container" class="mt-2 space-y-2"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        `,
-        script: './friends.js'
-    },
     'shared': {
         html: `
         <div class="flex justify-between items-center mb-6">
