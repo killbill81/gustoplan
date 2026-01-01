@@ -2,6 +2,7 @@ import { Link, Outlet } from "react-router-dom"
 import { ModeToggle } from "./mode-toggle"
 import { UserNav } from "./user-nav"
 import { MainNav } from "./main-nav"
+import { SiteFooter } from "./site-footer"
 
 export default function MainLayout() {
   return (
@@ -26,6 +27,7 @@ export default function MainLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <SiteFooter />
     </div>
   )
 }

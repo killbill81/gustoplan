@@ -40,13 +40,22 @@ export function MainNav({
         Mes Recettes
       </Link>
       <Link
+        to="/ingredients"
+        className={cn(
+          "text-sm font-medium transition-colors hover:text-primary",
+          location.pathname === "/ingredients" ? "text-foreground" : "text-muted-foreground"
+        )}
+      >
+        Ingrédients
+      </Link>
+      <Link
         to="/shopping-list"
         className={cn(
           "text-sm font-medium transition-colors hover:text-primary",
           location.pathname === "/shopping-list" ? "text-foreground" : "text-muted-foreground"
         )}
       >
-        Liste de courses
+        Courses
       </Link>
     </nav>
   )

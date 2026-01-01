@@ -57,11 +57,11 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => console.log("Profile clicked")}>
-            Profile
+          <DropdownMenuItem onClick={() => navigate("/settings")}>
+            Mon Profil
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log("Settings clicked")}>
-            Settings
+          <DropdownMenuItem onClick={() => navigate("/settings")}>
+            Paramètres
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

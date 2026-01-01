@@ -2,31 +2,14 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Trash2, Loader2 } from "lucide-react" // Removed Save
-// Removed Select imports
-
-export interface IngredientInput {
-  id: string; // Used for existing ingredients, can be Firebase ID or local temp ID
-  name: string;
-  quantity: number;
-  unit: string;
-}
-
-export interface RecipeData {
-  name: string;
-  imageUrl: string;
-  category: string;
-  servings: number;
-  prepTime: number;
-  difficulty: string;
-  ingredients: IngredientInput[];
-  steps: string;
-  isFavorite?: boolean;
-}
+import { Checkbox } from "@/components/ui/checkbox"
+import { Plus, Trash2, Loader2, Calendar } from "lucide-react"
+import { Recipe, Ingredient, Season, Month } from "@/types/recipe"
+import { SEASONS, MONTHS, SEASON_TO_MONTHS } from "@/lib/season-utils"
 
 interface RecipeFormProps {
-  initialData?: RecipeData;
-  onSubmit: (data: RecipeData) => void;
+  initialData?: Partial<Recipe>;
+  onSubmit: (data: Omit<Recipe, "id">) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -43,23 +26,39 @@ export default function RecipeForm({
   const [servings, setServings] = useState(initialData?.servings || 1)
   const [prepTime, setPrepTime] = useState(initialData?.prepTime || 0)
   const [difficulty, setDifficulty] = useState(initialData?.difficulty || "Facile")
-  const [ingredients, setIngredients] = useState<IngredientInput[]>(initialData?.ingredients || [])
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialData?.ingredients || [])
   const [steps, setSteps] = useState(initialData?.steps || "")
-  const [ingredientTempId, setIngredientTempId] = useState(0) // For new ingredients without Firebase ID
+  const [selectedSeasons, setSelectedSeasons] = useState<Season[]>(initialData?.seasons || [])
+  const [selectedMonths, setSelectedMonths] = useState<Month[]>(initialData?.months || [])
 
   const handleAddIngredient = () => {
-    setIngredients(prev => [...prev, { id: `temp-${ingredientTempId}`, name: "", quantity: 0, unit: "" }])
-    setIngredientTempId(prev => prev + 1)
+    setIngredients(prev => [...prev, { name: "", quantity: 0, unit: "" }])
   }
 
-  const handleUpdateIngredient = (id: string, field: keyof IngredientInput, value: any) => {
-    setIngredients(prev => 
-      prev.map(ing => (ing.id === id ? { ...ing, [field]: value } : ing))
+  const handleUpdateIngredient = (index: number, field: keyof Ingredient, value: any) => {
+    const newIngs = [...ingredients]
+    newIngs[index] = { ...newIngs[index], [field]: value }
+    setIngredients(newIngs)
+  }
+
+  const handleRemoveIngredient = (index: number) => {
+    setIngredients(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const toggleSeason = (season: Season) => {
+    setSelectedSeasons(prev => {
+      if (prev.includes(season)) {
+        return prev.filter(s => s !== season)
+      } else {
+        return [...prev, season]
+      }
+    })
+  }
+
+  const toggleMonth = (month: Month) => {
+    setSelectedMonths(prev =>
+      prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month]
     )
-  }
-
-  const handleRemoveIngredient = (id: string) => {
-    setIngredients(prev => prev.filter(ing => ing.id !== id))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,28 +70,30 @@ export default function RecipeForm({
       servings,
       prepTime,
       difficulty,
-      ingredients: ingredients.filter(ing => ing.name && ing.quantity), // Filter out empty ingredients
+      ingredients: ingredients.filter(ing => ing.name),
       steps,
+      seasons: selectedSeasons,
+      months: selectedMonths,
       isFavorite: initialData?.isFavorite || false,
     })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
           <Label htmlFor="name">Nom de la recette</Label>
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading} />
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="imageUrl">URL de l'image</Label>
-          <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Laisser vide pour une image aléatoire" disabled={isLoading} />
+          <Label htmlFor="imageUrl">URL de l'image (optionnel)</Label>
+          <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." disabled={isLoading} />
         </div>
         <div>
           <Label htmlFor="category">Catégorie</Label>
-          <select 
+          <select
             id="category"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:opacity-50"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             disabled={isLoading}
@@ -102,21 +103,22 @@ export default function RecipeForm({
             <option value="PLAT">PLAT</option>
             <option value="ACCOMPAGNEMENT">ACCOMPAGNEMENT</option>
             <option value="DESSERT">DESSERT</option>
+            <option value="AUTRE">AUTRE</option>
           </select>
         </div>
         <div>
-          <Label htmlFor="servings">Nombre de personnes</Label>
+          <Label htmlFor="servings">Personnes</Label>
           <Input id="servings" type="number" value={servings} onChange={(e) => setServings(parseInt(e.target.value) || 1)} min={1} disabled={isLoading} />
         </div>
         <div>
-          <Label htmlFor="prepTime">Temps de préparation (min)</Label>
+          <Label htmlFor="prepTime">Prép. (min)</Label>
           <Input id="prepTime" type="number" value={prepTime} onChange={(e) => setPrepTime(parseInt(e.target.value) || 0)} min={0} disabled={isLoading} />
         </div>
         <div>
           <Label htmlFor="difficulty">Difficulté</Label>
-          <select 
+          <select
             id="difficulty"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value)}
             disabled={isLoading}
@@ -129,51 +131,92 @@ export default function RecipeForm({
         </div>
       </div>
 
+      <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
+        <div className="flex items-center gap-2 font-semibold text-sm mb-2 text-primary">
+          <Calendar className="h-4 w-4" /> Saisonnalité
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {SEASONS.map(season => (
+            <div key={season} className="flex items-center space-x-2">
+              <Checkbox
+                id={`season-${season}`}
+                checked={selectedSeasons.includes(season)}
+                onCheckedChange={() => toggleSeason(season)}
+                disabled={isLoading}
+              />
+              <label htmlFor={`season-${season}`} className="text-sm cursor-pointer">{season}</label>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-2 border-t mt-2">
+          <Label className="text-[10px] text-muted-foreground mb-2 block uppercase font-bold tracking-tight">Ou mois spécifiques</Label>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-y-3 gap-x-2">
+            {MONTHS.map(month => (
+              <div key={month} className="flex items-center space-x-1.5">
+                <Checkbox
+                  id={`month-${month}`}
+                  checked={selectedMonths.includes(month)}
+                  onCheckedChange={() => toggleMonth(month)}
+                  className="h-3.5 w-3.5"
+                  disabled={isLoading}
+                />
+                <label htmlFor={`month-${month}`} className="text-[10px] cursor-pointer whitespace-nowrap leading-none">{month.slice(0, 3)}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div>
-        <h4 className="text-lg font-medium text-foreground mb-2">Ingrédients</h4>
-        <div className="space-y-2">
-          {ingredients.map((ing) => (
-            <div key={ing.id} className="flex gap-2 items-end">
+        <h4 className="text-md font-bold mb-4 flex items-center justify-between">
+          <span>Ingrédients</span>
+          <Button type="button" variant="outline" size="sm" onClick={handleAddIngredient} disabled={isLoading} className="h-8">
+            <Plus className="h-3.5 w-3.5 mr-1" /> Ajouter
+          </Button>
+        </h4>
+        <div className="space-y-3">
+          {ingredients.map((ing, idx) => (
+            <div key={idx} className="flex gap-2 items-center group">
               <div className="flex-grow">
-                <Label htmlFor={`ing-name-${ing.id}`}>Nom</Label>
-                <Input id={`ing-name-${ing.id}`} value={ing.name} onChange={(e) => handleUpdateIngredient(ing.id, "name", e.target.value)} disabled={isLoading} />
+                <Input placeholder="Ex: Poulet" value={ing.name} onChange={(e) => handleUpdateIngredient(idx, "name", e.target.value)} disabled={isLoading} className="h-9" />
               </div>
-              <div className="w-24">
-                <Label htmlFor={`ing-qty-${ing.id}`}>Quantité</Label>
-                <Input id={`ing-qty-${ing.id}`} type="number" value={ing.quantity} onChange={(e) => handleUpdateIngredient(ing.id, "quantity", parseFloat(e.target.value) || 0)} min={0} disabled={isLoading} />
+              <div className="w-16">
+                <Input type="number" placeholder="Qté" value={ing.quantity} onChange={(e) => handleUpdateIngredient(idx, "quantity", parseFloat(e.target.value) || 0)} disabled={isLoading} className="h-9" />
               </div>
-              <div className="w-24">
-                <Label htmlFor={`ing-unit-${ing.id}`}>Unité</Label>
-                <Input id={`ing-unit-${ing.id}`} value={ing.unit} onChange={(e) => handleUpdateIngredient(ing.id, "unit", e.target.value)} disabled={isLoading} />
+              <div className="w-16">
+                <Input placeholder="Unité" value={ing.unit} onChange={(e) => handleUpdateIngredient(idx, "unit", e.target.value)} disabled={isLoading} className="h-9" />
               </div>
-              <Button variant="destructive" size="icon" onClick={() => handleRemoveIngredient(ing.id)} disabled={isLoading}>
+              <Button variant="ghost" size="icon" onClick={() => handleRemoveIngredient(idx)} className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0" disabled={isLoading}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           ))}
+          {ingredients.length === 0 && (
+            <p className="text-center text-xs text-muted-foreground py-4 border border-dashed rounded-lg">Aucun ingrédient ajouté.</p>
+          )}
         </div>
-        <Button type="button" variant="outline" size="sm" className="mt-4" onClick={handleAddIngredient} disabled={isLoading}>
-          <Plus className="mr-2 h-4 w-4" /> Ajouter un ingrédient
-        </Button>
       </div>
 
       <div>
-        <Label htmlFor="steps">Préparation</Label>
-        <textarea 
+        <Label htmlFor="steps" className="mb-2 block">Préparation</Label>
+        <textarea
           id="steps"
-          rows={8}
-          className="mt-1 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          rows={6}
+          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 min-h-[120px]"
           value={steps}
           onChange={(e) => setSteps(e.target.value)}
           disabled={isLoading}
+          placeholder="Décrivez les étapes de la recette..."
         />
       </div>
 
-      <div className="flex justify-end space-x-4 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+      <div className="flex justify-end space-x-3 pt-4 sticky bottom-0 bg-background border-t">
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={isLoading}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading} className="min-w-[120px]">
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Sauvegarder"}
         </Button>
       </div>

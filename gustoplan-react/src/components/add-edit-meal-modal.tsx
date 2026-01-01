@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
-import { collection, query, onSnapshot, doc, updateDoc } from "firebase/firestore" // Removed where, arrayUnion, arrayRemove
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-// Removed Input import
-import { Label } from "@/components/ui/label"
-import { Heart, Loader2 } from "lucide-react" 
+import { Loader2, Search } from "lucide-react"
+import { useRecipes } from "@/hooks/useRecipes"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
 interface AddEditMealModalProps {
   isOpen: boolean;
@@ -13,20 +14,9 @@ interface AddEditMealModalProps {
   planId: string;
   currentWeek: number;
   dayIndex: number;
-  mealTypeKey: string;
+  mealTypeKey: 'lunch' | 'dinner';
   existingMeal?: any;
-  existingSlotMeals?: any[];
-  defaultServings?: number; 
-  slotIndex?: number;
-}
-
-interface Recipe {
-  id: string;
-  name: string;
-  servings: number;
-  imageUrl?: string;
-  category?: string;
-  isFavorite?: boolean;
+  slotIndex: number;
 }
 
 export default function AddEditMealModal({
@@ -37,188 +27,134 @@ export default function AddEditMealModal({
   dayIndex,
   mealTypeKey,
   existingMeal,
-  existingSlotMeals,
-  defaultServings = 1, // defaultServings is still used for initialisation, not as an input
-  slotIndex = 1,
+  slotIndex,
 }: AddEditMealModalProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string>("") 
-  const [error, setError] = useState<string>("") 
+  const { recipes, isLoading: loadingRecipes } = useRecipes()
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string>("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [error, setError] = useState<string>("")
 
-  // Fetch all recipes
-  useEffect(() => {
-    const q = query(collection(db, "recipes"))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setRecipes(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Recipe[])
-    })
-    return () => unsubscribe()
-  }, [])
-
-  // Initial values
   useEffect(() => {
     if (isOpen) {
-        if (existingMeal) {
-            setSelectedRecipeId(existingMeal.id || "")
-        } else {
-            setSelectedRecipeId("")
-        }
-        setError("")
+      setSelectedRecipeId(existingMeal?.id || "")
+      setSearchQuery("")
+      setError("")
     }
-  }, [isOpen, existingMeal]) 
+  }, [isOpen, existingMeal])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedRecipeId || !planId) {
+    if (!selectedRecipeId) {
       setError("Veuillez sélectionner une recette.")
       return
     }
     setIsLoading(true)
-    setError("")
 
     try {
       const planRef = doc(db, "plans", planId)
       const weekKey = currentWeek.toString()
       const slotKey = `${dayIndex}-${mealTypeKey}-${slotIndex}`
 
-      const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
-      if (!selectedRecipe) {
-          setError("Recette sélectionnée introuvable.");
-          setIsLoading(false);
-          return;
-      }
+      const selectedRecipe = recipes.find(r => r.id === selectedRecipeId)
+      if (!selectedRecipe) throw new Error("Recipe not found")
 
       const mealToSave = {
-          id: selectedRecipe.id,
-          name: selectedRecipe.name,
-          imageUrl: selectedRecipe.imageUrl || null,
-      };
-
-      let newMealsArray = existingSlotMeals ? [...existingSlotMeals] : [];
-      
-      if (existingMeal) {
-          newMealsArray = newMealsArray.map(m => m.id === existingMeal.id ? mealToSave : m);
-      } else {
-          newMealsArray.push(mealToSave);
+        id: selectedRecipe.id,
+        name: selectedRecipe.name,
+        imageUrl: selectedRecipe.imageUrl || null,
       }
 
       await updateDoc(planRef, {
-        [`weeks.${weekKey}.menuData.${slotKey}`]: newMealsArray,
-        lastUpdated: new Date(),
+        [`weeks.${weekKey}.menuData.${slotKey}`]: [mealToSave],
+        lastUpdated: serverTimestamp(),
       })
       onClose()
     } catch (err) {
       console.error("Error saving meal:", err)
-      setError("Erreur lors de l'enregistrement du plat.")
+      setError("Erreur lors de l'enregistrement.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleDelete = async () => {
-    if (!existingMeal || !window.confirm("Voulez-vous vraiment supprimer ce plat du menu ?")) return;
-    setIsLoading(true)
-    setError("")
+  const categoriesMap = ["ENTREE", "PLAT", "ACCOMPAGNEMENT", "DESSERT"]
+  const targetCategory = categoriesMap[slotIndex] || "PLAT"
 
-    try {
-        const planRef = doc(db, "plans", planId);
-        const weekKey = currentWeek.toString();
-        const slotKey = `${dayIndex}-${mealTypeKey}-${slotIndex}`;
-
-        const newMealsArray = existingSlotMeals ? existingSlotMeals.filter(m => m.id !== existingMeal.id) : [];
-        
-        if (newMealsArray.length === 0) {
-             await updateDoc(planRef, {
-                [`weeks.${weekKey}.menuData.${slotKey}`]: [], 
-                lastUpdated: new Date(),
-            });
-        } else {
-            await updateDoc(planRef, {
-                [`weeks.${weekKey}.menuData.${slotKey}`]: newMealsArray,
-                lastUpdated: new Date(),
-            });
-        }
-
-        onClose();
-    } catch (err) {
-        console.error("Error deleting meal:", err);
-        setError("Erreur lors de la suppression du plat.");
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-  // Determine target category based on slotIndex
-  const categoriesMap = ["ENTREE", "PLAT", "ACCOMPAGNEMENT", "DESSERT"];
-  const targetCategory = categoriesMap[slotIndex] || "PLAT";
-
-  // Filter recipes by category
-  const filteredRecipes = recipes.filter(recipe => {
-      if (existingMeal && recipe.id === existingMeal.id) return true;
-      
-      return recipe.category?.toUpperCase() === targetCategory;
-  });
-
-  // Sort recipes: favorites first, then by name
-  const sortedRecipes = [...filteredRecipes].sort((a, b) => {
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
-      return a.name.localeCompare(b.name);
-  });
+  const filteredRecipes = recipes.filter(r => {
+    const matchesCategory = r.category?.toUpperCase() === targetCategory
+    const matchesSearch = r.name.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesCategory && matchesSearch
+  })
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{existingMeal ? "Modifier le plat" : `Ajouter un(e) ${targetCategory.toLowerCase()}`}</DialogTitle>
+          <DialogTitle>
+            {existingMeal ? "Modifier le plat" : `Ajouter : ${targetCategory}`}
+          </DialogTitle>
           <DialogDescription>
-            {existingMeal ? "Modifiez les détails de votre plat." : `Ajoutez une nouvelle recette de type ${targetCategory} à votre planning.`}
+            Choisissez une recette pour ce créneau du planning.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSave} className="grid gap-4 py-4">
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <div className="grid gap-2">
-            <Label htmlFor="recipe">Recette ({targetCategory})</Label>
-            <select 
-                id="recipe"
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={selectedRecipeId}
-                onChange={(e) => setSelectedRecipeId(e.target.value)}
-                disabled={isLoading}
-            >
-                <option value="" disabled>Sélectionner une recette</option>
-                {sortedRecipes.length === 0 ? (
-                    <option disabled>Aucune recette trouvée dans cette catégorie</option>
-                ) : (
-                    sortedRecipes.map((recipe) => (
-                        <option key={recipe.id} value={recipe.id}>
-                            {recipe.name} {recipe.isFavorite ? "❤️" : ""}
-                        </option>
-                    ))
+
+        <div className="relative my-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher une recette..."
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="max-h-[300px] overflow-y-auto pr-2 grid gap-2 py-2">
+          {loadingRecipes ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : filteredRecipes.length === 0 ? (
+            <p className="text-center py-8 text-sm text-muted-foreground italic">Aucune recette trouvée.</p>
+          ) : (
+            filteredRecipes.map(recipe => (
+              <button
+                key={recipe.id}
+                type="button"
+                onClick={() => setSelectedRecipeId(recipe.id)}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-xl border text-left transition-all",
+                  selectedRecipeId === recipe.id
+                    ? "bg-primary/10 border-primary ring-1 ring-primary"
+                    : "hover:bg-muted border-transparent"
                 )}
-            </select>
-            {filteredRecipes.length === 0 && (
-                <p className="text-xs text-muted-foreground">Aucune recette trouvée pour la catégorie {targetCategory}. Ajoutez des recettes dans "Mes Recettes".</p>
-            )}
-          </div>
-          <DialogFooter className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-between sm:space-x-0">
-            <div className="flex flex-col sm:flex-row gap-2">
-              {existingMeal && (
-                <Button variant="destructive" type="button" onClick={handleDelete} disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Supprimer"}
-                </Button>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>
-                Annuler
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Enregistrer"}
-              </Button>
-            </div>
-          </DialogFooter>
-        </form>
+              >
+                <div className="h-10 w-10 rounded-lg bg-muted overflow-hidden shrink-0">
+                  {recipe.imageUrl ? (
+                    <img src={recipe.imageUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-xs font-bold bg-primary/5 text-primary">
+                      {recipe.name.substring(0, 1)}
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-grow">
+                  <p className="font-bold text-sm truncate">{recipe.name}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">{recipe.difficulty || 'Normal'}</p>
+                </div>
+                {recipe.isFavorite && <div className="text-red-500 text-xs">❤️</div>}
+              </button>
+            ))
+          )}
+        </div>
+
+        {error && <p className="text-destructive text-xs font-bold">{error}</p>}
+
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>Annuler</Button>
+          <Button onClick={handleSave} disabled={isLoading || !selectedRecipeId}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {existingMeal ? "Mettre à jour" : "Ajouter au menu"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

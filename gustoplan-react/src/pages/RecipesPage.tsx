@@ -1,104 +1,104 @@
-import { useState, useEffect } from "react"
-import { db } from "@/lib/firebase"
-import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore"
-import { Card, CardTitle } from "@/components/ui/card" // Removed CardContent, CardHeader, CardFooter
+import { useState, useMemo } from "react"
+import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog" // Removed DialogDescription
-import { Loader2, Plus, Pencil, Trash2, Search, Eye, Heart } from "lucide-react"
-// Removed ScrollArea import
-import RecipeForm, { RecipeData } from "@/components/recipe-form"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Loader2, Plus, Pencil, Trash2, Search, Eye, Heart, Leaf } from "lucide-react"
+import { useRecipes } from "@/hooks/useRecipes"
+import RecipeForm from "@/components/recipe-form"
 import RecipePreviewModal from "@/components/recipe-preview-modal"
 import { cn } from "@/lib/utils"
+import { Recipe } from "@/types/recipe"
+import { getRecipeSeasonScore } from "@/lib/season-utils"
+
+const CATEGORIES = ['ENTREE', 'PLAT', 'ACCOMPAGNEMENT', 'DESSERT', 'AUTRE'];
 
 export default function RecipesPage() {
-  const [recipes, setRecipes] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const { recipes, isLoading, createRecipe, updateRecipe, deleteRecipe, toggleFavorite } = useRecipes()
+  const [activeCategory, setActiveCategory] = useState('PLAT')
   const [searchTerm, setSearchTerm] = useState("")
-  
+
   // Modal State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false)
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeData | undefined>(undefined)
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | undefined>(undefined)
   const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
-    const q = query(collection(db, "recipes"))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const recipesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      // Sort: Favorites first, then alphabetical
-      recipesData.sort((a: any, b: any) => {
-          if (a.isFavorite === b.isFavorite) return a.name.localeCompare(b.name);
-          return a.isFavorite ? -1 : 1;
-      })
-      setRecipes(recipesData)
-      setLoading(false)
+  // Memoized filtered and sorted recipes
+  const filteredRecipes = useMemo(() => {
+    let result = recipes
+
+    // 1. Category filter
+    if (activeCategory && !searchTerm) {
+      result = result.filter(r => (r.category || 'AUTRE').toUpperCase() === activeCategory)
+    }
+
+    // 2. Search filter (overrides category display if found in another category)
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase()
+      result = result.filter(r => r.name.toLowerCase().includes(lowerSearch))
+    }
+
+    // 3. Sorting: Favorites first, then Season Score, then Alphabetical
+    return result.sort((a, b) => {
+      // Favorites first
+      if (a.isFavorite !== b.isFavorite) {
+        return a.isFavorite ? -1 : 1
+      }
+
+      // Seasonality score
+      const scoreA = getRecipeSeasonScore(a)
+      const scoreB = getRecipeSeasonScore(b)
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA
+      }
+
+      return a.name.localeCompare(b.name)
     })
-
-    return () => unsubscribe()
-  }, [])
-
-  const filteredRecipes = recipes.filter(recipe => 
-    recipe.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  }, [recipes, activeCategory, searchTerm])
 
   const handleAddClick = () => {
     setSelectedRecipe(undefined)
     setIsFormModalOpen(true)
   }
 
-  const handleEditClick = (recipe: any) => {
+  const handleEditClick = (recipe: Recipe) => {
     setSelectedRecipe(recipe)
     setIsFormModalOpen(true)
   }
 
-  const handlePreviewClick = (recipe: any) => {
+  const handlePreviewClick = (recipe: Recipe) => {
     setSelectedRecipe(recipe)
     setIsPreviewModalOpen(true)
   }
 
-  const handleDeleteClick = async (recipeId: string, recipeName: string) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la recette "${recipeName}" ?`)) {
-        try {
-            await deleteDoc(doc(db, "recipes", recipeId));
-        } catch (e) {
-            console.error("Error deleting recipe", e);
-            alert("Erreur lors de la suppression.");
-        }
+  const handleDeleteClick = async (recipe: Recipe) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la recette "${recipe.name}" ?`)) {
+      try {
+        await deleteRecipe(recipe.id);
+      } catch (e) {
+        console.error("Error deleting recipe", e);
+      }
     }
   }
 
-  const handleToggleFavorite = async (recipe: any) => {
-      try {
-          await updateDoc(doc(db, "recipes", recipe.id), {
-              isFavorite: !recipe.isFavorite
-          });
-      } catch (e) {
-          console.error("Error toggling favorite", e);
-      }
-  }
-
-  const handleFormSubmit = async (data: RecipeData) => {
+  const handleFormSubmit = async (data: Omit<Recipe, 'id'>) => {
     setIsSaving(true)
     try {
-        if (selectedRecipe?.id) {
-            await updateDoc(doc(db, "recipes", selectedRecipe.id), data as any)
-        } else {
-            await addDoc(collection(db, "recipes"), data)
-        }
-        setIsFormModalOpen(false)
+      if (selectedRecipe?.id) {
+        await updateRecipe({ id: selectedRecipe.id, ...data })
+      } else {
+        await createRecipe(data)
+      }
+      setIsFormModalOpen(false)
     } catch (e) {
-        console.error("Error saving recipe", e)
-        alert("Erreur lors de l'enregistrement.")
+      console.error("Error saving recipe", e)
     } finally {
-        setIsSaving(false)
+      setIsSaving(false)
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -107,108 +107,148 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="container py-8">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold">Mes Recettes ({recipes.length})</h1>
+    <div className="container py-8 max-w-7xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Mes Recettes</h1>
+          <p className="text-muted-foreground text-sm mt-1">{recipes.length} recettes au total</p>
+        </div>
         <div className="flex gap-2 w-full md:w-auto">
-            <div className="relative w-full md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                    placeholder="Rechercher..." 
-                    className="pl-8" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-            <Button onClick={handleAddClick}>
-                <Plus className="h-4 w-4 mr-2" /> Créer
-            </Button>
+          <div className="relative flex-grow md:w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher une recette..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleAddClick} className="shadow-sm">
+            <Plus className="h-4 w-4 mr-2" /> Créer
+          </Button>
         </div>
       </div>
-      
-      {filteredRecipes.length === 0 ? (
-        <p className="text-muted-foreground text-center py-12">
-            {searchTerm ? "Aucune recette ne correspond à votre recherche." : "Aucune recette trouvée. Créez-en une !"}
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredRecipes.map((recipe) => (
-            <Card key={recipe.id} className="flex flex-col overflow-hidden group hover:shadow-lg transition-all duration-200">
-              <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                {/* Favorite Button Overlay */}
-                <button 
-                    onClick={(e) => { e.stopPropagation(); handleToggleFavorite(recipe); }}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background text-muted-foreground hover:text-destructive transition-colors z-10 shadow-sm"
-                    title={recipe.isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
-                >
-                    <Heart className={cn("h-5 w-5 transition-transform active:scale-95", recipe.isFavorite && "fill-red-500 text-red-500")} />
-                </button>
 
-                {recipe.imageUrl ? (
-                    <img 
-                    src={recipe.imageUrl} 
-                    alt={recipe.name} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://placehold.co/600x400?text=No+Image";
-                    }}
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
-                        <span className="text-sm">Pas d'image</span>
-                    </div>
-                )}
-              </div>
-
-              <CardHeader className="p-4 pb-2 flex-grow">
-                <div className="flex justify-between items-start gap-2">
-                    <CardTitle className="text-lg leading-tight line-clamp-2" title={recipe.name}>{recipe.name}</CardTitle>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-2">
-                  <span className="bg-muted px-2 py-1 rounded font-medium text-foreground uppercase text-[10px]">{recipe.category || "AUTRE"}</span>
-                  {recipe.prepTime > 0 && <span className="bg-muted px-2 py-1 rounded">{recipe.prepTime} min</span>}
-                  <span className="bg-muted px-2 py-1 rounded">{recipe.servings || 1} pers.</span>
-                </div>
-              </CardHeader>
-
-              <div className="p-3 bg-muted/30 border-t border-border flex justify-between items-center gap-2">
-                  <Button variant="ghost" size="sm" className="flex-1 text-xs h-8" onClick={() => handlePreviewClick(recipe)}>
-                      <Eye className="h-3.5 w-3.5 mr-1.5" /> Voir
-                  </Button>
-                  <Button variant="ghost" size="sm" className="flex-1 text-xs h-8 text-primary hover:text-primary/90 hover:bg-primary/10" onClick={() => handleEditClick(recipe)}>
-                      <Pencil className="h-3.5 w-3.5 mr-1.5" /> Éditer
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeleteClick(recipe.id, recipe.name)}>
-                      <Trash2 className="h-4 w-4" />
-                  </Button>
-              </div>
-            </Card>
+      {/* Categories Tabs */}
+      {!searchTerm && (
+        <div className="flex space-x-1 border-b mb-6 overflow-x-auto scrollbar-none pb-px">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-all relative whitespace-nowrap",
+                activeCategory === cat
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {cat}
+            </button>
           ))}
+        </div>
+      )}
+
+      {filteredRecipes.length === 0 ? (
+        <div className="text-center py-20 bg-muted/20 rounded-xl border border-dashed">
+          <p className="text-muted-foreground">
+            {searchTerm ? "Aucun résultat pour cette recherche." : "Aucune recette dans cette catégorie."}
+          </p>
+          {searchTerm && (
+            <Button variant="link" onClick={() => setSearchTerm("")} className="mt-2">
+              Effacer la recherche
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          {filteredRecipes.map((recipe) => {
+            const isSeasonal = getRecipeSeasonScore(recipe) === 2
+            return (
+              <Card key={recipe.id} className="flex flex-col overflow-hidden group hover:shadow-lg transition-all border-muted/60 relative">
+                <div
+                  className="relative aspect-[4/3] w-full overflow-hidden bg-muted cursor-pointer"
+                  onClick={() => handlePreviewClick(recipe)}
+                >
+                  {/* Season Badge */}
+                  {isSeasonal && (
+                    <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-md flex items-center">
+                      <Leaf className="h-3 w-3 mr-1 fill-white" /> DE SAISON
+                    </div>
+                  )}
+
+                  {/* Favorite Button Overlay */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(recipe); }}
+                    className="absolute top-2 right-2 p-2 rounded-full bg-white/90 hover:bg-white text-muted-foreground hover:text-destructive transition-all z-10 shadow-sm"
+                  >
+                    <Heart className={cn("h-4 w-4 transition-transform active:scale-90", recipe.isFavorite && "fill-red-500 text-red-500")} />
+                  </button>
+
+                  <img
+                    src={recipe.imageUrl || "https://placehold.co/600x400?text=GustoPlan"}
+                    alt={recipe.name}
+                    className={cn(
+                      "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105",
+                      !isSeasonal && "grayscale-[30%] opacity-80"
+                    )}
+                  />
+                </div>
+
+                <CardHeader className="p-4 pb-0 flex-grow">
+                  <CardTitle
+                    className="text-md leading-tight line-clamp-2 cursor-pointer hover:text-primary transition-colors"
+                    title={recipe.name}
+                    onClick={() => handlePreviewClick(recipe)}
+                  >
+                    {recipe.name}
+                  </CardTitle>
+                  <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground mt-3 uppercase tracking-wider font-semibold">
+                    {recipe.prepTime > 0 && <span className="bg-muted px-2 py-0.5 rounded-sm">{recipe.prepTime} min</span>}
+                    <span className="bg-muted px-2 py-0.5 rounded-sm">{recipe.difficulty || 'Facile'}</span>
+                  </div>
+                </CardHeader>
+
+                <div className="p-3 mt-2 border-t border-muted/40 flex justify-between items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold px-2" onClick={() => handleEditClick(recipe)}>
+                    <Pencil className="h-3 w-3 mr-1" /> ÉDITER
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteClick(recipe)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </Card>
+            )
+          })}
         </div>
       )}
 
       {/* Create/Edit Form Modal */}
       <Dialog open={isFormModalOpen} onOpenChange={setIsFormModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle>{selectedRecipe ? "Modifier la recette" : "Créer une recette"}</DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto p-0">
+          <div className="p-6">
+            <DialogHeader className="mb-4">
+              <DialogTitle>{selectedRecipe ? "Modifier la recette" : "Ajouter une recette"}</DialogTitle>
             </DialogHeader>
-            <RecipeForm 
-                initialData={selectedRecipe} 
-                onSubmit={handleFormSubmit} 
-                onCancel={() => setIsFormModalOpen(false)}
-                isLoading={isSaving}
+            <RecipeForm
+              initialData={selectedRecipe}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setIsFormModalOpen(false)}
+              isLoading={isSaving}
             />
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Preview Modal */}
-      <RecipePreviewModal 
-        isOpen={isPreviewModalOpen} 
-        onClose={() => setIsPreviewModalOpen(false)} 
-        recipe={selectedRecipe}
-        onEdit={handleEditClick}
-      />
+      {selectedRecipe && (
+        <RecipePreviewModal
+          isOpen={isPreviewModalOpen}
+          onClose={() => setIsPreviewModalOpen(false)}
+          recipe={selectedRecipe as any}
+          onEdit={() => handleEditClick(selectedRecipe)}
+        />
+      )}
     </div>
   )
 }
