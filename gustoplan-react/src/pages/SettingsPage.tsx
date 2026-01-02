@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { auth, db } from "@/lib/firebase"
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -130,7 +130,7 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="p-8 space-y-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="name" className="font-bold ml-1">Nom d'affichage</Label>
+                                <Label htmlFor="name" className="font-bold ml-1">Nom d&apos;affichage</Label>
                                 <Input
                                     id="name"
                                     value={userSettings.displayName}

@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCcw, Home } from "lucide-react";
 
@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
                         <div className="space-y-2">
                             <h1 className="text-3xl font-black tracking-tight">Oups !</h1>
-                            <p className="text-muted-foreground font-medium">Une erreur inattendue est survenue dans l'application.</p>
+                            <p className="text-muted-foreground font-medium">Une erreur inattendue est survenue dans l&apos;application.</p>
                         </div>
 
                         {process.env.NODE_ENV === 'development' && (
@@ -62,7 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                     window.location.href = "/";
                                 }}
                             >
-                                <Home className="h-5 w-5" /> Retour à l'accueil
+                                <Home className="h-5 w-5" /> Retour à l&apos;accueil
                             </Button>
                         </div>
                     </div>
@@ -70,6 +70,6 @@ export class ErrorBoundary extends Component<Props, State> {
             );
         }
 
-        return this.children;
+        return this.props.children;
     }
 }

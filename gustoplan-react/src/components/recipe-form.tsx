@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Trash2, Loader2, Calendar } from "lucide-react"
 import { Recipe, Ingredient, Season, Month } from "@/types/recipe"
-import { SEASONS, MONTHS, SEASON_TO_MONTHS } from "@/lib/season-utils"
+import { SEASONS, MONTHS } from "@/lib/season-utils"
 
 interface RecipeFormProps {
   initialData?: Partial<Recipe>;
@@ -86,7 +86,7 @@ export default function RecipeForm({
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading} />
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="imageUrl">URL de l'image (optionnel)</Label>
+          <Label htmlFor="imageUrl">URL de l&apos;image (optionnel)</Label>
           <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." disabled={isLoading} />
         </div>
         <div>

@@ -51,7 +51,7 @@ export default function PlanFormModal({ isOpen, onClose, onSubmit, plan }: PlanF
                     <DialogHeader>
                         <DialogTitle>{plan ? "Renommer le plan" : "Nouveau plan"}</DialogTitle>
                         <DialogDescription>
-                            Donnez un nom à votre menu pour mieux l'organiser.
+                            Donnez un nom à votre menu pour mieux l&apos;organiser.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">

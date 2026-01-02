@@ -9,7 +9,6 @@ import {
     addDoc,
     updateDoc,
     deleteDoc,
-    setDoc,
     or,
     serverTimestamp
 } from 'firebase/firestore'
@@ -25,8 +24,10 @@ export function usePlans() {
     useEffect(() => {
         const user = auth.currentUser
         if (!user) {
-            setPlans([])
-            setIsLoading(false)
+            setTimeout(() => {
+                setPlans([])
+                setIsLoading(false)
+            }, 0)
             return
         }
 

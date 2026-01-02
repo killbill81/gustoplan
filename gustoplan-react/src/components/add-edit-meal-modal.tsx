@@ -118,6 +118,11 @@ export default function AddEditMealModal({
             filteredRecipes.map(recipe => (
               <button
                 key={recipe.id}
+                ref={el => {
+                  if (selectedRecipeId === recipe.id && el) {
+                    el.scrollIntoView({ block: 'center', behavior: 'instant' })
+                  }
+                }}
                 type="button"
                 onClick={() => setSelectedRecipeId(recipe.id)}
                 className={cn(

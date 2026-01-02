@@ -9,11 +9,14 @@ export default function AuthWrapper() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    console.log("AuthWrapper: useEffect mounted")
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("AuthWrapper: Auth state changed", user ? "User logged in" : "No user")
       if (user) {
         setIsAuthenticated(true)
       } else {
         setIsAuthenticated(false)
+        console.log("AuthWrapper: No user, redirecting to /login")
         navigate("/login")
       }
     })

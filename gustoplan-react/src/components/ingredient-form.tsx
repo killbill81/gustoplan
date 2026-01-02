@@ -58,7 +58,7 @@ export default function IngredientForm({
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
             <div className="grid gap-4">
                 <div>
-                    <Label htmlFor="ing-name">Nom de l'ingrédient</Label>
+                    <Label htmlFor="ing-name">Nom de l&apos;ingrédient</Label>
                     <Input id="ing-name" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading} />
                 </div>
 

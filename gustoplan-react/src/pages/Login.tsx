@@ -1,5 +1,6 @@
-import { useState } from "react"
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +13,19 @@ export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    console.log("Login.tsx: useEffect mounted")
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log("Login.tsx: Auth state changed", user ? "User logged in" : "No user")
+      if (user) {
+        console.log("Login.tsx: User found, redirecting to /")
+        navigate("/")
+      }
+    })
+    return () => unsubscribe()
+  }, [navigate])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,11 +47,12 @@ export default function Login() {
     setIsLoading(true)
     const provider = new GoogleAuthProvider()
     try {
-      await signInWithPopup(auth, provider)
-    } catch (err) {
-      console.error(err)
-      setError("Erreur lors de la connexion Google.")
-    } finally {
+      const result = await signInWithPopup(auth, provider)
+      console.log("Login.tsx: Popup success", result.user)
+      // Navigation is handled by onAuthStateChanged
+    } catch (err: any) {
+      console.error("Login.tsx: Popup error", err)
+      setError("Erreur lors de la connexion Google: " + err.message)
       setIsLoading(false)
     }
   }
@@ -64,7 +79,7 @@ export default function Login() {
               Google
             </Button>
           </div>
-          
+
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
@@ -114,12 +129,12 @@ export default function Login() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-            <div className="text-sm text-muted-foreground text-center">
-                Pas encore de compte ?{" "}
-                <a href="#" className="underline text-primary hover:text-primary/80">
-                    S'inscrire
-                </a>
-            </div>
+          <div className="text-sm text-muted-foreground text-center">
+            Pas encore de compte ?{" "}
+            <a href="#" className="underline text-primary hover:text-primary/80">
+              S&apos;inscrire
+            </a>
+          </div>
         </CardFooter>
       </Card>
     </div>

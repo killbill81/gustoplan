@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react"
-import { auth } from "@/lib/firebase"
+import { useState, useMemo } from "react"
 import { usePlans } from "@/hooks/usePlans"
 import { useShoppingList, ShoppingItem } from "@/hooks/useShoppingList"
 import { Button } from "@/components/ui/button"
@@ -19,11 +18,10 @@ import {
   Beef,
   Fish,
   Milk,
-  HeadsUp as Bread, // Using HeadsUp as a placeholder if Bread icon isn't standard in lucide-react, but Bread usually is. Wait, checking lucide...
+  Croissant as Bread,
   Utensils,
   Package,
-  ChevronUp,
-  CheckCircle2
+  ChevronUp
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -59,7 +57,7 @@ export default function ShoppingListPage() {
   const [showAI, setShowAI] = useState(false)
   const [showManual, setShowManual] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+
 
   // Manual item form state
   const [newItem, setNewItem] = useState({ name: "", quantity: 1, unit: "pièce(s)", category: "Inconnue" })
@@ -383,7 +381,7 @@ export default function ShoppingListPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name" className="font-bold ml-1">Nom de l'article</Label>
+              <Label htmlFor="name" className="font-bold ml-1">Nom de l&apos;article</Label>
               <Input
                 id="name"
                 className="rounded-xl border-primary/10 h-11"

@@ -1,27 +1,52 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { FlatCompat } from "@eslint/eslintrc";
 import globals from "globals";
-import pluginJs from "@eslint/js";
+import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import pluginReactConfig from "eslint-plugin-react/configs/recommended.js";
-import pkg from "@eslint/js"; // Import as default
-const { fixupConfigRules } = pkg; // Destructure named export from default
+import pluginReactRefresh from "eslint-plugin-react-refresh";
 
-export default [
-  { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"] },
-  { languageOptions: { globals: globals.browser } },
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  ...fixupConfigRules(pluginReactConfig),
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+  allConfig: js.configs.all
+});
+
+export default tseslint.config(
   {
-    settings: { react: { version: "detect" } },
+    ignores: ["dist", "node_modules"],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  ...compat.extends("plugin:react/recommended", "plugin:react-hooks/recommended"),
+  {
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.browser,
+        ...globals.es2020,
+      },
+    },
+    plugins: {
+      "react-refresh": pluginReactRefresh,
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
     rules: {
       "react/react-in-jsx-scope": "off",
-      "@typescript-eslint/no-unused-vars": [
+      "react-refresh/only-export-components": [
         "warn",
-        { argsIgnorePattern: "^", varsIgnorePattern: "^" },
+        { allowConstantExport: true },
       ],
       "@typescript-eslint/no-explicit-any": "off",
-      "react-hooks/exhaustive-deps": "warn",
-      "react/prop-types": "off",
+      "@typescript-eslint/no-unused-vars": "warn",
     },
-  },
-];
+  }
+);

@@ -153,32 +153,50 @@ export default function IngredientsPage() {
                     {filteredIngredients.map((ing) => {
                         const isSeasonal = getRecipeSeasonScore({ ...ing, ingredients: [] } as any) === 2
                         return (
-                            <Card key={ing.id} className="flex flex-col overflow-hidden group hover:shadow-md transition-all border-muted/60 relative p-3 bg-card/50 backdrop-blur-sm">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="bg-primary/10 p-2 rounded-lg text-primary">
-                                        <Apple className="h-4 w-4" />
-                                    </div>
+                            <Card key={ing.id} className="flex flex-col overflow-hidden group hover:shadow-lg transition-all border-muted/60 relative">
+                                <div
+                                    className="relative aspect-[4/3] w-full overflow-hidden bg-muted cursor-pointer flex items-center justify-center"
+                                    onClick={() => { setSelectedIngredient(ing); setIsIngModalOpen(true); }}
+                                >
+                                    {/* Season Badge */}
                                     {isSeasonal && (
-                                        <div className="bg-green-100 text-green-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-green-200 flex items-center gap-0.5">
-                                            <Leaf className="h-2.5 w-2.5 fill-green-700" /> SAISON
+                                        <div className="absolute top-2 left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10 shadow-md flex items-center">
+                                            <Leaf className="h-3 w-3 mr-1 fill-white" /> DE SAISON
+                                        </div>
+                                    )}
+
+                                    {ing.imageUrl ? (
+                                        <img
+                                            src={ing.imageUrl}
+                                            alt={ing.name}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center text-primary/30 group-hover:text-primary/50 transition-colors">
+                                            <Apple className="h-12 w-12 mb-2" />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">No Image</span>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex-grow">
-                                    <h4 className="font-bold text-sm leading-tight line-clamp-2" title={ing.name}>
+                                <div className="p-4 pb-0 flex-grow">
+                                    <h3
+                                        className="font-semibold text-md leading-tight line-clamp-2 cursor-pointer hover:text-primary transition-colors mb-2"
+                                        title={ing.name}
+                                        onClick={() => { setSelectedIngredient(ing); setIsIngModalOpen(true); }}
+                                    >
                                         {ing.name}
-                                    </h4>
-                                    <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">
-                                        Unité: <span className="text-foreground">{ing.unit || 'unité'}</span>
-                                    </p>
+                                    </h3>
+                                    <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                                        <span className="bg-muted px-2 py-0.5 rounded-sm">Unité: {ing.unit || 'unité'}</span>
+                                    </div>
                                 </div>
 
-                                <div className="flex justify-end gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setSelectedIngredient(ing); setIsIngModalOpen(true); }}>
-                                        <Pencil className="h-3.5 w-3.5" />
+                                <div className="p-3 mt-4 border-t border-muted/40 flex justify-between items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="sm" className="h-8 text-xs font-semibold px-2" onClick={() => { setSelectedIngredient(ing); setIsIngModalOpen(true); }}>
+                                        <Pencil className="h-3 w-3 mr-1" /> ÉDITER
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => handleDeleteIng(ing)}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDeleteIng(ing)}>
                                         <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                 </div>

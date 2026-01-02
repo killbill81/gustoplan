@@ -3,7 +3,7 @@ import { db } from "@/lib/firebase"
 import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore"
 import { useRecipes } from "./useRecipes"
 import { useIngredients } from "./useIngredients"
-import { Plan, WeekData } from "@/types/plan"
+import { Plan } from "@/types/plan"
 
 export interface ShoppingItem {
     id?: string;
@@ -13,6 +13,7 @@ export interface ShoppingItem {
     category: string;
     isChecked: boolean;
     isManual?: boolean;
+    imageUrl?: string;
     sources?: Array<{
         recipeName: string;
         day: string;
@@ -28,6 +29,12 @@ const sanitizeKey = (name: string, unit: string) => {
 
 const ALL_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
+// Helper to get image URL for an ingredient
+const getIngredientImage = (ingredients: any[], name: string): string | undefined => {
+    const ing = ingredients.find(i => i.name.toLowerCase() === name.toLowerCase())
+    return ing?.imageUrl || ing?.image
+}
+
 export function useShoppingList(planId: string | undefined) {
     const { recipes, isLoading: recipesLoading } = useRecipes()
     const { ingredients: masterIngredients, isLoading: ingredientsLoading } = useIngredients()
@@ -36,12 +43,14 @@ export function useShoppingList(planId: string | undefined) {
 
     useEffect(() => {
         if (!planId) {
-            setPlan(null)
-            setIsLoadingPlan(false)
+            setTimeout(() => {
+                setPlan(null)
+                setIsLoadingPlan(false)
+            }, 0)
             return
         }
 
-        setIsLoadingPlan(true)
+        setTimeout(() => setIsLoadingPlan(true), 0)
         const unsubscribe = onSnapshot(doc(db, "plans", planId), (snapshot) => {
             if (snapshot.exists()) {
                 setPlan({ id: snapshot.id, ...snapshot.data() } as Plan)
@@ -65,12 +74,16 @@ export function useShoppingList(planId: string | undefined) {
         // 1. Add Manual Items
         manualItems.forEach(item => {
             const key = sanitizeKey(item.name, item.unit)
+            // Try to find image in master ingredients for manual items too
+            const masterIng = masterIngredients.find(mi => mi.name.toLowerCase() === item.name.toLowerCase())
+
             combined.set(key, {
                 ...item,
                 totalQuantity: item.totalQuantity || 0,
                 category: item.category || 'Inconnue',
                 isChecked: !!checkedItems[key],
-                isManual: true
+                isManual: true,
+                imageUrl: item.imageUrl || masterIng?.imageUrl
             })
         })
 
@@ -113,6 +126,10 @@ export function useShoppingList(planId: string | undefined) {
                                     quantity: finalQty,
                                     servings: numPeople
                                 })
+                                // If existing doesn't have image, try to set it from this instance
+                                if (!existing.imageUrl && ing.imageUrl) {
+                                    existing.imageUrl = ing.imageUrl
+                                }
                             } else {
                                 const masterIng = masterIngredients.find(mi => mi.name.toLowerCase() === ing.name.toLowerCase())
                                 combined.set(key, {
@@ -121,6 +138,8 @@ export function useShoppingList(planId: string | undefined) {
                                     unit: unit,
                                     category: masterIng?.category || 'Inconnue',
                                     isChecked: !!checkedItems[key],
+                                    // Prefer recipe ingredient image, then master ingredient image
+                                    imageUrl: ing.imageUrl || masterIng?.imageUrl,
                                     sources: [{
                                         recipeName: recipe.name,
                                         day: ALL_DAYS[parseInt(dayIdx)],

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { auth, db } from "@/lib/firebase"
-import { collection, query, where, onSnapshot, doc, getDoc, or } from "firebase/firestore"
+import { collection, query, where, onSnapshot, doc, or } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, Utensils, ShoppingBag, ListTodo, Calendar, Apple, Leaf, Zap } from "lucide-react"
@@ -28,7 +28,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const currentUser = auth.currentUser
     if (currentUser) {
-      setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || "Utilisateur")
+      setTimeout(() => setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || "Utilisateur"), 0)
     }
   }, [])
 
@@ -74,7 +74,7 @@ export default function DashboardPage() {
   // Fetch current week meals
   useEffect(() => {
     if (!selectedPlanId) {
-      setLoading(false)
+      setTimeout(() => setLoading(false), 0)
       return
     }
 
@@ -113,7 +113,7 @@ export default function DashboardPage() {
     <div className="container py-8 max-w-7xl">
       <div className="flex flex-col gap-1 mb-8">
         <h1 className="text-4xl font-extrabold tracking-tight">Bonjour, {userName} !</h1>
-        <p className="text-muted-foreground">Voici l'aperçu de votre semaine GustoPlan.</p>
+        <p className="text-muted-foreground">Voici l&apos;aperçu de votre semaine GustoPlan.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

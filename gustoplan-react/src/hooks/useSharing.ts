@@ -51,7 +51,7 @@ export function useSharing() {
             setInvites(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
         })
 
-        setIsLoading(false)
+        setTimeout(() => setIsLoading(false), 0)
         return () => {
             unsubUser()
             unsubInvites()

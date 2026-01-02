@@ -8,6 +8,7 @@ export interface Ingredient {
     quantity: number;
     unit: string;
     category?: string;
+    imageUrl?: string;
 }
 
 export interface IngredientCategory {

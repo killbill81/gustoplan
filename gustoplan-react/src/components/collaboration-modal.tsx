@@ -34,7 +34,7 @@ export default function CollaborationModal({ plan, isOpen, onClose }: Collaborat
             <DialogContent className="sm:max-w-[450px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Share2 className="h-5 w-5 text-primary" /> Partager "{plan.name}"
+                        <Share2 className="h-5 w-5 text-primary" /> Partager &quot;{plan.name}&quot;
                     </DialogTitle>
                     <DialogDescription>
                         Invitez vos amis à collaborer sur ce menu en temps réel.
@@ -93,7 +93,7 @@ export default function CollaborationModal({ plan, isOpen, onClose }: Collaborat
                     <div className="bg-primary/20 p-2 rounded-lg"><Mail className="h-4 w-4 text-primary" /></div>
                     <div>
                         <p className="text-xs font-bold text-primary">Invitation par email</p>
-                        <p className="text-[10px] text-muted-foreground leading-tight mt-1">L'invitation apparaîtra dans les notifications de votre collaborateur sur GustoPlan.</p>
+                        <p className="text-[10px] text-muted-foreground leading-tight mt-1">L&apos;invitation apparaîtra dans les notifications de votre collaborateur sur GustoPlan.</p>
                     </div>
                 </div>
 
