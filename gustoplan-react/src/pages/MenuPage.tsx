@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react"
 import { usePlans } from "@/hooks/usePlans"
+import { db } from "@/lib/firebase"
+import { serverTimestamp, doc, updateDoc } from "firebase/firestore"
 import { usePresence } from "@/hooks/usePresence"
 import { useRecipes } from "@/hooks/useRecipes"
 import { Button } from "@/components/ui/button"
@@ -28,8 +30,7 @@ import {
     History,
     Settings,
     Pencil,
-    Trash2,
-    ShoppingCart
+    Trash2
 } from "lucide-react"
 import { cn, getWeekNumber } from "@/lib/utils"
 import { Recipe } from "@/types/recipe"
@@ -37,6 +38,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import RecipeForm from "@/components/recipe-form"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DraggableMeal } from "@/components/draggable-meal";
+import { DroppableSlot } from "@/components/droppable-slot";
 
 export default function MenuPage() {
     const [currentWeek, setCurrentWeek] = useState<number>(getWeekNumber(new Date()))
@@ -62,6 +66,14 @@ export default function MenuPage() {
     const [selectedSlotIndex, setSelectedSlotIndex] = useState<number>(0)
     const [mealToEdit, setMealToEdit] = useState<any | null>(null)
     const [recipeToPreview, setRecipeToPreview] = useState<Recipe | undefined>(undefined)
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
 
     const weekData = useMemo(() => {
         return currentPlan?.weeks?.[currentWeek] || { menuData: {}, servingsData: {}, remarksData: {} }
@@ -181,6 +193,72 @@ export default function MenuPage() {
         }
     }
 
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (!over || active.id === over.id) return;
+
+        // querySelector or just pass data
+        // Actually, active.data.current holds the meal object and source slot info if we pass it.
+        const destinationSlotId = over.id as string; // e.g., "0-lunch-2"
+
+        // We need to know:
+        // 1. Source Slot (Day, Type, Index)
+        // 2. The Meal Object being moved
+        // 3. Dest Slot (Day, Type, Index)
+
+        const sourceData = active.data.current as { dayIndex: number, typeKey: 'lunch' | 'dinner', slotIndex: number, meal: any };
+        if (!sourceData) return;
+
+        const { dayIndex: srcDay, typeKey: srcType, slotIndex: srcSlot, meal } = sourceData;
+
+        // Extract dest info from ID "day-type-slot"
+        const [destDayStr, destType, destSlotStr] = destinationSlotId.split('-');
+        const destDay = parseInt(destDayStr);
+        const destSlot = parseInt(destSlotStr);
+        const destTypeKey = destType as 'lunch' | 'dinner';
+
+        if (srcDay === destDay && srcType === destTypeKey && srcSlot === destSlot) return; // Same slot
+
+        // Optimistic UI Update or just waiting for Firestore? Firestore is fast enough usually.
+        // Logic:
+        // 1. Remove from source
+        // 2. Add to dest
+        // 3. Update Firestore
+
+        try {
+            const planRef = doc(db, "plans", currentPlan!.id);
+            const weekKey = currentWeek.toString();
+            const srcKey = `${srcDay}-${srcType}-${srcSlot}`;
+            const destKey = `${destDay}-${destTypeKey}-${destSlot}`;
+
+            // Get current dest meals
+            const destMeals = weekData.menuData?.[destKey] || [];
+
+            // If we want to REPLACE the item in dest, or ADD to it?
+            // User requirement: "move recipes". Usually means replace or add.
+            // If dest is empty -> Add.
+            // If dest has item -> Add to list (multiple items per slot supported).
+
+            // 1. Remove from Source
+            // We need to fetch current source meals to filter out THIS meal.
+            const srcMeals = weekData.menuData?.[srcKey] || [];
+            const newSrcMeals = srcMeals.filter((m: any) => m.id !== meal.id);
+
+            // 2. Add to Dest
+            const newDestMeals = [...destMeals, meal];
+
+            await updateDoc(planRef, {
+                [`weeks.${weekKey}.menuData.${srcKey}`]: newSrcMeals,
+                [`weeks.${weekKey}.menuData.${destKey}`]: newDestMeals,
+                lastUpdated: serverTimestamp()
+            });
+
+        } catch (error) {
+            console.error("Error moving meal:", error);
+        }
+    };
+
     function renderSlotSection(dayIndex: number, typeKey: 'lunch' | 'dinner', baseBg: string) {
         const slotKey = `${dayIndex}-${typeKey}`
         const servings = weekData.servingsData?.[slotKey] ?? currentPlan?.defaultNumPeople
@@ -195,28 +273,39 @@ export default function MenuPage() {
                 </div>
 
                 {[0, 1, 2, 3].map(sIdx => {
-                    const meals = weekData.menuData?.[`${dayIndex}-${typeKey}-${sIdx}`] || []
+                    const slotId = `${dayIndex}-${typeKey}-${sIdx}`
+                    const meals = weekData.menuData?.[slotId] || []
                     return (
-                        <div key={sIdx} className={cn("min-h-[100px] border-r p-1.5 flex flex-col gap-1.5 group hover:bg-black/5 transition-colors relative", baseBg)}>
+                        <DroppableSlot
+                            key={sIdx}
+                            id={slotId}
+                            className={cn("min-h-[100px] border-r p-1.5 flex flex-col gap-1.5 group hover:bg-black/5 transition-colors relative", baseBg)}
+                            isOverClassName="bg-primary/20 ring-2 ring-inset ring-primary"
+                        >
                             {meals.map((m: any) => {
                                 const recipe = recipes.find(r => r.id === m.id)
                                 const recipeName = recipe?.name || "???"
+                                const dragData = { dayIndex, typeKey, slotIndex: sIdx, meal: m }
+                                const draggableId = `${slotId}-${m.id}`
+
                                 return (
-                                    <div key={m.id} className="bg-card shadow-sm border rounded-lg p-2 text-[11px] font-bold relative group/item hover:ring-2 hover:ring-primary/20 transition-all">
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div className="truncate pr-4 cursor-default">{recipeName}</div>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{recipeName}</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                        <div className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 flex gap-0.5">
-                                            <button onClick={() => { setShowPreviewModal(true); setRecipeToPreview(recipe); }} className="hover:text-primary"><Eye className="h-3 w-3" /></button>
-                                            <button onClick={() => recipe && handleEditRecipeClick(recipe)} className="hover:text-primary"><Pencil className="h-3 w-3" /></button>
-                                            <button onClick={() => { handleRemoveMeal(dayIndex, typeKey, sIdx, m); }} className="hover:text-destructive"><X className="h-3 w-3" /></button>
+                                    <DraggableMeal key={m.id} id={draggableId} data={dragData}>
+                                        <div className="bg-card shadow-sm border rounded-lg p-2 text-[11px] font-bold relative group/item hover:ring-2 hover:ring-primary/20 transition-all touch-none">
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="truncate pr-4 cursor-grab active:cursor-grabbing">{recipeName}</div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>{recipeName}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            <div className="absolute top-1 right-1 opacity-0 group-hover/item:opacity-100 flex gap-0.5">
+                                                <button onClick={() => { setShowPreviewModal(true); setRecipeToPreview(recipe); }} className="hover:text-primary"><Eye className="h-3 w-3" /></button>
+                                                <button onClick={() => recipe && handleEditRecipeClick(recipe)} className="hover:text-primary"><Pencil className="h-3 w-3" /></button>
+                                                <button onClick={() => { handleRemoveMeal(dayIndex, typeKey, sIdx, m); }} className="hover:text-destructive"><X className="h-3 w-3" /></button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </DraggableMeal>
                                 )
                             })}
                             <button
@@ -225,7 +314,7 @@ export default function MenuPage() {
                             >
                                 <Plus className="h-4 w-4" />
                             </button>
-                        </div>
+                        </DroppableSlot>
                     )
                 })}
 
@@ -332,7 +421,7 @@ export default function MenuPage() {
                                     <select
                                         className="bg-transparent text-xs font-bold outline-none cursor-pointer"
                                         value={currentPlan.startDay}
-                                        onChange={(e) => {/* Handle start day change */ }}
+                                        onChange={() => {/* Handle start day change */ }}
                                     >
                                         {standardDays.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
@@ -379,38 +468,40 @@ export default function MenuPage() {
                                 {/* Grid Header */}
                                 <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20">
                                     <div className="min-w-[1000px] xl:min-w-0">
-                                        <div className="grid grid-cols-[100px_45px_repeat(5,minmax(0,1fr))_45px_repeat(5,minmax(0,1fr))]">
-                                            <div className="p-3"></div>
-                                            <div className="col-span-6 text-center py-3 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-black text-xs uppercase tracking-widest border-l border-border">Midi</div>
-                                            <div className="col-span-6 text-center py-3 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 font-black text-xs uppercase tracking-widest border-l border-border">Soir</div>
+                                        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                                            <div className="grid grid-cols-[100px_45px_repeat(5,minmax(0,1fr))_45px_repeat(5,minmax(0,1fr))]">
+                                                <div className="p-3"></div>
+                                                <div className="col-span-6 text-center py-3 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 font-black text-xs uppercase tracking-widest border-l border-border">Midi</div>
+                                                <div className="col-span-6 text-center py-3 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 font-black text-xs uppercase tracking-widest border-l border-border">Soir</div>
 
-                                            {/* Labels Row */}
-                                            <div className="p-2 border-t border-r flex items-center justify-center"><Users className="h-4 w-4 text-muted-foreground" /></div>
-                                            <div className="bg-amber-50/50 border-t border-r"></div>
-                                            {categoryLabels.map((l, i) => (
-                                                <div key={`m-${i}`} className={cn("text-[10px] font-bold text-muted-foreground uppercase text-center py-2 bg-amber-50/50 border-t border-r last:border-r-slate-300", i === 4 && "bg-amber-100/30")}>{l}</div>
-                                            ))}
-                                            <div className="bg-indigo-50/50 border-t border-r"></div>
-                                            {categoryLabels.map((l, i) => (
-                                                <div key={`s-${i}`} className={cn("text-[10px] font-bold text-muted-foreground uppercase text-center py-2 bg-indigo-50/50 border-t border-r last:border-r-0", i === 4 && "bg-indigo-100/30")}>{l}</div>
-                                            ))}
-                                        </div>
+                                                {/* Labels Row */}
+                                                <div className="p-2 border-t border-r flex items-center justify-center"><Users className="h-4 w-4 text-muted-foreground" /></div>
+                                                <div className="bg-amber-50/50 border-t border-r"></div>
+                                                {categoryLabels.map((l, i) => (
+                                                    <div key={`m-${i}`} className={cn("text-[10px] font-bold text-muted-foreground uppercase text-center py-2 bg-amber-50/50 border-t border-r last:border-r-slate-300", i === 4 && "bg-amber-100/30")}>{l}</div>
+                                                ))}
+                                                <div className="bg-indigo-50/50 border-t border-r"></div>
+                                                {categoryLabels.map((l, i) => (
+                                                    <div key={`s-${i}`} className={cn("text-[10px] font-bold text-muted-foreground uppercase text-center py-2 bg-indigo-50/50 border-t border-r last:border-r-0", i === 4 && "bg-indigo-100/30")}>{l}</div>
+                                                ))}
+                                            </div>
 
-                                        {/* Rows */}
-                                        {orderedDays.names.map((day, idx) => {
-                                            const realIndex = orderedDays.indices[idx]
-                                            return (
-                                                <div key={day} className="grid grid-cols-[100px_45px_repeat(5,minmax(0,1fr))_45px_repeat(5,minmax(0,1fr))] border-t items-stretch">
-                                                    <div className="bg-muted p-4 font-black text-xs text-muted-foreground text-center border-r flex items-center justify-center uppercase tracking-tighter">{day}</div>
+                                            {/* Rows */}
+                                            {orderedDays.names.map((day, idx) => {
+                                                const realIndex = orderedDays.indices[idx]
+                                                return (
+                                                    <div key={day} className="grid grid-cols-[100px_45px_repeat(5,minmax(0,1fr))_45px_repeat(5,minmax(0,1fr))] border-t items-stretch">
+                                                        <div className="bg-muted p-4 font-black text-xs text-muted-foreground text-center border-r flex items-center justify-center uppercase tracking-tighter">{day}</div>
 
-                                                    {/* MIDI */}
-                                                    {renderSlotSection(realIndex, 'lunch', 'bg-amber-50/20')}
+                                                        {/* MIDI */}
+                                                        {renderSlotSection(realIndex, 'lunch', 'bg-amber-50/20')}
 
-                                                    {/* SOIR */}
-                                                    {renderSlotSection(realIndex, 'dinner', 'bg-indigo-50/20')}
-                                                </div>
-                                            )
-                                        })}
+                                                        {/* SOIR */}
+                                                        {renderSlotSection(realIndex, 'dinner', 'bg-indigo-50/20')}
+                                                    </div>
+                                                )
+                                            })}
+                                        </DndContext>
                                     </div>
                                 </div>
                             </Card>
