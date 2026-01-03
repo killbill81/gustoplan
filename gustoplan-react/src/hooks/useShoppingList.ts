@@ -227,11 +227,71 @@ export function useShoppingList(planId: string | undefined) {
         })
     }
 
+    const updateItemQuantity = async (name: string, unit: string, delta: number) => {
+        if (!planId || !plan) return
+
+        const manualItems = [...(plan.manualItems || [])]
+        const existingIndex = manualItems.findIndex(mi => mi.name === name && mi.unit === unit)
+
+        if (existingIndex >= 0) {
+            manualItems[existingIndex] = {
+                ...manualItems[existingIndex],
+                totalQuantity: (manualItems[existingIndex].totalQuantity || 0) + delta
+            }
+            // Optional: remove if quantity is 0 AND it was purely manual? 
+            // Complexity: If it was originally 0 from recipe and we added 1, now it's 0. 
+            // If we remove it, it goes back to 0. Correct.
+            // If it was originally 2 from recipe and we added -2, now it's -2. 
+            // If we remove it, it goes back to 2. INCORRECT.
+            // So we only remove if the manual adjustment becomes 0, effectively resetting the manual override.
+            // But here, we store the *total* manual quantity.
+            // Wait, my logic before was: total = recipe + manual.
+            // So `manualItems` store the *delta*? No, previous logic lines 75-88 imply manual items are treated as distinct items.
+            // Combined map accumulates them.
+            // So if I have "Sel" 1g from recipe, and I add "Sel" 1g manual. Total is 2g.
+            // If I want to "increase" by 1, I find the manual item "Sel".
+            // If exists (qty=1), I make it qty=2. Total becomes 3.
+            // If not exists, I make it qty=1. Total becomes 2.
+
+            // What if I want to DECREASE?
+            // "Sel" 1g from recipe. I want -0.5g.
+            // I create manual "Sel" -0.5g. Total 0.5g.
+
+            // Issue: cleanup. If I have manual "Sel" 0g. It adds 0.
+            // If I remove it, it adds 0. So removing 0-quantity manual items is safe.
+            if (manualItems[existingIndex].totalQuantity === 0) {
+                manualItems.splice(existingIndex, 1)
+            }
+        } else {
+            // Create new manual item
+            // We need to know the category. We can try to find it from masterIngredients or existing combined list.
+            // Since we don't have easy access to combined here (it's in useMemo), we can try to guess or just use "Inconnue".
+            // Or better, passed in arguments?
+            // Let's rely on backend or just use Inconnue.
+            // Ideally we'd lookup category. 
+            // Since this function is inside the hook, we have `masterIngredients`.
+            const masterIng = masterIngredients.find(mi => mi.name.toLowerCase() === name.toLowerCase())
+
+            manualItems.push({
+                name,
+                unit,
+                totalQuantity: delta,
+                category: masterIng?.category || 'Inconnue'
+            })
+        }
+
+        await updateDoc(doc(db, "plans", planId), {
+            manualItems: manualItems,
+            lastUpdated: serverTimestamp()
+        })
+    }
+
     return {
         ...shoppingData,
         isLoading: isLoadingPlan || recipesLoading || ingredientsLoading,
         toggleCheck,
         addManualItem,
+        updateItemQuantity,
         removeItem,
         restoreItem
     }

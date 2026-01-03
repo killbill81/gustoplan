@@ -38,6 +38,7 @@ export interface Plan {
         totalQuantity: number;
         unit: string;
         category: string;
+        imageUrl?: string;
     }>;
     checkedItems?: Record<string, boolean>;
     hiddenTrashItems?: string[];
