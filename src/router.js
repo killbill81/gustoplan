@@ -637,10 +637,17 @@ async function navigateTo(path) {
         mainContent.innerHTML = route.html;
         if (route.script) {
             try {
-                // Cache busting to ensure we always load the latest version of the module script
-                // This is crucial when the user reports issues with seeing new UI elements.
-                const scriptPath = `${route.script}?v=${Date.now()}`;
-                const module = await import(scriptPath);
+                // Prioritize static moduleMap for bundlers (Vite)
+                // This fixes the 404 error on GitHub Pages where dynamic imports with variables fail
+                let module;
+                if (moduleMap[route.script]) {
+                    module = await moduleMap[route.script]();
+                } else {
+                    // Fallback for Vanilla Dev (cache busting)
+                    const scriptPath = `${route.script}?v=${Date.now()}`;
+                    module = await import(scriptPath);
+                }
+
                 if (module.default && typeof module.default === 'function') {
                     currentCleanup = module.default(); // Store the returned cleanup function
                 }
