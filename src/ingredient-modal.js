@@ -13,6 +13,13 @@ export class IngredientModalManager {
     bindElements() {
         if (this.modal) return; // Already bound
         this.modal = document.getElementById('ingredient-form-modal');
+
+        // Hoist modal to body to ensure it's not in a hidden container
+        if (this.modal && this.modal.parentElement !== document.body) {
+            document.body.appendChild(this.modal);
+            console.log("DEBUG: Hoisted ingredient-form-modal to body");
+        }
+
         this.form = document.getElementById('ingredient-form');
         this.title = document.getElementById('ingredient-modal-title');
         this.idInput = document.getElementById('ingredient-id');
@@ -74,48 +81,66 @@ export class IngredientModalManager {
     }
 
     async open(ingredientOrName = null, onSuccess = null) {
-        this.bindElements();
-        if (!this.form) {
-            console.error("Ingredient Modal elements not found!");
-            return;
+        console.log("DEBUG: IngredientModalManager.open called", { ingredientOrName });
+        try {
+            this.bindElements();
+            if (!this.form) {
+                console.error("Ingredient Modal elements not found!");
+                // Try to search again if DOM was updated
+                this.modal = document.getElementById('ingredient-form-modal');
+                this.form = document.getElementById('ingredient-form');
+                if (!this.form) {
+                    alert("Erreur système : Le formulaire d'ingrédient est introuvable dans la page.");
+                    return;
+                }
+            }
+
+            // Re-bind events if they were missed in init because elements were missing
+            if (!this.eventsAttached) {
+                this.attachEvents();
+            }
+
+            this.onSuccessCallback = onSuccess;
+            this.form.reset();
+
+            // Populate Units
+            this.unitSelect.innerHTML = '';
+            this.units.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit;
+                option.textContent = unit;
+                this.unitSelect.appendChild(option);
+            });
+
+            // Populate Categories (Don't let this block the modal indefinitely)
+            this.populateCategories().catch(err => {
+                console.error("Non-blocking error in populateCategories:", err);
+            });
+
+            if (typeof ingredientOrName === 'string') {
+                // New ingredient with pre-filled name
+                this.prepareNew(ingredientOrName);
+            } else if (ingredientOrName && typeof ingredientOrName === 'object') {
+                // Edit existing
+                this.prepareEdit(ingredientOrName);
+            } else {
+                // New empty
+                this.prepareNew();
+            }
+
+            this.modal.classList.remove('hidden');
+            // Force visibility in case of CSS class issues
+            this.modal.style.display = 'flex';
+            this.modal.classList.remove('hidden');
+            this.modal.style.display = 'flex'; // Ensure flex layout
+            this.modal.style.zIndex = '9999'; // Ensure top z-index
+            this.modal.ariaHidden = 'false';
+
+            console.log("DEBUG: IngredientModalManager modal shown (Hoisted + Display Flex)");
+        } catch (error) {
+            console.error("CRITICAL ERROR in IngredientModalManager.open:", error);
+            alert("Une erreur est survenue lors de l'ouverture du formulaire : " + error.message);
         }
-
-        // Re-bind events if they were missed in init because elements were missing
-        // This is a bit hacky but ensures listeners are attached if bindElements succeeded only now
-        // Ideally checking a flag if eventsAttached would be better
-        if (!this.eventsAttached) {
-            this.attachEvents();
-        }
-
-        this.onSuccessCallback = onSuccess;
-        this.form.reset();
-
-        // Populate Units
-        this.unitSelect.innerHTML = '';
-        this.units.forEach(unit => {
-            const option = document.createElement('option');
-            option.value = unit;
-            option.textContent = unit;
-            this.unitSelect.appendChild(option);
-        });
-
-        // Populate Categories (Fetch or Cached?)
-        // ideally passed in or fetched fresh. For now, let's fetch fast if empty or keep simple logic
-        // We will fetch categories here to ensure it's up to date anywhere
-        await this.populateCategories();
-
-        if (typeof ingredientOrName === 'string') {
-            // New ingredient with pre-filled name
-            this.prepareNew(ingredientOrName);
-        } else if (ingredientOrName && typeof ingredientOrName === 'object') {
-            // Edit existing
-            this.prepareEdit(ingredientOrName);
-        } else {
-            // New empty
-            this.prepareNew();
-        }
-
-        this.modal.classList.remove('hidden');
     }
 
     async populateCategories() {
@@ -175,6 +200,11 @@ export class IngredientModalManager {
 
     close() {
         this.modal.classList.add('hidden');
+        // Clear forced inline styles to allow hiding
+        this.modal.style.display = '';
+        this.modal.style.zIndex = '';
+        this.modal.ariaHidden = 'true';
+        console.log("DEBUG: IngredientModalManager closed and styles cleared");
     }
 
     async handleSubmit(e) {
