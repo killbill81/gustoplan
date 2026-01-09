@@ -1330,8 +1330,10 @@ export default function init() {
                     });
                 }
 
-                // On filtre les éléments dont la quantité résultante est 0
-                const finalItems = currentItems.filter(item => item.totalQuantity !== 0);
+                // On ne filtre PLUS les éléments à 0 (pour qu'ils aillent dans la corbeille)
+                // Sauf si c'est un ajustement qui annule exactement une recette (cas rare, mais on garde pour l'instant)
+                // Pour le fix corbeille : on garde tout. La vue filtrera les items actifs (>0).
+                const finalItems = currentItems;
 
                 transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
             });
@@ -1421,9 +1423,19 @@ export default function init() {
                                 if (!planDoc.exists()) return;
 
                                 const currentItems = planDoc.data().manualItems || [];
-                                const finalItems = currentItems.filter(i => !(i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit));
+                                const itemIndex = currentItems.findIndex(i => i.name.toLowerCase() === item.name.toLowerCase() && i.unit === item.unit);
 
-                                transaction.update(planRef, { manualItems: finalItems, lastUpdated: new Date() });
+                                if (itemIndex > -1) {
+                                    if (item.source === 'manual') {
+                                        // Si c'est un item manuel, on le restaure à 1 (ou sa valeur par défaut)
+                                        currentItems[itemIndex].totalQuantity = 1;
+                                    } else {
+                                        // Si c'est un ajustement de recette, on le supprime pour revenir à la valeur calculée
+                                        currentItems.splice(itemIndex, 1);
+                                    }
+                                }
+
+                                transaction.update(planRef, { manualItems: currentItems, lastUpdated: new Date() });
                             });
                             // If it was the last item, close modal
                             if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
@@ -1727,8 +1739,7 @@ export default function init() {
         const deletedIngredients = finalIngredients.filter(item => {
             const key = `${item.name}_${item.unit || ''}`;
             return item.totalQuantity <= 0 &&
-                item.sources &&
-                item.sources.length > 0 &&
+                (item.source === 'manual' || (item.sources && item.sources.length > 0)) &&
                 !hiddenTrashItems.includes(key);
         }).sort((a, b) => a.name.localeCompare(b.name));
 
@@ -2250,14 +2261,54 @@ export default function init() {
         });
         elements.planHistoryModal?.addEventListener('click', (e) => { if (e.target === elements.planHistoryModal) closePlanHistoryModal(); });
 
-        elements.openTrashBtn?.addEventListener('click', () => {
-            elements.trashModal.classList.remove('hidden');
+        // Use delegation for dynamically added buttons (like trash button in shopping list)
+        document.addEventListener('click', (e) => {
+            const trashBtn = e.target.closest('#open-trash-btn');
+            if (trashBtn) {
+                console.log('DEBUG: Trash button clicked');
+                let modal = document.getElementById('trash-modal');
+
+                if (!modal && elements && elements.trashModal) {
+                    modal = elements.trashModal;
+                }
+
+                if (modal) {
+                    // Hoist to body if not already there to avoid z-index traps
+                    if (modal.parentNode !== document.body) {
+                        console.log('DEBUG: Hoisting trash modal to body');
+                        document.body.appendChild(modal);
+                    }
+
+                    modal.classList.remove('hidden');
+                    // Force visibility
+                    modal.style.display = 'flex';
+                    modal.style.zIndex = '9999';
+                    modal.style.position = 'fixed';
+                    modal.style.inset = '0';
+                    console.log('DEBUG: Trash modal forced open');
+                } else {
+                    console.error('DEBUG: Trash modal element NOT FOUND');
+                    alert("Erreur: Impossible de trouver la fenêtre de corbeille.");
+                }
+            }
         });
-        elements.closeTrashModalBtn?.addEventListener('click', () => {
-            elements.trashModal.classList.add('hidden');
-        });
-        elements.trashModal?.addEventListener('click', (e) => {
-            if (e.target === elements.trashModal) elements.trashModal.classList.add('hidden');
+        // Delegation for closing the trash modal (button & background)
+        document.addEventListener('click', (e) => {
+            const closeBtn = e.target.closest('#close-trash-modal');
+            const modal = document.getElementById('trash-modal');
+
+            // Click on Close Button OR Click on backdrop (modal itself)
+            if (modal && !modal.classList.contains('hidden')) {
+                if (closeBtn || e.target === modal) {
+                    console.log('DEBUG: Closing trash modal');
+                    modal.classList.add('hidden');
+                    // IMPORTANT: Clear the forced inline styles so 'hidden' class takes effect
+                    modal.style.display = '';
+                    modal.style.zIndex = '';
+                    modal.style.position = '';
+                    modal.style.inset = '';
+                }
+            }
         });
 
         elements.savePlanBtn?.addEventListener('click', async () => {
