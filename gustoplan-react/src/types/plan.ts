@@ -39,6 +39,7 @@ export interface Plan {
         unit: string;
         category: string;
         imageUrl?: string;
+        isTrashed?: boolean;
     }>;
     checkedItems?: Record<string, boolean>;
     hiddenTrashItems?: string[];

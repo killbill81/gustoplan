@@ -49,7 +49,8 @@ export default function ShoppingListPage() {
     toggleCheck,
     removeItem,
     restoreItem,
-    addManualItem
+    addManualItem,
+    deleteForever
   } = useShoppingList(currentPlan?.id)
 
   const [activeTab, setActiveTab] = useState<string>("")
@@ -282,7 +283,7 @@ export default function ShoppingListPage() {
                           </div>
 
                           <button
-                            onClick={() => removeItem(item.name, item.unit)}
+                            onClick={() => removeItem(item.name, item.unit, item.totalQuantity)}
                             className="absolute right-4 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
                             title="Supprimer"
                           >
@@ -336,14 +337,25 @@ export default function ShoppingListPage() {
                       <span className="text-sm font-bold text-muted-foreground line-through decoration-2">{item.name}</span>
                       <span className="text-[10px] uppercase font-black tracking-widest text-primary/40 mt-1">{item.category}</span>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="rounded-xl hover:bg-primary/10 gap-2 h-9 px-4 font-bold"
-                      onClick={() => restoreItem(item.name, item.unit)}
-                    >
-                      <Undo2 className="h-4 w-4" /> Restaurer
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-xl hover:bg-primary/10 gap-2 h-9 px-4 font-bold"
+                        onClick={() => restoreItem(item.name, item.unit, !!(item.sources && item.sources.length > 0))}
+                      >
+                        <Undo2 className="h-4 w-4" /> Restaurer
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-9 w-9 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        onClick={() => deleteForever(item.name, item.unit)}
+                        title="Supprimer définitivement"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}

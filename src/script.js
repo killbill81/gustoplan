@@ -1388,6 +1388,7 @@ export default function init() {
                             });
                         });
                         elements.trashModal.classList.add('hidden');
+                        elements.trashModal.style.display = ''; // Clear inline flex
                     } catch (error) {
                         console.error("Erreur vidage corbeille:", error);
                     }
@@ -1438,7 +1439,10 @@ export default function init() {
                                 transaction.update(planRef, { manualItems: currentItems, lastUpdated: new Date() });
                             });
                             // If it was the last item, close modal
-                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
+                            if (deletedItems.length <= 1) {
+                                elements.trashModal.classList.add('hidden');
+                                elements.trashModal.style.display = ''; // Clear inline flex
+                            }
                         } catch (error) {
                             console.error("Erreur lors de la restauration :", error);
                         }
@@ -1460,7 +1464,10 @@ export default function init() {
                                 });
                             });
                             // If it was the last item, close modal
-                            if (deletedItems.length <= 1) elements.trashModal.classList.add('hidden');
+                            if (deletedItems.length <= 1) {
+                                elements.trashModal.classList.add('hidden');
+                                elements.trashModal.style.display = ''; // Clear inline flex
+                            }
                         } catch (error) {
                             console.error("Erreur suppression définitive:", error);
                         }

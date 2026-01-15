@@ -291,115 +291,127 @@ export default function init() {
             return a.localeCompare(b);
         });
 
-        // Create and inject the tabs container at the top of the main list container
-        const tabsWrapper = document.createElement('div');
-        tabsWrapper.className = 'sticky top-0 z-30 glass-header px-4 mb-4';
+        // --- Category Management UI ---
+        const controlsContainer = document.createElement('div');
+        controlsContainer.className = 'flex justify-end px-4 mb-4';
 
-        const tabsContainer = document.createElement('div');
-        tabsContainer.id = 'shopping-category-tabs';
-        tabsContainer.className = 'flex overflow-x-auto space-x-3 py-3 items-center';
+        const organizeBtn = document.createElement('button');
+        organizeBtn.className = 'text-sm font-medium text-tomato bg-orange-50 hover:bg-orange-100 px-3 py-2 rounded-lg transition-colors flex items-center shadow-sm border border-orange-100';
+        organizeBtn.innerHTML = '<i class="fas fa-sort mr-2"></i> Organiser les rayons';
+        organizeBtn.onclick = () => showCategorySortModal(categories);
 
-        tabsWrapper.appendChild(tabsContainer);
-        container.appendChild(tabsWrapper);
+        controlsContainer.appendChild(organizeBtn);
+        container.appendChild(controlsContainer);
 
-        const sanitizeForId = (text) => 'category-' + text.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        function showCategorySortModal(currentCategories) {
+            // Create Modal
+            const modalOverlay = document.createElement('div');
+            modalOverlay.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4';
 
-        // --- Create and add category tabs ---
-        const tabElements = {};
+            const modalContent = document.createElement('div');
+            modalContent.className = 'bg-white rounded-xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden';
 
-        categories.forEach(cat => {
-            const tab = document.createElement('button');
-            tab.className = 'category-tab btn-outline flex-shrink-0';
+            // Header
+            const header = document.createElement('div');
+            header.className = 'p-4 border-b flex justify-between items-center bg-gray-50';
+            header.innerHTML = '<h3 class="font-bold text-lg text-gray-800">Ordre des Rayons</h3>';
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'text-gray-400 hover:text-gray-600';
+            closeBtn.innerHTML = '<i class="fas fa-times text-xl"></i>';
+            closeBtn.onclick = () => modalOverlay.remove();
+            header.appendChild(closeBtn);
+            modalContent.appendChild(header);
 
-            const iconClass = categoryIcons[cat.toLowerCase()] || 'fa-tag';
-            tab.innerHTML = `<i class="fas ${iconClass}"></i> <span>${cat}</span>`;
+            // List Container
+            const listContainer = document.createElement('div');
+            listContainer.className = 'overflow-y-auto p-2 flex-grow bg-gray-50';
+            const sortList = document.createElement('ul');
+            sortList.className = 'space-y-2';
 
-            tab.onclick = () => {
-                const headerElement = document.getElementById(sanitizeForId(cat));
-                if (headerElement) {
-                    const mainHeader = document.querySelector('header');
-                    const headerOffset = mainHeader ? mainHeader.offsetHeight : 0;
-                    const tabsOffset = tabsWrapper.offsetHeight;
-                    const elementPosition = headerElement.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset - tabsOffset - 10;
+            currentCategories.forEach(cat => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm cursor-grab active:cursor-grabbing hover:border-tomato transition-colors';
+                li.dataset.category = cat;
 
-                    window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                    });
-                }
-            };
-            tabsContainer.appendChild(tab);
-            tabElements[cat] = tab;
-            tab.dataset.categoryName = cat; // Essential for sorting logic
-        });
+                const iconClass = categoryIcons[cat.toLowerCase()] || 'fa-tag';
 
-        // --- Initialize SortableJS on tabs ---
-        if (window.Sortable) {
-            new Sortable(tabsContainer, {
-                animation: 150,
-                ghostClass: 'opacity-50',
-                onEnd: async () => {
-                    const newOrder = Array.from(tabsContainer.querySelectorAll('.category-tab'))
-                        .map(btn => btn.dataset.categoryName);
+                li.innerHTML = `
+                    <div class="text-gray-400 mr-3 cursor-grab"><i class="fas fa-grip-lines"></i></div>
+                    <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center mr-3 text-tomato">
+                        <i class="fas ${iconClass} text-sm"></i>
+                    </div>
+                    <span class="font-medium text-gray-700 flex-grow">${cat}</span>
+                `;
+                sortList.appendChild(li);
+            });
+            listContainer.appendChild(sortList);
+            modalContent.appendChild(listContainer);
 
-                    console.log("[DEBUG] New category order:", newOrder);
-                    customCategoryOrder = newOrder;
+            // Footer
+            const footer = document.createElement('div');
+            footer.className = 'p-4 border-t bg-white flex justify-end space-x-3';
 
-                    // Save to Firestore
-                    const uid = getCurrentUserId();
-                    if (uid) {
-                        const userRef = doc(db, "users", uid);
-                        try {
-                            await import('firebase/firestore').then(module => {
-                                module.updateDoc(userRef, {
-                                    shoppingCategoryOrder: newOrder,
-                                    lastUpdated: new Date()
-                                });
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium';
+            cancelBtn.textContent = 'Annuler';
+            cancelBtn.onclick = () => modalOverlay.remove();
+
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'px-6 py-2 bg-tomato text-white rounded-lg font-medium shadow-md hover:bg-tomato-dark transition-transform active:scale-95';
+            saveBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Valider';
+
+            saveBtn.onclick = async () => {
+                const newOrder = Array.from(sortList.children).map(li => li.dataset.category);
+                console.log("[DEBUG] New manual category order:", newOrder);
+
+                customCategoryOrder = newOrder; // Update local state immediately
+
+                // Persist to Firebase
+                const uid = getCurrentUserId();
+                if (uid) {
+                    const userRef = doc(db, "users", uid);
+                    try {
+                        await import('firebase/firestore').then(module => {
+                            module.updateDoc(userRef, {
+                                shoppingCategoryOrder: newOrder,
+                                lastUpdated: new Date()
                             });
-                        } catch (e) {
-                            console.error("Error saving category order", e);
-                        }
+                        });
+                    } catch (e) {
+                        console.error("Error saving category order", e);
                     }
-
-                    // Re-render to update H3 sections order
-                    renderShoppingList();
                 }
-            });
+
+                modalOverlay.remove();
+                renderShoppingList(); // Re-render main list
+            };
+
+            footer.appendChild(cancelBtn);
+            footer.appendChild(saveBtn);
+            modalContent.appendChild(footer);
+
+            modalOverlay.appendChild(modalContent);
+            document.body.appendChild(modalOverlay);
+
+            // Init Sortable
+            if (window.Sortable) {
+                new Sortable(sortList, {
+                    animation: 150,
+                    handle: '.cursor-grab', // Drag handle
+                    ghostClass: 'opacity-50',
+                    chosenClass: 'bg-orange-50'
+                });
+            }
         }
-
-        // --- Scroll Spy Logic ---
-        const observerOptions = {
-            root: null,
-            rootMargin: '-10% 0px -80% 0px', // Adjust margin to trigger when header is near the top
-            threshold: 0
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const catName = entry.target.dataset.categoryName;
-                    // Update active state
-                    Object.values(tabElements).forEach(t => t.classList.remove('category-tab-active'));
-                    const activeTab = tabElements[catName];
-                    if (activeTab) {
-                        activeTab.classList.add('category-tab-active');
-                        // Scroll active tab into view in the horizontal container
-                        activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                    }
-                }
-            });
-        }, observerOptions);
 
         categories.forEach(cat => {
             const catHeader = document.createElement('h3');
-            catHeader.className = 'font-bold text-lg text-gray-700 mt-6 mb-3 border-b border-gray-200 pb-1 scroll-mt-24';
+            catHeader.className = 'font-bold text-lg text-gray-700 mt-6 mb-3 border-b border-gray-200 pb-1'; // Removed scroll-mt-24
             catHeader.textContent = cat;
-            catHeader.id = sanitizeForId(cat); // Assign ID for anchor link
-            catHeader.dataset.categoryName = cat; // For Scroll Spy
+            // Removed ID and dataset for Scroll Spy
             container.appendChild(catHeader);
 
-            observer.observe(catHeader); // Start observing each header
+            // observer.observe(catHeader); // Removed observer
 
             const ul = document.createElement('ul');
             ul.className = 'space-y-3';
@@ -571,6 +583,30 @@ export default function init() {
                     mainContent.appendChild(checkbox);
                     mainContent.appendChild(textDiv);
                     li.appendChild(mainContent);
+
+                    // Add annotations if available (Copied logic)
+                    if (item.sources && item.sources.length > 0) {
+                        const annotationsDiv = document.createElement('div');
+                        annotationsDiv.className = 'mt-2 ml-9 text-xs text-gray-400 space-y-1'; // text-gray-400 for checked items
+
+                        // Group sources by recipe and day
+                        const groupedSources = item.sources.reduce((acc, source) => {
+                            const servingsText = source.servings ? ` - ${source.servings} pers.` : '';
+                            const key = `${source.recipeName} (${source.day} ${source.time})${servingsText}`;
+                            if (!acc[key]) {
+                                acc[key] = 0;
+                            }
+                            acc[key] += source.quantity;
+                            return acc;
+                        }, {});
+
+                        for (const key in groupedSources) {
+                            const annotationSpan = document.createElement('div');
+                            annotationSpan.textContent = `↳ ${key}`;
+                            annotationsDiv.appendChild(annotationSpan);
+                        }
+                        li.appendChild(annotationsDiv);
+                    }
 
                     ul.appendChild(li);
                 });
