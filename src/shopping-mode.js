@@ -293,13 +293,88 @@ export default function init() {
 
         // --- Category Management UI ---
         const controlsContainer = document.createElement('div');
-        controlsContainer.className = 'flex justify-end px-4 mb-4';
+        controlsContainer.className = 'flex justify-end px-4 mb-4 space-x-2';
+
+        // Wake Lock Button
+        const wakeLockBtn = document.createElement('button');
+        wakeLockBtn.className = 'text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors flex items-center shadow-sm border border-gray-200';
+        wakeLockBtn.innerHTML = '<i class="fas fa-lightbulb mr-2"></i> Écran';
+        wakeLockBtn.title = "Garder l'écran allumé";
+
+        let wakeLock = null;
+        wakeLockBtn.onclick = async () => {
+            if ('wakeLock' in navigator) {
+                if (wakeLock) {
+                    await wakeLock.release();
+                    wakeLock = null;
+                    wakeLockBtn.classList.remove('text-yellow-600', 'bg-yellow-50', 'border-yellow-200');
+                    wakeLockBtn.classList.add('text-gray-500', 'bg-white', 'border-gray-200');
+                    wakeLockBtn.innerHTML = '<i class="fas fa-lightbulb mr-2"></i> Écran';
+                } else {
+                    try {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        wakeLockBtn.classList.remove('text-gray-500', 'bg-white', 'border-gray-200');
+                        wakeLockBtn.classList.add('text-yellow-600', 'bg-yellow-50', 'border-yellow-200');
+                        wakeLockBtn.innerHTML = '<i class="fas fa-lightbulb mr-2"></i> Actif';
+
+                        wakeLock.addEventListener('release', () => {
+                            console.log('Wake Lock released');
+                            // If released externally (e.g. system), reset UI
+                            wakeLock = null;
+                            if (!wakeLockBtn.classList.contains('text-gray-500')) {
+                                wakeLockBtn.classList.remove('text-yellow-600', 'bg-yellow-50', 'border-yellow-200');
+                                wakeLockBtn.classList.add('text-gray-500', 'bg-white', 'border-gray-200');
+                                wakeLockBtn.innerHTML = '<i class="fas fa-lightbulb mr-2"></i> Écran';
+                            }
+                        });
+                    } catch (err) {
+                        console.error(`${err.name}, ${err.message}`);
+                        alert("Impossible de garder l'écran allumé (Batterie faible ?)");
+                    }
+                }
+            } else {
+                alert("Votre navigateur ne supporte pas le verrouillage d'écran.");
+            }
+        };
+
+        // Re-acquire lock on visibility change
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (e) {
+                    console.error("Re-acquire wake lock failed", e);
+                    wakeLock = null;
+                    wakeLockBtn.classList.remove('text-yellow-600', 'bg-yellow-50', 'border-yellow-200');
+                    wakeLockBtn.classList.add('text-gray-500', 'bg-white', 'border-gray-200');
+                    wakeLockBtn.innerHTML = '<i class="fas fa-lightbulb mr-2"></i> Écran';
+                }
+            }
+        });
 
         const organizeBtn = document.createElement('button');
         organizeBtn.className = 'text-sm font-medium text-tomato bg-orange-50 hover:bg-orange-100 px-3 py-2 rounded-lg transition-colors flex items-center shadow-sm border border-orange-100';
-        organizeBtn.innerHTML = '<i class="fas fa-sort mr-2"></i> Organiser les rayons';
+        organizeBtn.innerHTML = '<i class="fas fa-sort mr-2"></i> Organiser';
         organizeBtn.onclick = () => showCategorySortModal(categories);
 
+        // Calculator Button
+        const calcBtn = document.createElement('button');
+        calcBtn.className = 'text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors flex items-center shadow-sm border border-gray-200';
+        calcBtn.innerHTML = '<i class="fas fa-calculator mr-2"></i> Prix';
+        calcBtn.onclick = () => {
+            calculatorMode = !calculatorMode;
+            if (calculatorMode) {
+                calcBtn.classList.remove('text-gray-500', 'bg-white', 'border-gray-200');
+                calcBtn.classList.add('text-tomato', 'bg-orange-50', 'border-orange-200');
+            } else {
+                calcBtn.classList.remove('text-tomato', 'bg-orange-50', 'border-orange-200');
+                calcBtn.classList.add('text-gray-500', 'bg-white', 'border-gray-200');
+            }
+            renderShoppingList(); // Re-render to show/hide inputs
+        };
+
+        controlsContainer.appendChild(wakeLockBtn);
+        controlsContainer.appendChild(calcBtn);
         controlsContainer.appendChild(organizeBtn);
         container.appendChild(controlsContainer);
 
@@ -458,6 +533,12 @@ export default function init() {
                 textDiv.appendChild(nameSpan);
                 textDiv.appendChild(qtySpan);
 
+                // Price Input (Active Items)
+                if (calculatorMode) {
+                    const priceContainer = createPriceInput(key, itemPrices[key]);
+                    mainContent.appendChild(priceContainer);
+                }
+
                 // Click on row toggles checkbox
                 const toggle = () => {
                     const newState = !checkbox.checked;
@@ -569,6 +650,12 @@ export default function init() {
                     textDiv.appendChild(nameSpan);
                     textDiv.appendChild(qtySpan);
 
+                    // Price Input (Checked Items)
+                    if (calculatorMode) {
+                        const priceContainer = createPriceInput(key, itemPrices[key]);
+                        mainContent.appendChild(priceContainer);
+                    }
+
                     const toggle = () => {
                         const newState = !checkbox.checked;
                         checkbox.checked = newState;
@@ -613,14 +700,135 @@ export default function init() {
                 container.appendChild(ul);
             });
         }
+        // Sticky Footer for Calculator
+        if (calculatorMode) {
+            const footer = document.createElement('div');
+            footer.id = 'shopping-total-display';
+            footer.className = 'fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg text-lg flex justify-between items-center z-50 pb-safe'; // pb-safe for iPhone Home bar
+            footer.innerHTML = '<span class="text-gray-500">Total:</span> 0.00€ <span class="mx-2">|</span> <span class="font-bold text-tomato">Panier: 0.00€</span>';
+            document.body.appendChild(footer);
+            // Trigger initial calculation
+            setTimeout(updateTotals, 0);
+
+            // Add padding to container so footer doesn't hide content
+            container.style.paddingBottom = '80px';
+        } else {
+            container.style.paddingBottom = '20px';
+            // Remove footer if exists (cleanup handled by container.innerHTML='' at start of render, but footer is attached to body)
+            const existingFooter = document.getElementById('shopping-total-display');
+            if (existingFooter) existingFooter.remove();
+        }
     }
+
+    let calculatorMode = false;
+    let itemPrices = {}; // Key: itemName_unit, Value: number
+
+    function updateItemPrice(key, price) {
+        if (!currentPlan) return;
+
+        itemPrices[key] = price;
+        updateTotals();
+
+        const planRef = doc(db, 'plans', currentPlan.id);
+        const updateData = {};
+        updateData[`itemPrices.${key}`] = price;
+        updateData['lastUpdated'] = new Date();
+
+        import('firebase/firestore').then(module => {
+            module.updateDoc(planRef, updateData).catch(err => console.error("Error saving price", err));
+        });
+    }
+
+    function updateTotals() {
+        const totalSpan = document.getElementById('shopping-total-display');
+        if (!totalSpan) return;
+
+        let total = 0;
+        let cart = 0;
+
+        // Iterate over all known prices
+        // Note: We need the quantity from the list to calculate total correctly if price is per unit?
+        // User request "Champ saisie prix". Usually user inputs TOTAL price of the item package. 
+        // e.g. "Pack of milk" -> 6€.
+        // Simple fallback: The input IS the price added to total.
+
+        Object.values(itemPrices).forEach(p => total += (parseFloat(p) || 0));
+
+        // Calculate Cart Total (Checked items)
+        // We need to know which items are checked. itemPrices keys match checkedItems keys.
+        Object.keys(itemPrices).forEach(key => {
+            const price = parseFloat(itemPrices[key]) || 0;
+            if (checkedItems[key]) {
+                cart += price;
+            }
+        });
+
+        totalSpan.innerHTML = `<span class="text-gray-500">Total:</span> ${total.toFixed(2)}€ <span class="mx-2">|</span> <span class="font-bold text-tomato">Panier: ${cart.toFixed(2)}€</span>`;
+    }
+
+    function createPriceInput(key, initialValue) {
+        const container = document.createElement('div');
+        container.className = 'ml-auto flex items-center border rounded-lg border-gray-300 bg-white focus-within:ring-2 focus-within:ring-tomato focus-within:border-tomato';
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.01';
+        input.className = 'w-16 p-1 text-right text-sm border-none focus:ring-0 rounded-l-lg appearance-none';
+        input.value = initialValue || '';
+        input.onclick = (e) => e.stopPropagation();
+        input.onchange = (e) => updateItemPrice(key, parseFloat(e.target.value));
+
+        const symbol = document.createElement('span');
+        symbol.className = 'text-gray-500 text-sm pr-2 pl-1 bg-gray-50 h-full flex items-center rounded-r-lg border-l border-gray-100';
+        symbol.textContent = '€';
+
+        container.appendChild(input);
+        container.appendChild(symbol);
+
+        return container;
+    }
+
+    // Lets also add the Price Input logic in a separate step or via DOM update function to avoid loop complexity?
+    // Actually, I need to restore the updateItemState function signature here first.
 
     function updateItemState(key, isChecked, li, checkbox, nameSpan, qtySpan) {
         if (!currentPlan) return;
 
         const isManual = li.dataset.isManual === "true";
 
-        // Optimistic UI update
+        function createPriceInput(key, initialValue) {
+            const container = document.createElement('div');
+            container.className = 'ml-auto flex items-center border rounded-lg border-gray-300 bg-white focus-within:ring-2 focus-within:ring-tomato focus-within:border-tomato ml-4'; // Added ml-4 for spacing
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = '0.01';
+            input.className = 'w-16 p-1 text-right text-sm border-none focus:ring-0 rounded-l-lg appearance-none'; // Remove default borders
+            input.value = initialValue || '';
+            input.onclick = (e) => e.stopPropagation();
+            input.onchange = (e) => updateItemPrice(key, parseFloat(e.target.value));
+
+            const symbol = document.createElement('span');
+            symbol.className = 'text-gray-500 text-sm pr-2 pl-1 bg-gray-50 h-full flex items-center rounded-r-lg border-l border-gray-100';
+            symbol.textContent = '€';
+
+            container.appendChild(input);
+            container.appendChild(symbol);
+
+            return container;
+        }
+
+        // ... inside UpdateItemState ...
+        // Note: I will need to call this helper in the Active/Checked loops.
+        // Since I cannot rewrite the whole file, I will define the function globally (inside renderShoppingList) 
+        // and then use regex replace for the usage sites in the next steps.
+
+        // HOWEVER, I am editing the file now. I will insert the helper function before generateList (?) 
+        // NO, 'renderShoppingList' is a closure. I should put it next to 'updateItemPrice'.
+
+        // This replace_file_content call is tricky because I need to insert the function AND replace usage.
+        // I'll stick to inserting the helper first near 'updateItemPrice'.
+
         if (isChecked) {
             li.classList.remove('bg-white', 'bg-orange-100', 'shadow-sm', 'border', 'border-gray-100', 'border-orange-200');
             li.classList.add('bg-gray-100');
