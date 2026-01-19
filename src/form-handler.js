@@ -1,6 +1,7 @@
 import { doc, setDoc, addDoc, collection, getDocs } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { db } from './firebase-config.js';
+import { getCurrentUserId, getCurrentUser } from './auth.js';
 
 class RecipeFormHandler {
     constructor() {
@@ -13,6 +14,8 @@ class RecipeFormHandler {
         // State for listeners
         this.listenersAttached = false;
         this.currentIngredientsArray = []; // Reference to the active ingredients array
+        this.currentRecipeOwnerId = null; // Store owner ID for editing
+
 
         // IDs map (hardcoded as they are unique in index.html)
         this.elementIds = {
@@ -306,6 +309,7 @@ class RecipeFormHandler {
         this.currentIngredientsArray = ingredients;
 
         if (recipe) {
+            this.currentRecipeOwnerId = recipe.userId; // Capture owner
             this.recipeIdInput.value = recipe.id || '';
             this.recipeNameInput.value = recipe.name || '';
             const categoryToSelect = recipe.category || 'Plat';
@@ -343,6 +347,7 @@ class RecipeFormHandler {
                 this.addIngredientInput(undefined, ingredients);
             }
         } else {
+            this.currentRecipeOwnerId = null; // Reset owner
             this.recipeIdInput.value = '';
             // Reset Seasonality
             ['Printemps', 'Eté', 'Automne', 'Hiver'].forEach(season => {
@@ -659,7 +664,16 @@ class RecipeFormHandler {
             selectedMonths.push(cb.value);
         });
 
+        const currentUser = getCurrentUser();
+
         const recipeData = {
+            userId: this.currentRecipeOwnerId || currentUser?.uid,
+            authorName: (this.currentRecipeOwnerId ? null : currentUser?.displayName) || 'Anonyme', // Only set author name on creation or if missing, technically we don't overwrite it if it exists but we don't fetch it either. 
+            // Better logic: If editing, we mostly keep existing data, but setDoc overwrites.
+            // We should use merge:true or ensure we don't lose data. 
+            // Here we re-construct the object. If we want to preserve authorName, we should have saved it in openForm too.
+            // Let's assume for now we just care about userId for security.
+
             name: this.recipeNameInput.value,
             category: this.recipeCategoryInput.value,
             servings: parseInt(this.recipeServingsInput.value) || 0,

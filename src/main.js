@@ -2,6 +2,8 @@ import { navigateTo } from './router.js';
 import { protectPage, getCurrentUser } from './auth.js';
 import { initNotifications } from './notifications.js';
 import { initSettingsUI } from './settings-ui.js?v=1.2';
+import { db } from './firebase-config.js';
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 function startApp() {
     const currentUser = getCurrentUser();
@@ -12,19 +14,96 @@ function startApp() {
         }
     }
 
+    // Feedback Logic (Global)
+    const feedbackBtn = document.getElementById('feedback-btn');
+    const feedbackModal = document.getElementById('feedback-modal');
+    const closeFeedbackBtn = document.getElementById('close-feedback-modal');
+    const feedbackForm = document.getElementById('feedback-modal-form');
+
+    console.log("DEBUG: Feedback Init:", {
+        btn: !!feedbackBtn,
+        modal: !!feedbackModal,
+        close: !!closeFeedbackBtn
+    });
+
+    if (feedbackBtn && feedbackModal && closeFeedbackBtn) {
+        feedbackBtn.addEventListener('click', (e) => {
+            console.log("DEBUG: Feedback Button Clicked");
+            e.preventDefault();
+            feedbackModal.classList.remove('hidden');
+        });
+
+        closeFeedbackBtn.addEventListener('click', () => {
+            feedbackModal.classList.add('hidden');
+        });
+
+        feedbackModal.addEventListener('click', (e) => {
+            if (e.target === feedbackModal) {
+                feedbackModal.classList.add('hidden');
+            }
+        });
+    }
+
+    if (feedbackForm) {
+        feedbackForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = feedbackForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> Envoi...';
+
+            try {
+                const typeInput = feedbackForm.querySelector('input[name="feedback-type"]:checked');
+                const message = document.getElementById('feedback-message').value;
+                const email = document.getElementById('feedback-email').value;
+
+                const payload = {
+                    type: typeInput ? typeInput.value : 'avis',
+                    message: message,
+                    contactEmail: email || null,
+                    userAgent: navigator.userAgent,
+                    url: window.location.href,
+                    userId: currentUser ? currentUser.uid : 'unknown',
+                    timestamp: serverTimestamp()
+                };
+
+                console.log("DEBUG: Feedback Payload:", payload);
+                console.log("DEBUG: DB Instance:", db);
+
+                if (!db) throw new Error("Database instance (db) is undefined");
+
+                await addDoc(collection(db, "feedback"), payload);
+
+                alert("Merci ! Votre retour a bien été envoyé.");
+                feedbackModal.classList.add('hidden');
+                feedbackForm.reset();
+            } catch (error) {
+                console.error("Erreur feedback FULL:", error);
+                console.error("Erreur feedback MSG:", error.message);
+                console.error("Erreur feedback CODE:", error.code);
+                alert("Une erreur est survenue: " + (error.message || "Erreur inconnue"));
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    }
+
     const navButtons = document.querySelectorAll('.nav-btn');
     navButtons.forEach(button => {
         button.addEventListener('click', (e) => {
             const path = e.currentTarget.dataset.path;
-            navigateTo(path);
+            if (path) {
+                navigateTo(path);
 
-            // Update active button style
-            navButtons.forEach(btn => {
-                btn.classList.remove('bg-tomato', 'text-white');
-                btn.classList.add('bg-white', 'text-tomato');
-            });
-            e.currentTarget.classList.add('bg-tomato', 'text-white');
-            e.currentTarget.classList.remove('bg-white', 'text-tomato');
+                // Update active button style
+                navButtons.forEach(btn => {
+                    btn.classList.remove('bg-tomato', 'text-white');
+                    btn.classList.add('bg-white', 'text-tomato');
+                });
+                e.currentTarget.classList.add('bg-tomato', 'text-white');
+                e.currentTarget.classList.remove('bg-white', 'text-tomato');
+            }
         });
     });
 

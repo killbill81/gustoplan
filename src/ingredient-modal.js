@@ -1,5 +1,6 @@
 import { db } from './firebase-config.js';
 import { collection, doc, setDoc, addDoc, getDocs } from "firebase/firestore";
+import { getCurrentUserId } from './auth.js';
 
 export class IngredientModalManager {
     constructor() {
@@ -177,6 +178,7 @@ export class IngredientModalManager {
 
     prepareEdit(ingredient) {
         this.title.textContent = "Modifier l'ingrédient";
+        this.currentIngredientOwnerId = ingredient.userId;
         this.idInput.value = ingredient.id;
         this.nameInput.value = ingredient.name;
         this.unitSelect.value = ingredient.unit || '';
@@ -221,7 +223,14 @@ export class IngredientModalManager {
             selectedMonths.push(cb.value);
         });
 
+        this.modal.querySelectorAll('.month-checkbox:checked').forEach(cb => {
+            selectedMonths.push(cb.value);
+        });
+
+        const userId = this.currentIngredientOwnerId || getCurrentUserId();
+
         const ingredientData = {
+            userId: userId,
             name: this.nameInput.value,
             unit: this.unitSelect.value,
             category: this.categorySelect.value,

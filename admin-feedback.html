@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GustoPlan - Admin Feedback</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tomato: {
+                            light: '#ff8a65',
+                            DEFAULT: '#ff6347',
+                            dark: '#c54935',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-100 font-sans antialiased min-h-screen">
+
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-6 sm:px-0">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">
+                    <i class="fas fa-user-shield text-tomato mr-2"></i> Administration Feedback
+                </h1>
+                <a href="index.html" class="text-tomato hover:text-tomato-dark font-medium">
+                    <i class="fas fa-arrow-left mr-1"></i> Retour App
+                </a>
+            </div>
+
+            <!-- Login Modal (Hardcoded Check) -->
+            <div id="admin-login-modal" class="fixed inset-0 bg-gray-900 z-50 flex items-center justify-center">
+                <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
+                    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Accès Admin</h2>
+                    <form id="admin-login-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Identifiant</label>
+                            <input type="text" id="admin-user"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato sm:text-sm"
+                                required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Mot de passe</label>
+                            <input type="password" id="admin-pass"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-tomato focus:ring-tomato sm:text-sm"
+                                required>
+                        </div>
+                        <p id="login-error" class="text-red-500 text-sm hidden">Identifiants incorrects.</p>
+                        <button type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-tomato hover:bg-tomato-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tomato transition-colors">
+                            Se connecter
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="firebase-loading"
+                class="hidden fixed inset-0 bg-white/80 z-40 flex flex-col items-center justify-center">
+                <i class="fas fa-spinner fa-spin text-4xl text-tomato mb-4"></i>
+                <p class="text-gray-600 font-medium">Connexion sécurisée aux données...</p>
+            </div>
+
+            <!-- Content Area -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-md hidden" id="content-area">
+                <ul id="feedback-list" class="divide-y divide-gray-200">
+                    <!-- Feedback items will be inserted here -->
+                </ul>
+            </div>
+            <div id="empty-state" class="hidden p-10 text-center text-gray-500">
+                Aucun feedback pour le moment.
+            </div>
+        </div>
+    </div>
+
+    <!-- Standalone Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // --- HARDCODED CREDENTIALS ---
+        // Change these values to set your own admin credentials
+        const ADMIN_USER = "admin";
+        const ADMIN_PASS = "gusto2026";
+        // -----------------------------
+
+        // Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDif5g62oVWT460e5q3Kpg7txgRN8VXk24",
+            authDomain: "gustoplan-dev.firebaseapp.com",
+            projectId: "gustoplan-dev",
+            storageBucket: "gustoplan-dev.firebasestorage.app",
+            messagingSenderId: "554162135180",
+            appId: "1:554162135180:web:f5addf322a0977ffe31ba9",
+            databaseURL: "https://gustoplan-dev-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const listContainer = document.getElementById('feedback-list');
+        const emptyState = document.getElementById('empty-state');
+        const loginModal = document.getElementById('admin-login-modal');
+        const loginForm = document.getElementById('admin-login-form');
+        const loginError = document.getElementById('login-error');
+        const contentArea = document.getElementById('content-area');
+        const loadingOverlay = document.getElementById('firebase-loading');
+
+        // 1. Handle Hardcoded Login
+        if (sessionStorage.getItem('admin_logged_in') === 'true') {
+            showContent();
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const u = document.getElementById('admin-user').value;
+            const p = document.getElementById('admin-pass').value;
+
+            if (u === ADMIN_USER && p === ADMIN_PASS) {
+                sessionStorage.setItem('admin_logged_in', 'true');
+                showContent();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        function showContent() {
+            loginModal.classList.add('hidden');
+            contentArea.classList.remove('hidden');
+            initFirebase();
+        }
+
+        function initFirebase() {
+            loadingOverlay.classList.remove('hidden');
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // Already authenticated (e.g., from main app or previous anon login)
+                    console.log("Authenticated as:", user.uid);
+                    loadFeedback();
+                } else {
+                    // Not authenticated. Authenticate anonymously to satisfy Firestore Security Rules.
+                    // This is key: Even if we use a hardcoded password for the UI, 
+                    // we MUST use a valid Firebase Auth token to talk to the database.
+                    console.log("Not authenticated via Firebase. Attempting anonymous login...");
+                    try {
+                        await signInAnonymously(auth);
+                        // onAuthStateChanged will trigger again with user
+                    } catch (error) {
+                        console.error("Firebase Auth failed:", error);
+                        loadingOverlay.classList.add('hidden');
+                        alert("Erreur critique : Impossible de se connecter à la base de données. " + error.message);
+                    }
+                }
+            });
+        }
+
+        async function loadFeedback() {
+            try {
+                const q = query(collection(db, "feedback"), orderBy("timestamp", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                loadingOverlay.classList.add('hidden');
+                listContainer.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                emptyState.classList.add('hidden');
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const date = data.timestamp ? data.timestamp.toDate().toLocaleString() : 'Date inconnue';
+
+                    let iconClass = 'fa-comment text-gray-400';
+                    let bgClass = 'bg-gray-50';
+                    if (data.type === 'bug') { iconClass = 'fa-bug text-red-500'; bgClass = 'bg-red-50'; }
+                    if (data.type === 'feature') { iconClass = 'fa-lightbulb text-yellow-500'; bgClass = 'bg-yellow-50'; }
+                    if (data.type === 'avis') { iconClass = 'fa-heart text-pink-500'; bgClass = 'bg-pink-50'; }
+
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="px-4 py-4 sm:px-6 hover:bg-gray-50 transition block border-b border-gray-100 last:border-b-0">
+                            <div class="flex items-center justify-between">
+                                <p class="text-sm font-medium text-tomato truncate font-bold">
+                                    ${data.contactEmail || 'Anonyme'}
+                                </p>
+                                <div class="ml-2 flex-shrink-0 flex">
+                                    <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${bgClass} ${iconClass.split(' ')[1]}">
+                                        ${data.type ? data.type.toUpperCase() : 'MSG'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-gray-800 text-sm">
+                                <p class="whitespace-pre-wrap"><i class="fas ${iconClass.split(' ')[0]} mr-2 text-gray-400"></i>${data.message}</p>
+                            </div>
+                            <div class="mt-2 sm:flex sm:justify-between text-xs text-gray-400">
+                                <div class="sm:flex">
+                                    ${data.userAgent ? `<p class="truncate max-w-xs mr-4" title="${data.userAgent}"><i class="fas fa-desktop mr-1"></i> ${data.userAgent.split(')')[0]})` : ''}</p>
+                                    ${data.url ? `<p class="truncate max-w-xs"><i class="fas fa-link mr-1"></i> ${data.url}</p>` : ''}
+                                </div>
+                                <div class="mt-2 flex items-center sm:mt-0">
+                                    <i class="fas fa-clock mr-1.5"></i>
+                                    <p>${date}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    listContainer.appendChild(li);
+                });
+
+            } catch (error) {
+                console.error("Error loading feedback:", error);
+                loadingOverlay.classList.add('hidden');
+                alert("Erreur de chargement des données. Permissions insuffisantes.");
+            }
+        }
+    </script>
+</body>
+
+</html>
