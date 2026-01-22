@@ -506,7 +506,7 @@ export default function init() {
                 const quantityDisplay = Number.isInteger(item.totalQuantity) ? item.totalQuantity : parseFloat(item.totalQuantity.toFixed(2));
 
                 const nameSpan = document.createElement('span');
-                nameSpan.className = `font-medium text-base ${isChecked ? 'line-through text-gray-400' : 'text-gray-800'}`;
+                nameSpan.className = `font-medium text-base flex-1 ${isChecked ? 'line-through text-gray-400' : 'text-gray-800'}`;
                 nameSpan.textContent = item.name;
 
                 const qtySpan = document.createElement('span');

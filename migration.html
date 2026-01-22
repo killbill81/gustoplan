@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GustoPlan - Migration</title>
+    <link rel="stylesheet" href="./src/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full text-center">
+        <h1 class="text-2xl font-bold text-tomato mb-4"><i class="fas fa-magic"></i> Migration des Données</h1>
+        <p class="text-gray-600 mb-6">
+            Cette page permet de récupérer la propriété de toutes les anciennes recettes et ingrédients.
+        </p>
+
+        <div id="status" class="mb-4 text-sm font-medium text-gray-500">En attente...</div>
+
+        <button id="btn-start" class="btn btn-primary w-full py-3 text-lg shadow-lg">
+            Lancer la migration
+        </button>
+
+        <a href="index.html" class="block mt-6 text-gray-400 hover:text-gray-600 text-sm">Retour à l'accueil</a>
+    </div>
+
+    <script type="module">
+        import { migrateDataToCurrentUser } from './src/migration.js';
+        import { auth } from './src/firebase-config.js';
+        import { onAuthStateChanged } from "firebase/auth";
+
+        const statusDiv = document.getElementById('status');
+        const btn = document.getElementById('btn-start');
+
+        statusDiv.textContent = "Chargement de l'utilisateur...";
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                statusDiv.textContent = `Connecté en tant que : ${user.displayName || user.email}`;
+                statusDiv.classList.add('text-green-600');
+
+                btn.addEventListener('click', async () => {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement...';
+                    try {
+                        await migrateDataToCurrentUser();
+                        statusDiv.textContent = "Migration réussie !";
+                    } catch (e) {
+                        statusDiv.textContent = "Erreur : " + e.message;
+                        btn.disabled = false;
+                        btn.textContent = "Réessayer";
+                    }
+                });
+            } else {
+                statusDiv.textContent = "Erreur : Vous n'êtes pas connecté. Retournez sur l'accueil pour vous connecter.";
+                statusDiv.classList.add('text-red-500');
+                btn.disabled = true;
+            }
+        });
+    </script>
+</body>
+
+</html>

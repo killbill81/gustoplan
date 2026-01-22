@@ -170,7 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.documentElement.classList.remove('dark');
             if (darkModeToggle) darkModeToggle.checked = false;
         }
+        localStorage.setItem('theme', theme);
     };
+
+
+
+
 
     // Check for saved theme on load and apply it
     const savedTheme = localStorage.getItem('theme');

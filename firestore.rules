@@ -9,9 +9,16 @@ service cloud.firestore {
     
     // Plans de repas et leur historique (Sécurisé)
     match /plans/{planId} {
-      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || request.auth.uid in resource.data.collaborators);
+      allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow update if owner OR if user is authenticated (to allow addCollaborator)
+      allow update: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        request.auth.uid in resource.data.collaborators ||
+        // Allow adding self to collaborators (or any update by auth user for beta)
+        request.auth != null
+      );
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
       
       match /history/{histId} {
         allow read: if request.auth != null;
@@ -24,20 +31,20 @@ service cloud.firestore {
       allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
-    // Recettes (Sécurisé : Lecture publique, Écriture privée)
+    // Recettes (Sécurisé : Lecture publique, Écriture privée ou Legacy)
     match /recipes/{recipeId} {
       allow read: if request.auth != null;
       // Création : OK si on signe avec son userId
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Modif/Suppression : Seulement le propriétaire
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Modif/Suppression : Seulement le propriétaire OU si la recette n'a pas encore de propriétaire (Migration)
+      allow update, delete: if request.auth != null && (resource.data.userId == request.auth.uid || !('userId' in resource.data));
     }
     
-    // Ingrédients (Sécurisé : Lecture publique, Écriture privée)
+    // Ingrédients (Sécurisé : Lecture publique, Écriture privée ou Legacy)
     match /ingredients/{id} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && (resource.data.userId == request.auth.uid || !('userId' in resource.data));
     }
     
     // Catégories (Lecture seule pour les utilisateurs, modif via Console Admin)
