@@ -1,10 +1,13 @@
 const functions = require("firebase-functions");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const logger = functions.logger;
 
-// Initialize Google Gemini with API Key from environment variables
-// Use: firebase functions:config:set google.key="AIza..."
+// Initialisation du secret pour la clé Gemini
+const googleApiKeySecret = defineSecret("GOOGLE_API_KEY");
+
+// Les secrets sont gérés via defineSecret
 
 // Gen 1 syntax
 exports.helloWorld = functions.https.onRequest((request, response) => {
@@ -53,9 +56,7 @@ exports.extractRecipeFromUrl = functions.https.onCall(async (data, context) => {
         const truncatedHtml = html.substring(0, 50000);
 
         // 2. Analyze with Gemini
-        // functions.config() is removed in v7. Using hardcoded fallback or env var.
-        const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
-        const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+        const apiKey = googleApiKeySecret.value();
 
         if (!apiKey) {
             console.error("API Key completely missing");
@@ -131,9 +132,7 @@ exports.generateRecipe = functions.https.onCall(async (data, context) => {
     }
 
     try {
-        // functions.config() is removed in v7. Using hardcoded fallback or env var.
-        const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
-        const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+        const apiKey = googleApiKeySecret.value();
 
         if (!apiKey) throw new functions.https.HttpsError('failed-precondition', "Clé API Google manquante");
 
@@ -217,8 +216,7 @@ exports.auditIngredients = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('invalid-argument', 'Liste d\'ingrédients manquante ou invalide');
     }
 
-    const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
-    const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+    const apiKey = googleApiKeySecret.value();
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
@@ -272,11 +270,10 @@ exports.suggestMenu = functions.https.onCall(async (data, context) => {
     const currentSeason = data?.season || (data?.data && data.data.season);
 
     if (!recipes || !Array.isArray(recipes)) {
-        throw new functions.https.HttpsError('invalid-argument', 'Liste de recettes manquante');
+        throw new HttpsError('invalid-argument', 'Liste de recettes manquante');
     }
 
-    const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
-    const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+    const apiKey = googleApiKeySecret.value();
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
@@ -350,8 +347,7 @@ exports.analyzeHistory = onCall(async (request) => {
         throw new HttpsError('invalid-argument', 'Profil de données manquant');
     }
 
-    const hardcodedKey = "AIzaSyBHhs6Vq2UFGXDRjEBIuihx9KWFswvMI18";
-    const apiKey = process.env.GOOGLE_API_KEY || hardcodedKey;
+    const apiKey = googleApiKeySecret.value();
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
