@@ -628,7 +628,7 @@ export const PlanningView: React.FC = () => {
       <div className="h-[calc(100vh-73px)] flex flex-col md:flex-row bg-slate-950 text-white overflow-hidden">
         
         {/* ================= PANNEAU GAUCHE : RECETTES (PC UNIQUEMENT) ================= */}
-        <div className={`hidden md:flex shrink-0 flex-col border-r border-slate-900 bg-slate-950 h-full overflow-hidden transition-all duration-300 ease-in-out ${
+        <div className={`hidden md:flex shrink-0 flex-col border-r border-slate-900 bg-slate-900/45 h-full overflow-hidden transition-all duration-300 ease-in-out ${
           isLeftCollapsed ? "w-12 p-2 items-center" : "w-[22%] p-4"
         }`}>
           {isLeftCollapsed ? (
@@ -670,6 +670,7 @@ export const PlanningView: React.FC = () => {
                 placeholder="Rechercher..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onFocus={(e) => e.target.select()}
                 className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 mb-4"
               />
 
@@ -867,7 +868,7 @@ export const PlanningView: React.FC = () => {
         </div>
 
         {/* ================= PANNEAU DROIT : LISTE DE COURSES TEMPS RÉEL (PC UNIQUEMENT) ================= */}
-        <div className={`hidden md:flex shrink-0 flex-col border-l border-slate-900 bg-slate-950 h-full overflow-hidden transition-all duration-300 ease-in-out ${
+        <div className={`hidden md:flex shrink-0 flex-col border-l border-slate-900 bg-slate-900/45 h-full overflow-hidden transition-all duration-300 ease-in-out ${
           isRightCollapsed ? "w-12 p-2 items-center" : "w-[25%] relative"
         }`}>
           {isRightCollapsed ? (

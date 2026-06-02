@@ -31,27 +31,35 @@ const AppContent: React.FC = () => {
     <div className="h-screen bg-slate-950 flex flex-col text-white font-sans overflow-hidden">
       
       {/* ================= HEADER COMMUN (PC & TABLETTE) ================= */}
-      <header className="bg-slate-900/40 border-b border-slate-900 px-6 py-4 flex items-center justify-between z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-tr from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center shadow-md shadow-violet-500/10">
-            <ChefHat className="w-5 h-5 text-white" />
-          </div>
+      <header 
+        className="border-b border-slate-900/85 px-6 py-4 flex items-center justify-between z-10 relative overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: "url('/header_banner.png')" }}
+      >
+        {/* Voile sombre de gradation pour l'effet de profondeur et lisibilité */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/70 to-slate-950/90 backdrop-blur-[1px]" />
+
+        <div className="flex items-center gap-3.5 relative z-10">
+          <img 
+            src="/logo.png" 
+            alt="GustoPlan Logo" 
+            className="w-14 h-14 rounded-2xl object-cover border border-slate-800 shadow-md shadow-violet-500/10" 
+          />
           <div>
-            <h1 className="text-lg font-black tracking-tight leading-none">GustoPlan</h1>
-            <span className="text-3xs text-slate-500 font-extrabold uppercase tracking-widest mt-1 block">
+            <h1 className="text-xl font-black tracking-tight leading-none text-white drop-shadow-md">GustoPlan</h1>
+            <span className="text-3xs text-slate-300 font-extrabold uppercase tracking-widest mt-1 block drop-shadow">
               V2 Efficace
             </span>
           </div>
         </div>
 
         {/* Navigation Onglets (Visible uniquement sur PC/Tablette dans le header) */}
-        <nav className="hidden md:flex bg-slate-900 border border-slate-850 p-1 rounded-xl">
+        <nav className="hidden md:flex bg-slate-900/80 backdrop-blur-md border border-slate-800 p-1 rounded-xl relative z-10">
           <button
             onClick={() => setActiveTab("planning")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === "planning"
                 ? "bg-violet-600 text-white shadow-md shadow-violet-600/10"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-300 hover:text-slate-100"
             }`}
           >
             <Calendar className="w-4 h-4" />
@@ -63,7 +71,7 @@ const AppContent: React.FC = () => {
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === "recettes"
                 ? "bg-violet-600 text-white shadow-md shadow-violet-600/10"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-300 hover:text-slate-100"
             }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -75,7 +83,7 @@ const AppContent: React.FC = () => {
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === "liste"
                 ? "bg-violet-600 text-white shadow-md shadow-violet-600/10"
-                : "text-slate-400 hover:text-slate-200"
+                : "text-slate-300 hover:text-slate-100"
             }`}
           >
             <ShoppingCart className="w-4 h-4" />
@@ -84,17 +92,17 @@ const AppContent: React.FC = () => {
         </nav>
 
         {/* Profil & Logout */}
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-slate-900/60 border border-slate-850 px-3 py-1.5 rounded-xl">
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="hidden sm:flex items-center gap-2 bg-slate-900/85 backdrop-blur-md border border-slate-800 px-3 py-1.5 rounded-xl">
             <User className="w-4 h-4 text-violet-400" />
-            <span className="text-xs font-semibold text-slate-300 max-w-[120px] truncate">
+            <span className="text-xs font-semibold text-slate-200 max-w-[120px] truncate">
               {user.email}
             </span>
           </div>
           <button
             onClick={logout}
             title="Se déconnecter"
-            className="p-2.5 bg-slate-900/60 hover:bg-slate-900 border border-slate-850 hover:border-slate-700 rounded-xl text-slate-400 hover:text-white transition-colors"
+            className="p-2.5 bg-slate-900/85 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300 hover:text-white transition-colors"
           >
             <LogOut className="w-4.5 h-4.5" />
           </button>

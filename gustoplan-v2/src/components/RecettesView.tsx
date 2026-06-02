@@ -24,6 +24,8 @@ export const RecettesView: React.FC = () => {
   const [ingNom, setIngNom] = useState("");
   const [ingQuantite, setIngQuantite] = useState("");
   const [ingUnite, setIngUnite] = useState("g");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
 
   // Récupération en temps réel
   useEffect(() => {
@@ -33,6 +35,13 @@ export const RecettesView: React.FC = () => {
     });
     return unsubscribe;
   }, [foyer?.id]);
+
+  // Réinitialiser automatiquement tous les champs de la fiche quand la modal se ferme
+  useEffect(() => {
+    if (!isModalOpen) {
+      resetForm();
+    }
+  }, [isModalOpen]);
 
   const handleAddIngredient = () => {
     if (!ingNom.trim()) return;
@@ -58,14 +67,19 @@ export const RecettesView: React.FC = () => {
     const existingRecette = recettes.find(r => r.id === editingId);
     const wasFavori = existingRecette ? existingRecette.favori : false;
 
-    const data: Omit<Recette, 'id'> & { id?: string } = {
+    const data: Omit<Recette, 'id'> & { id?: string, imageUrl?: string } = {
       titre: titre.trim(),
       portionsDefaut: portions,
       categorie,
       favori: wasFavori,
-      ingredients,
-      imageUrl: imageUrl.trim() || undefined
+      ingredients
     };
+
+    if (imageUrl.trim()) {
+      data.imageUrl = imageUrl.trim();
+    } else {
+      data.imageUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(titre.trim())}%20recette&w=400&h=300&c=7&rs=1&p=0`;
+    }
 
     if (editingId) {
       data.id = editingId;
@@ -87,6 +101,9 @@ export const RecettesView: React.FC = () => {
     setCategorie(recette.categorie);
     setIngredients(recette.ingredients);
     setImageUrl(recette.imageUrl || "");
+    setIngNom("");
+    setIngQuantite("");
+    setIngUnite("g");
     setIsModalOpen(true);
   };
 
@@ -134,6 +151,32 @@ export const RecettesView: React.FC = () => {
     return a.titre.localeCompare(b.titre, "fr", { sensitivity: "base" });
   });
 
+  const cartesIngredientsUnites = recettes.reduce<{ [key: string]: string[] }>((acc, r) => {
+    (r.ingredients || []).forEach((ing) => {
+      const nom = ing.nom.trim().toLowerCase();
+      const unite = ing.unite.trim();
+      if (nom && unite) {
+        if (!acc[nom]) {
+          acc[nom] = [];
+        }
+        if (!acc[nom].includes(unite)) {
+          acc[nom].push(unite);
+        }
+      }
+    });
+    return acc;
+  }, {});
+
+  const tousIngredientsExistants = Object.keys(cartesIngredientsUnites).sort();
+
+  const suggestionsFiltrees = ingNom.trim()
+    ? tousIngredientsExistants.filter((nom) =>
+        nom.includes(ingNom.toLowerCase().trim())
+      )
+    : [];
+
+  const unitesSuggerees = cartesIngredientsUnites[ingNom.trim().toLowerCase()] || [];
+
   return (
     <div className="h-full flex flex-col p-4 md:p-6 bg-slate-950 text-white">
       {/* Header */}
@@ -167,6 +210,7 @@ export const RecettesView: React.FC = () => {
             placeholder="Rechercher une recette..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onFocus={(e) => e.target.select()}
             className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 placeholder-slate-500 text-white focus:outline-none focus:border-violet-500 transition-colors"
           />
         </div>
@@ -201,73 +245,75 @@ export const RecettesView: React.FC = () => {
       </div>
 
       {/* Grille des recettes avec hauteur calculée pour éviter l'écrasement CSS Grid */}
-      <div className="h-[calc(100vh-220px)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20 md:pb-6">
+      <div className="h-[calc(100vh-220px)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20 md:pb-6">
         {sortedRecettes.map((recette) => (
           <div
             key={recette.id}
-            className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between hover:border-slate-700 transition-all hover:scale-101 overflow-hidden h-[360px]"
+            className="bg-slate-900/60 border border-slate-800/80 rounded-2xl flex flex-col justify-between hover:border-slate-700 transition-all hover:scale-[1.01] overflow-hidden h-[260px] shadow-lg relative group"
           >
-            <div className="flex flex-col h-full overflow-hidden">
-              {recette.imageUrl && (
+            {/* Image de la recette en arrière-plan complet */}
+            {recette.imageUrl ? (
+              <div className="absolute inset-0 w-full h-full">
                 <img 
                   src={recette.imageUrl} 
                   alt={recette.titre} 
-                  className="w-full h-32 object-cover rounded-t-2xl mb-4 -mt-5 -mx-5 w-[calc(100%+2.5rem)] max-w-none"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-              )}
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <span className={`px-2.5 py-1 rounded-lg text-2xs font-extrabold uppercase tracking-wider ${
-                  recette.categorie === "entree" 
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    : recette.categorie === "plat"
-                    ? "bg-violet-500/10 text-violet-400 border border-violet-500/20"
-                    : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                }`}>
-                  {recette.categorie}
-                </span>
-                <button 
-                  onClick={() => handleToggleFavori(recette)}
-                  className="text-slate-500 hover:text-fuchsia-500 transition-colors p-1"
-                >
-                  <Heart className={`w-5 h-5 ${recette.favori ? "fill-fuchsia-500 text-fuchsia-500" : ""}`} />
-                </button>
+                {/* Voile sombre pour le contraste */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
               </div>
-
-              <h3 className="text-lg font-bold text-white mb-2 leading-relaxed py-1">{recette.titre}</h3>
-              <p className="text-xs text-slate-500 mb-4">Portions : {recette.portionsDefaut} pers.</p>
-
-
-
-              
-              <div className="text-slate-400 text-xs space-y-1">
-                <div className="font-semibold text-slate-500 mb-1">Ingrédients :</div>
-                {recette.ingredients.slice(0, 4).map((ing, idx) => (
-                  <div key={idx} className="flex justify-between">
-                    <span className="capitalize">{ing.nom}</span>
-                    <span>{ing.quantite > 0 ? `${ing.quantite} ${ing.unite}` : ing.unite}</span>
-                  </div>
-                ))}
-                {recette.ingredients.length > 4 && (
-                  <div className="text-slate-500 text-2xs italic pt-1">
-                    + {recette.ingredients.length - 4} autres ingrédients...
-                  </div>
-                )}
+            ) : (
+              <div className="absolute inset-0 w-full h-full bg-slate-950/40 flex items-center justify-center">
+                <BookOpen className="w-12 h-12 text-slate-800" />
               </div>
+            )}
+
+            {/* Catégorie et favoris en haut (flottants sur l'image) */}
+            <div className="relative z-10 p-3 flex items-start justify-between gap-2">
+              <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-slate-950/80 backdrop-blur-sm ${
+                recette.categorie === "entree" 
+                  ? "text-emerald-400 border border-emerald-500/20"
+                  : recette.categorie === "plat"
+                  ? "text-violet-400 border border-violet-500/20"
+                  : "text-amber-400 border border-amber-500/20"
+              }`}>
+                {recette.categorie}
+              </span>
+              <button 
+                onClick={() => handleToggleFavori(recette)}
+                className="text-white/70 hover:text-fuchsia-500 bg-slate-950/80 backdrop-blur-sm rounded-full p-1 transition-colors"
+              >
+                <Heart className={`w-3.5 h-3.5 ${recette.favori ? "fill-fuchsia-500 text-fuchsia-500" : ""}`} />
+              </button>
             </div>
 
-            <div className="flex gap-2 border-t border-slate-800/80 pt-4 mt-5">
-              <button
-                onClick={() => handleEdit(recette)}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <Edit3 className="w-3.5 h-3.5" /> Éditer
-              </button>
-              <button
-                onClick={() => handleDelete(recette.id)}
-                className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 p-2 rounded-xl transition-all"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+            {/* Conteneur flouté en bas pour le texte et les boutons (effet verre dépoli) */}
+            <div className="relative z-10 p-3 bg-slate-800/25 backdrop-blur-md border-t border-white/5 flex flex-col gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-white capitalize truncate leading-tight" title={recette.titre}>
+                  {recette.titre}
+                </h3>
+                <p className="text-[11px] font-semibold text-slate-350 mt-1 flex items-center gap-1">
+                  Portions : <span className="text-violet-400 font-extrabold">{recette.portionsDefaut}</span> pers.
+                </p>
+              </div>
+
+              {/* Boutons d'actions */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => handleEdit(recette)}
+                  className="flex-grow bg-white/10 hover:bg-white/15 border border-white/10 text-white py-1.5 rounded-xl text-3xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all"
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> Éditer
+                </button>
+                <button
+                  onClick={() => handleDelete(recette.id)}
+                  className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 p-1.5 rounded-xl transition-all"
+                  title="Supprimer la recette"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -364,13 +410,51 @@ export const RecettesView: React.FC = () => {
                 </label>
                 
                 <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    placeholder="Nom (ex: tomate)"
-                    value={ingNom}
-                    onChange={(e) => setIngNom(e.target.value)}
-                    className="flex-grow bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
-                  />
+                  <div className="flex-grow relative">
+                    <input
+                      type="text"
+                      placeholder="Nom (ex: tomate)"
+                      value={ingNom}
+                      onChange={(e) => {
+                        setIngNom(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => {
+                        // Petit délai pour laisser l'événement onClick de la suggestion se déclencher
+                        setTimeout(() => setShowSuggestions(false), 200);
+                      }}
+                      className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+                    />
+                    
+                    {showSuggestions && suggestionsFiltrees.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
+                        {suggestionsFiltrees.map((nom) => (
+                          <button
+                            key={nom}
+                            type="button"
+                            onClick={() => {
+                              setIngNom(nom);
+                              setShowSuggestions(false);
+                              // Pré-remplir l'unité avec la première unité déjà utilisée
+                              const units = cartesIngredientsUnites[nom] || [];
+                              if (units.length > 0) {
+                                setIngUnite(units[0]);
+                              }
+                            }}
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-300 transition-all cursor-pointer capitalize font-semibold flex justify-between items-center"
+                          >
+                            <span>{nom}</span>
+                            {cartesIngredientsUnites[nom] && cartesIngredientsUnites[nom].length > 0 && (
+                              <span className="text-[10px] text-slate-400 font-normal normal-case ml-2">
+                                ({cartesIngredientsUnites[nom].join(", ")})
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input
                     type="text"
                     placeholder="Qté (ex: 200)"
@@ -378,17 +462,44 @@ export const RecettesView: React.FC = () => {
                     onChange={(e) => setIngQuantite(e.target.value)}
                     className="w-20 bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
                   />
-                  <input
-                    type="text"
-                    placeholder="Unité (ex: g)"
-                    value={ingUnite}
-                    onChange={(e) => setIngUnite(e.target.value)}
-                    className="w-16 bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
-                  />
+                  <div className="relative w-28 flex-shrink-0">
+                    <input
+                      type="text"
+                      placeholder="Unité"
+                      value={ingUnite}
+                      onChange={(e) => {
+                        setIngUnite(e.target.value);
+                        setShowUnitSuggestions(true);
+                      }}
+                      onFocus={() => setShowUnitSuggestions(true)}
+                      onBlur={() => {
+                        // Petit délai pour laisser l'événement onClick de la suggestion se déclencher
+                        setTimeout(() => setShowUnitSuggestions(false), 200);
+                      }}
+                      className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+                    />
+                    {showUnitSuggestions && unitesSuggerees.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
+                        {unitesSuggerees.map((u) => (
+                          <button
+                            key={u}
+                            type="button"
+                            onClick={() => {
+                              setIngUnite(u);
+                              setShowUnitSuggestions(false);
+                            }}
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-300 transition-all cursor-pointer font-semibold"
+                          >
+                            {u}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddIngredient}
-                    className="bg-violet-600 hover:bg-violet-500 text-white p-2 rounded-xl flex items-center justify-center"
+                    className="bg-violet-600 hover:bg-violet-500 text-white p-2 rounded-xl flex items-center justify-center flex-shrink-0"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
