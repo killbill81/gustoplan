@@ -115,7 +115,7 @@ const AppContent: React.FC = () => {
         {activeTab === "recettes" && <RecettesView />}
         {activeTab === "liste" && (
           <div className="h-full max-w-4xl mx-auto">
-            <ListeView />
+            <ListeView context="liste" />
           </div>
         )}
       </main>

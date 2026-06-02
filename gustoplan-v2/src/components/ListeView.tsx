@@ -6,9 +6,10 @@ import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, Chev
 
 interface ListeViewProps {
   onCollapse?: () => void;
+  context?: "planning" | "liste";
 }
 
-export const ListeView: React.FC<ListeViewProps> = ({ onCollapse }) => {
+export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "liste" }) => {
   const { foyer } = useAuth();
   const [elements, setElements] = useState<ElementListeCourses[]>([]);
 
@@ -212,12 +213,14 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse }) => {
                   className="bg-slate-900/60 border border-slate-800/50 hover:border-slate-700 flex items-center justify-between p-3 rounded-xl border transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={false}
-                      onChange={() => handleToggleAchete(item.id)}
-                      className="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-violet-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0"
-                    />
+                    {context === "liste" && (
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={() => handleToggleAchete(item.id)}
+                        className="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-violet-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0"
+                      />
+                    )}
                     <div>
                       <span className="text-sm font-medium capitalize text-white">
                         {item.nom}
@@ -232,37 +235,35 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse }) => {
 
                   <div className="flex items-center gap-3">
                     {/* Contrôle de la quantité */}
-                    <div className="flex items-center gap-1 bg-slate-950/40 border border-slate-800 px-2 py-1 rounded-lg text-slate-500">
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantite(item.id, -1)}
-                        className="p-0.5 hover:bg-slate-800 hover:text-violet-400 rounded transition-colors text-slate-550"
-                        title="Diminuer la quantité"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-                      
-                      <span className="text-xs font-bold text-violet-400 min-w-[70px] text-center truncate">
+                    {context === "planning" ? (
+                      <div className="flex items-center gap-1 bg-slate-950/40 border border-slate-800 px-2 py-1 rounded-lg text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantite(item.id, -1)}
+                          className="p-0.5 hover:bg-slate-800 hover:text-violet-400 rounded transition-colors text-slate-555"
+                          title="Diminuer la quantité"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        
+                        <span className="text-xs font-bold text-violet-400 min-w-[70px] text-center truncate">
+                          {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantite(item.id, 1)}
+                          className="p-0.5 hover:bg-slate-800 hover:text-violet-400 rounded transition-colors text-slate-555"
+                          title="Augmenter la quantité"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-semibold text-violet-400 mr-2">
                         {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
                       </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantite(item.id, 1)}
-                        className="p-0.5 hover:bg-slate-800 hover:text-violet-400 rounded transition-colors text-slate-550"
-                        title="Augmenter la quantité"
-                      >
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => handleDeleteElement(item.id)}
-                      className="text-slate-650 hover:text-red-400 transition-colors p-1"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -280,15 +281,17 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse }) => {
               {elementsCoches.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-slate-950/20 border border-slate-900/40 flex items-center justify-between p-3 rounded-xl border transition-all"
+                  className="bg-slate-955/20 border border-slate-900/40 flex items-center justify-between p-3 rounded-xl border transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={true}
-                      onChange={() => handleToggleAchete(item.id)}
-                      className="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-violet-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0"
-                    />
+                    {context === "liste" && (
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        onChange={() => handleToggleAchete(item.id)}
+                        className="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-violet-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0"
+                      />
+                    )}
                     <div>
                       <span className="text-sm font-medium capitalize text-slate-500 line-through">
                         {item.nom}
@@ -303,37 +306,35 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse }) => {
 
                   <div className="flex items-center gap-3">
                     {/* Contrôle de la quantité */}
-                    <div className="flex items-center gap-1 bg-slate-950/20 border border-slate-900 px-2 py-1 rounded-lg text-slate-600">
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantite(item.id, -1)}
-                        className="p-0.5 hover:bg-slate-900 hover:text-violet-400 rounded transition-colors text-slate-650"
-                        title="Diminuer la quantité"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-                      
-                      <span className="text-xs font-bold text-slate-550 min-w-[70px] text-center truncate">
+                    {context === "planning" ? (
+                      <div className="flex items-center gap-1 bg-slate-950/20 border border-slate-900 px-2 py-1 rounded-lg text-slate-600">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantite(item.id, -1)}
+                          className="p-0.5 hover:bg-slate-950 hover:text-violet-400 rounded transition-colors text-slate-650"
+                          title="Diminuer la quantité"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                        
+                        <span className="text-xs font-bold text-slate-550 min-w-[70px] text-center truncate">
+                          {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantite(item.id, 1)}
+                          className="p-0.5 hover:bg-slate-955 hover:text-violet-400 rounded transition-colors text-slate-655"
+                          title="Augmenter la quantité"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-semibold text-slate-500 line-through mr-2">
                         {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
                       </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateQuantite(item.id, 1)}
-                        className="p-0.5 hover:bg-slate-900 hover:text-violet-400 rounded transition-colors text-slate-655"
-                        title="Augmenter la quantité"
-                      >
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <button
-                      onClick={() => handleDeleteElement(item.id)}
-                      className="text-slate-700 hover:text-red-400 transition-colors p-1"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -892,7 +892,7 @@ export const PlanningView: React.FC = () => {
               </div>
             </div>
           ) : (
-            <ListeView onCollapse={() => setIsRightCollapsed(true)} />
+            <ListeView onCollapse={() => setIsRightCollapsed(true)} context="planning" />
           )}
         </div>
 
