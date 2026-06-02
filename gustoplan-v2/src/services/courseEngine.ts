@@ -68,10 +68,15 @@ const DICT_RAYONS: { [key: string]: string } = {
   baguette: "Épicerie",
 };
 
-export function devinerRayon(nomIngredient: string): string {
+export function devinerRayon(nomIngredient: string, customRayons?: { [key: string]: string }): string {
   const nomClean = nomIngredient.trim().toLowerCase();
   
-  // Recherche correspondance exacte ou partielle dans le dico
+  // 1. Vérifier d'abord s'il y a un rayon personnalisé pour cet ingrédient
+  if (customRayons && customRayons[nomClean]) {
+    return customRayons[nomClean];
+  }
+
+  // 2. Recherche correspondance exacte ou partielle dans le dico statique
   for (const key in DICT_RAYONS) {
     if (nomClean.includes(key)) {
       return DICT_RAYONS[key];
@@ -84,7 +89,8 @@ export function devinerRayon(nomIngredient: string): string {
 export function genererListeCourses(
   planning: PlanningSemaine | null,
   recettes: Recette[],
-  listeActuelle: ElementListeCourses[]
+  listeActuelle: ElementListeCourses[],
+  customRayons?: { [key: string]: string }
 ): ElementListeCourses[] {
   if (!planning) return [];
 
@@ -138,7 +144,7 @@ export function genererListeCourses(
       nom: nom,
       quantite: Math.round(info.quantite * 100) / 100, // Arrondi à 2 décimales
       unite: info.unite,
-      rayon: devinerRayon(nom),
+      rayon: devinerRayon(nom, customRayons),
       dejaAcquis: elementExistant ? elementExistant.dejaAcquis : false,
       achete: elementExistant ? elementExistant.achete : false
     };

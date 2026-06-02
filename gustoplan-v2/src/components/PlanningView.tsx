@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { subscribeRecettes, subscribePlanning, savePlanning, saveListeCourses, subscribeListeCourses, updateFoyerStartDay } from "../services/db";
+import { subscribeRecettes, subscribePlanning, savePlanning, saveListeCourses, subscribeListeCourses, updateFoyerStartDay, subscribeRayonsIngredients } from "../services/db";
 import { genererListeCourses } from "../services/courseEngine";
 import { Recette, PlanningSemaine, JourPlanning, RepasPlanifie, ElementListeCourses } from "../types";
 import { DndContext, useDraggable, useDroppable, DragEndEvent, pointerWithin, DragOverlay } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Users, Trash2, Edit, Plus, Heart, 
   Settings, RefreshCw, Smartphone, Monitor, BookOpen, ShoppingCart
@@ -206,18 +208,23 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
       </div>
 
       <div className="flex-grow flex flex-col gap-2">
-        {listAsArray.map((repas) => (
-          <DraggablePlannedMeal
-            key={repas.planifiedId || repas.id || Math.random().toString()}
-            prefix={prefix}
-            repas={repas}
-            jour={jour}
-            moment={moment}
-            onClear={onClear}
-            onUpdatePortions={onUpdatePortions}
-            colors={colors}
-          />
-        ))}
+        <SortableContext
+          items={listAsArray.map((repas) => `${prefix}_planned_${repas.planifiedId}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          {listAsArray.map((repas) => (
+            <DraggablePlannedMeal
+              key={repas.planifiedId || repas.id || Math.random().toString()}
+              prefix={prefix}
+              repas={repas}
+              jour={jour}
+              moment={moment}
+              onClear={onClear}
+              onUpdatePortions={onUpdatePortions}
+              colors={colors}
+            />
+          ))}
+        </SortableContext>
 
         {listAsArray.length === 0 && !showInput && (
           <div className="flex-grow flex items-center justify-center py-2">
@@ -265,14 +272,20 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
   onUpdatePortions,
   colors,
 }) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `${prefix}_planned_${repas.planifiedId}`,
     data: { repas, sourceJour: jour, sourceMoment: moment }
   });
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition
+  };
+
   return (
     <div
       ref={setNodeRef}
+      style={style}
       {...listeners}
       {...attributes}
       className={`bg-slate-950/45 p-2 rounded-xl border border-slate-850/60 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing transition-all ${
@@ -352,6 +365,7 @@ export const PlanningView: React.FC = () => {
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [planning, setPlanning] = useState<PlanningSemaine | null | undefined>(undefined);
   const [listeCourses, setListeCourses] = useState<ElementListeCourses[]>([]);
+  const [customRayons, setCustomRayons] = useState<{ [key: string]: string }>({});
   const [activeRecipe, setActiveRecipe] = useState<Recette | null>(null);
   const [activePlannedMeal, setActivePlannedMeal] = useState<RepasPlanifie | null>(null);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
@@ -371,10 +385,12 @@ export const PlanningView: React.FC = () => {
     const unsubRecettes = subscribeRecettes(foyer.id, setRecettes);
     const unsubPlanning = subscribePlanning(foyer.id, setPlanning);
     const unsubListe = subscribeListeCourses(foyer.id, setListeCourses);
+    const unsubRayons = subscribeRayonsIngredients(foyer.id, setCustomRayons);
     return () => {
       unsubRecettes();
       unsubPlanning();
       unsubListe();
+      unsubRayons();
     };
   }, [foyer?.id]);
 
@@ -402,8 +418,24 @@ export const PlanningView: React.FC = () => {
   // Générer automatiquement la liste de courses en temps réel à chaque changement du planning
   const declencherMiseAJourListe = async (nouveauPlanning: PlanningSemaine) => {
     if (!foyer?.id) return;
-    const nouvelleListe = genererListeCourses(nouveauPlanning, recettes, listeCourses);
+    const nouvelleListe = genererListeCourses(nouveauPlanning, recettes, listeCourses, customRayons);
     await saveListeCourses(foyer.id, nouvelleListe);
+  };
+
+  const trouverRepasEtPosition = (planifiedId: string) => {
+    if (!planning) return null;
+    const joursKeys = Object.keys(planning.jours);
+    for (const jour of joursKeys) {
+      for (const moment of ["midi", "soir"] as const) {
+        const repasListe = planning.jours[jour][moment] || [];
+        const arrayRepas = Array.isArray(repasListe) ? repasListe : (repasListe ? [repasListe] : []);
+        const idx = arrayRepas.findIndex((r) => r.planifiedId === planifiedId);
+        if (idx !== -1) {
+          return { jour, moment, index: idx };
+        }
+      }
+    }
+    return null;
   };
 
   // Ordonner les jours de la semaine selon la config du foyer (jourDebutSemaine)
@@ -438,65 +470,108 @@ export const PlanningView: React.FC = () => {
     const { active, over } = event;
     if (!over) return;
 
-    const overId = over.id as string; // format: cell_prefix_jour_moment
-    if (!overId.startsWith("cell_")) return;
+    const overId = over.id as string;
+    let targetJour = "";
+    let targetMoment: "midi" | "soir" = "midi";
+    let targetIndex = -1; // -1 signifie à la fin de la liste
 
-    const parts = overId.split("_");
-    const targetJour = parts[2];
-    const targetMoment = parts[3] as "midi" | "soir";
+    if (overId.startsWith("cell_")) {
+      const parts = overId.split("_");
+      targetJour = parts[2];
+      targetMoment = parts[3] as "midi" | "soir";
+    } else {
+      // C'est un ID de repas sortable
+      const planifiedIdClean = overId.includes("_planned_") ? overId.split("_planned_")[1] : overId;
+      const targetPos = trouverRepasEtPosition(planifiedIdClean);
+      if (targetPos) {
+        targetJour = targetPos.jour;
+        targetMoment = targetPos.moment;
+        targetIndex = targetPos.index;
+      } else {
+        return;
+      }
+    }
 
     const activeData = active.data.current;
     if (!activeData) return;
 
-    let repasPlanifie: RepasPlanifie;
+    let planningModifie: PlanningSemaine;
 
-    // Cas 1: Provenance panneau gauche des recettes (contient recette)
+    // Cas 1: Provenance panneau gauche des recettes
     if (activeData.recette) {
       const r: Recette = activeData.recette;
-      repasPlanifie = {
+      const repasPlanifie: RepasPlanifie = {
         planifiedId: `${r.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
         type: "recette",
         id: r.id,
         texte: r.titre,
         portions: r.portionsDefaut || 4
       };
+
+      const currentList = planning.jours[targetJour]?.[targetMoment] || [];
+      const targetList = Array.isArray(currentList) ? [...currentList] : (currentList ? [currentList] : []);
+      
+      if (targetIndex === -1) {
+        targetList.push(repasPlanifie);
+      } else {
+        targetList.splice(targetIndex, 0, repasPlanifie);
+      }
+
+      planningModifie = {
+        ...planning,
+        jours: {
+          ...planning.jours,
+          [targetJour]: {
+            ...planning.jours[targetJour],
+            [targetMoment]: targetList
+          }
+        }
+      };
     } 
-    // Cas 2: Provenance d'un jour existant du planning (glisser-déposer interne)
+    // Cas 2: Déplacement interne d'un repas planifié
     else if (activeData.repas) {
-      repasPlanifie = activeData.repas;
+      const repasPlanifie: RepasPlanifie = activeData.repas;
       const sourceJour = activeData.sourceJour;
       const sourceMoment = activeData.sourceMoment as "midi" | "soir";
 
-      // Si c'est déposé sur la même case, ne rien faire
-      if (sourceJour === targetJour && sourceMoment === targetMoment) {
-        return;
+      // 1. Retirer du jour source
+      const currentSourceList = planning.jours[sourceJour]?.[sourceMoment] || [];
+      const sourceList = Array.isArray(currentSourceList) ? [...currentSourceList] : (currentSourceList ? [currentSourceList] : []);
+      const sourceIdx = sourceList.findIndex((repas) => repas.planifiedId === repasPlanifie.planifiedId);
+      if (sourceIdx !== -1) {
+        sourceList.splice(sourceIdx, 1);
       }
 
-      // Retirer du jour source
-      const currentSourceList = planning.jours[sourceJour]?.[sourceMoment] || [];
-      const sourceListAsArray = Array.isArray(currentSourceList) ? currentSourceList : (currentSourceList ? [currentSourceList] : []);
-      const updatedSourceList = sourceListAsArray.filter((repas) => repas.planifiedId !== repasPlanifie.planifiedId);
+      // 2. Insérer dans le jour cible
+      const currentTargetList = planning.jours[targetJour]?.[targetMoment] || [];
+      let targetList = (sourceJour === targetJour && sourceMoment === targetMoment)
+        ? sourceList
+        : (Array.isArray(currentTargetList) ? [...currentTargetList] : (currentTargetList ? [currentTargetList] : []));
+
+      let finalTargetIndex = targetIndex;
+      if (finalTargetIndex === -1) {
+        finalTargetIndex = targetList.length;
+      }
       
-      planning.jours[sourceJour][sourceMoment] = updatedSourceList;
+      targetList.splice(finalTargetIndex, 0, repasPlanifie);
+
+      planningModifie = {
+        ...planning,
+        jours: {
+          ...planning.jours,
+          [sourceJour]: {
+            ...planning.jours[sourceJour],
+            [sourceMoment]: sourceList
+          },
+          [targetJour]: {
+            ...planning.jours[targetJour],
+            [targetMoment]: targetList
+          }
+        }
+      };
     } else {
       return;
     }
-
-    // Ajouter au jour de destination
-    const currentTargetList = planning.jours[targetJour]?.[targetMoment] || [];
-    const targetListAsArray = Array.isArray(currentTargetList) ? currentTargetList : (currentTargetList ? [currentTargetList] : []);
-    const updatedTargetList = [...targetListAsArray, repasPlanifie];
-
-    const planningModifie = {
-      ...planning,
-      jours: {
-        ...planning.jours,
-        [targetJour]: {
-          ...planning.jours[targetJour],
-          [targetMoment]: updatedTargetList
-        }
-      }
-    };
 
     setPlanning(planningModifie);
     await savePlanning(foyer.id, planningModifie);

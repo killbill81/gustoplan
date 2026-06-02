@@ -153,3 +153,75 @@ export async function saveListeCourses(foyerId: string, elements: ElementListeCo
   const docRef = doc(db, "foyers", foyerId, "liste_courses", "actuelle");
   await setDoc(docRef, { ingredients: elements });
 }
+
+// --- GESTION DES RAYONS DES INGRÉDIENTS (TEMPS RÉEL) ---
+
+export function subscribeRayonsIngredients(foyerId: string, callback: (rayons: { [key: string]: string }) => void) {
+  const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "actuel");
+  return onSnapshot(docRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.data() || {});
+    } else {
+      callback({});
+    }
+  });
+}
+
+export async function saveRayonsIngredients(foyerId: string, rayons: { [key: string]: string }): Promise<void> {
+  const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "actuel");
+  await setDoc(docRef, rayons);
+}
+
+export function subscribeCustomCategories(foyerId: string, callback: (categories: string[]) => void) {
+  const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "categories");
+  return onSnapshot(docRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.data().list || []);
+    } else {
+      callback([]);
+    }
+  });
+}
+
+export async function saveCustomCategories(foyerId: string, categories: string[]): Promise<void> {
+  const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "categories");
+  await setDoc(docRef, { list: categories });
+}
+
+export interface IngredientGlobal {
+  id?: string;
+  name: string;
+  unit: string;
+  category: string;
+  userId?: string;
+}
+
+export function subscribeIngredientsGlobal(userId: string, callback: (ingredients: IngredientGlobal[]) => void) {
+  const colRef = collection(db, "ingredients");
+  return onSnapshot(colRef, (snapshot) => {
+    const list: IngredientGlobal[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (!data.userId || data.userId === userId) {
+        list.push({ id: doc.id, ...data } as IngredientGlobal);
+      }
+    });
+    list.sort((a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base" }));
+    callback(list);
+  });
+}
+
+export async function saveIngredientGlobal(ingredient: IngredientGlobal): Promise<void> {
+  if (ingredient.id) {
+    const docRef = doc(db, "ingredients", ingredient.id);
+    await setDoc(docRef, ingredient);
+  } else {
+    const colRef = collection(db, "ingredients");
+    await addDoc(colRef, ingredient);
+  }
+}
+
+export async function deleteIngredientGlobal(id: string): Promise<void> {
+  const docRef = doc(db, "ingredients", id);
+  await deleteDoc(docRef);
+}

@@ -97,6 +97,9 @@ service cloud.firestore {
       match /liste_courses/{listeId} {
         allow read, write: if request.auth != null;
       }
+      match /rayons_ingredients/{rayonId} {
+        allow read, write: if request.auth != null;
+      }
     }
     
     // Par défaut : bloquer tout le reste

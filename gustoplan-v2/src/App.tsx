@@ -4,14 +4,15 @@ import { AuthScreen } from "./components/AuthScreen";
 import { PlanningView } from "./components/PlanningView";
 import { ListeView } from "./components/ListeView";
 import { RecettesView } from "./components/RecettesView";
+import { IngredientsView } from "./components/IngredientsView";
 import { 
-  Calendar, ShoppingCart, BookOpen, LogOut, User, ChefHat, Info 
+  Calendar, ShoppingCart, BookOpen, LogOut, User, ChefHat, Info, Tag
 } from "lucide-react";
 import "./App.css";
 
 const AppContent: React.FC = () => {
   const { user, foyer, loading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"planning" | "liste" | "recettes">("planning");
+  const [activeTab, setActiveTab] = useState<"planning" | "liste" | "recettes" | "ingredients">("planning");
 
   if (loading) {
     return (
@@ -79,6 +80,18 @@ const AppContent: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setActiveTab("ingredients")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+              activeTab === "ingredients"
+                ? "bg-violet-600 text-white shadow-md shadow-violet-600/10"
+                : "text-slate-300 hover:text-slate-100"
+            }`}
+          >
+            <Tag className="w-4 h-4" />
+            Ingrédients
+          </button>
+
+          <button
             onClick={() => setActiveTab("liste")}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === "liste"
@@ -113,6 +126,7 @@ const AppContent: React.FC = () => {
       <main className="flex-grow overflow-hidden relative">
         {activeTab === "planning" && <PlanningView />}
         {activeTab === "recettes" && <RecettesView />}
+        {activeTab === "ingredients" && <IngredientsView />}
         {activeTab === "liste" && (
           <div className="h-full max-w-4xl mx-auto">
             <ListeView context="liste" />
@@ -140,6 +154,16 @@ const AppContent: React.FC = () => {
         >
           <BookOpen className="w-5.5 h-5.5" />
           <span className="text-4xs font-bold uppercase tracking-wider">Recettes</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("ingredients")}
+          className={`flex flex-col items-center gap-1 transition-colors ${
+            activeTab === "ingredients" ? "text-violet-500" : "text-slate-500 hover:text-slate-400"
+          }`}
+        >
+          <Tag className="w-5.5 h-5.5" />
+          <span className="text-4xs font-bold uppercase tracking-wider">Ingrédients</span>
         </button>
 
         <button
