@@ -2,9 +2,13 @@ import React, { useState, useEffect } from "react";
 import { subscribeListeCourses, saveListeCourses } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses } from "../types";
-import { ShoppingCart, Eye, EyeOff, Plus, Trash2, CheckCircle2, RotateCcw, AlertCircle } from "lucide-react";
+import { ShoppingCart, Eye, EyeOff, Plus, Trash2, CheckCircle2, RotateCcw, AlertCircle, ChevronRight } from "lucide-react";
 
-export const ListeView: React.FC = () => {
+interface ListeViewProps {
+  onCollapse?: () => void;
+}
+
+export const ListeView: React.FC<ListeViewProps> = ({ onCollapse }) => {
   const { foyer } = useAuth();
   const [elements, setElements] = useState<ElementListeCourses[]>([]);
   const [mode, setMode] = useState<"preparation" | "courses">("courses");
@@ -106,12 +110,23 @@ export const ListeView: React.FC = () => {
   return (
     <div className="h-full flex flex-col p-4 md:p-6 bg-slate-950 text-white">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <ShoppingCart className="text-violet-500" />
-            Ma Liste de Courses
-          </h2>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div className="flex-grow min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <ShoppingCart className="text-violet-500 shrink-0" />
+              <span className="truncate">Ma Liste de Courses</span>
+            </h2>
+            {onCollapse && (
+              <button
+                onClick={onCollapse}
+                className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-850 hover:border-violet-500/50 rounded-lg text-slate-400 hover:text-violet-400 transition-all cursor-pointer"
+                title="Réduire la liste de courses"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
           <p className="text-slate-400 text-sm mt-1">
             Gérez vos achats ({elements.filter(e => !e.achete && !e.dejaAcquis).length} articles restants)
           </p>

@@ -891,17 +891,7 @@ export const PlanningView: React.FC = () => {
               </div>
             </div>
           ) : (
-            <>
-              {/* Bouton de réduction placé en haut à droite du panneau de droite, ne chevauchant pas le planning */}
-              <button
-                onClick={() => setIsRightCollapsed(true)}
-                className="absolute right-4 top-5 z-10 p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-850 hover:border-violet-500/50 rounded-lg text-slate-400 hover:text-violet-400 transition-all cursor-pointer"
-                title="Réduire la liste de courses"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <ListeView />
-            </>
+            <ListeView onCollapse={() => setIsRightCollapsed(true)} />
           )}
         </div>
 
