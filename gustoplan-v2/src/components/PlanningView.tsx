@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { subscribeRecettes, subscribePlanning, savePlanning, saveListeCourses, subscribeListeCourses, updateFoyerStartDay, subscribeRayonsIngredients } from "../services/db";
+import { subscribeRecettes, subscribePlanning, savePlanning, saveListeCourses, subscribeListeCourses, updateFoyerStartDay, subscribeRayonsIngredients, toggleFavoriRecette } from "../services/db";
 import { genererListeCourses } from "../services/courseEngine";
 import { Recette, PlanningSemaine, JourPlanning, RepasPlanifie, ElementListeCourses } from "../types";
 import { DndContext, useDraggable, useDroppable, DragEndEvent, pointerWithin, DragOverlay } from "@dnd-kit/core";
@@ -102,9 +102,10 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
 // --- DRAGGABLE RECIPE COMPONENT ---
 interface DraggableRecipeProps {
   recette: Recette;
+  onToggleFavori?: (recette: Recette) => void;
 }
 
-const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette }) => {
+const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavori }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `recipe_${recette.id}`,
     data: { recette }
@@ -131,7 +132,28 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette }) => {
       <div className="flex-grow min-w-0">
         <div className="flex justify-between items-center gap-1">
           <span className="text-sm font-semibold truncate text-white capitalize">{recette.titre}</span>
-          {recette.favori && <Heart className="w-3.5 h-3.5 fill-fuchsia-500 text-fuchsia-500 shrink-0" />}
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              if (onToggleFavori) {
+                onToggleFavori(recette);
+              }
+            }}
+            className="p-1 hover:bg-slate-700 rounded-lg transition-colors shrink-0"
+            title={recette.favori ? "Retirer des favoris" : "Ajouter aux favoris"}
+          >
+            <Heart 
+              className={`w-3.5 h-3.5 transition-all ${
+                recette.favori 
+                  ? "fill-fuchsia-500 text-fuchsia-500 scale-110" 
+                  : "text-slate-500 hover:text-fuchsia-400"
+              }`} 
+            />
+          </button>
         </div>
         <div className="flex items-center justify-between mt-1 text-3xs uppercase tracking-wider font-extrabold text-slate-400">
           <span>{recette.categorie}</span>
@@ -374,6 +396,7 @@ export const PlanningView: React.FC = () => {
   // Onglet recettes filtre
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [onlyFavs, setOnlyFavs] = useState(false);
+  const [favsFirst, setFavsFirst] = useState(true);
   const [search, setSearch] = useState("");
 
   // Mobile Swipe Jours
@@ -436,6 +459,12 @@ export const PlanningView: React.FC = () => {
       }
     }
     return null;
+  };
+
+  // Aimer/désaimer une recette
+  const handleToggleFavori = async (recette: Recette) => {
+    if (!foyer?.id || !recette.id) return;
+    await toggleFavoriRecette(foyer.id, recette.id, !recette.favori);
   };
 
   // Ordonner les jours de la semaine selon la config du foyer (jourDebutSemaine)
@@ -693,8 +722,10 @@ export const PlanningView: React.FC = () => {
   });
 
   const sortedRecettesPanneau = [...filteredRecettesPanneau].sort((a, b) => {
-    if (a.favori && !b.favori) return -1;
-    if (!a.favori && b.favori) return 1;
+    if (favsFirst) {
+      if (a.favori && !b.favori) return -1;
+      if (!a.favori && b.favori) return 1;
+    }
     return a.titre.localeCompare(b.titre, "fr", { sensitivity: "base" });
   });
 
@@ -765,22 +796,49 @@ export const PlanningView: React.FC = () => {
                 ))}
               </div>
 
-              <button
-                onClick={() => setOnlyFavs(!onlyFavs)}
-                className={`w-full py-2 px-3 rounded-lg border text-2xs font-semibold mb-4 flex items-center justify-center gap-1.5 transition-all ${
-                  onlyFavs
-                    ? "bg-fuchsia-600/10 border-fuchsia-500/30 text-fuchsia-400"
-                    : "bg-slate-900 border-slate-850 text-slate-500 hover:text-slate-300"
-                }`}
-              >
-                <Heart className={`w-3.5 h-3.5 ${onlyFavs ? "fill-fuchsia-500 text-fuchsia-500" : ""}`} />
-                Favoris
-              </button>
+              <div className="flex gap-2 mb-4 w-full">
+                <button
+                  type="button"
+                  onClick={() => setOnlyFavs(!onlyFavs)}
+                  className={`flex-grow min-h-[38px] py-1.5 px-2 rounded-lg border text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    onlyFavs
+                      ? "bg-fuchsia-600/10 border-fuchsia-500/30 text-fuchsia-400"
+                      : "bg-slate-900 border-slate-850 text-slate-500 hover:text-slate-300"
+                  }`}
+                  title="Afficher uniquement les favoris"
+                >
+                  <Heart className={`w-3.5 h-3.5 ${onlyFavs ? "fill-fuchsia-500 text-fuchsia-500" : ""}`} />
+                  <span>Favoris</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFavsFirst(!favsFirst)}
+                  className={`flex-grow min-h-[38px] py-1 px-2 rounded-lg border text-[9px] font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    favsFirst
+                      ? "bg-violet-600/10 border-violet-500/30 text-violet-400"
+                      : "bg-slate-900 border-slate-850 text-slate-500 hover:text-slate-300"
+                  }`}
+                  title="Afficher les recettes favorites en premier dans la liste"
+                >
+                  <svg className={`w-3.5 h-3.5 ${favsFirst ? "text-violet-400" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <span className="leading-tight text-left">
+                    Favoris <br />
+                    en premier
+                  </span>
+                </button>
+              </div>
 
               {/* Liste draggable */}
               <div className="flex-grow overflow-y-auto space-y-2.5 pr-1">
                 {sortedRecettesPanneau.map((recette) => (
-                  <DraggableRecipe key={recette.id} recette={recette} />
+                  <DraggableRecipe 
+                    key={recette.id} 
+                    recette={recette} 
+                    onToggleFavori={handleToggleFavori} 
+                  />
                 ))}
                 {sortedRecettesPanneau.length === 0 && (
                   <div className="text-xs text-slate-600 text-center py-6">Aucune recette</div>
