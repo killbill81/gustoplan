@@ -84,6 +84,21 @@ service cloud.firestore {
        allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
+    // Foyers et leurs sous-collections (V2)
+    match /foyers/{foyerId} {
+      allow read, write: if request.auth != null;
+      
+      match /recettes/{recetteId} {
+        allow read, write: if request.auth != null;
+      }
+      match /planning/{planningId} {
+        allow read, write: if request.auth != null;
+      }
+      match /liste_courses/{listeId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    
     // Par défaut : bloquer tout le reste
     match /{document=**} {
       allow read, write: if false;
