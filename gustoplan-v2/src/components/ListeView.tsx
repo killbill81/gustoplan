@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { subscribeListeCourses, saveListeCourses } from "../services/db";
+import { subscribeListeCourses, saveListeCourses, subscribeRecettes } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
-import { ElementListeCourses } from "../types";
+import { ElementListeCourses, Recette } from "../types";
 import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ListeViewProps {
@@ -12,6 +12,7 @@ interface ListeViewProps {
 export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "liste" }) => {
   const { foyer } = useAuth();
   const [elements, setElements] = useState<ElementListeCourses[]>([]);
+  const [recettes, setRecettes] = useState<Recette[]>([]);
 
   // Formulaire ajout manuel
   const [nom, setNom] = useState("");
@@ -19,12 +20,20 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
   const [unite, setUnite] = useState("");
   const [rayon, setRayon] = useState("Autre / Divers");
 
+  // Suggestions autocomplétion
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
+
   useEffect(() => {
     if (!foyer?.id) return;
     const unsubscribe = subscribeListeCourses(foyer.id, (loadedElements) => {
       setElements(loadedElements);
     });
-    return unsubscribe;
+    const unsubRecettes = subscribeRecettes(foyer.id, setRecettes);
+    return () => {
+      unsubscribe();
+      unsubRecettes();
+    };
   }, [foyer?.id]);
 
   const getStep = (unite: string, quantite: number) => {
@@ -89,6 +98,33 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     setRayon("Autre / Divers");
   };
 
+  // Traiter les suggestions
+  const cartesIngredientsUnites = recettes.reduce<{ [key: string]: string[] }>((acc, r) => {
+    (r.ingredients || []).forEach((ing) => {
+      const n = ing.nom.trim().toLowerCase();
+      const u = ing.unite.trim();
+      if (n && u) {
+        if (!acc[n]) {
+          acc[n] = [];
+        }
+        if (!acc[n].includes(u)) {
+          acc[n].push(u);
+        }
+      }
+    });
+    return acc;
+  }, {});
+
+  const tousIngredientsExistants = Object.keys(cartesIngredientsUnites).sort();
+
+  const suggestionsFiltrees = nom.trim()
+    ? tousIngredientsExistants.filter((n) =>
+        n.includes(nom.toLowerCase().trim())
+      )
+    : [];
+
+  const unitesSuggerees = cartesIngredientsUnites[nom.trim().toLowerCase()] || [];
+
   const handleDeleteElement = async (id: string) => {
     if (!foyer?.id) return;
     const updated = elements.filter((item) => item.id !== id);
@@ -138,16 +174,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
             <div />
           )}
 
-          {/* Action buttons on the top right */}
-          <div className="flex gap-2">
-            <button
-              onClick={handleResetFiltres}
-              title="Réinitialiser toutes les coches"
-              className="p-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-400 hover:text-white transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-          </div>
+          <div />
         </div>
 
         {/* Title and Subtitle */}
@@ -162,41 +189,106 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
         </div>
       </div>
 
-      {/* Section Ajout Manuel */}
-      <form onSubmit={handleAddManuel} className="bg-slate-900/40 border border-slate-850 rounded-2xl p-4 mb-6 grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <div className="sm:col-span-2">
-          <input
-            type="text"
-            required
-            placeholder="Ajouter un produit (ex: Beurre, Citrons...)"
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
-          />
-        </div>
-        <div className="flex gap-2">
+      {/* Formulaire d'ajout manuel d'ingrédients (Planning uniquement, style identique fiche recette) */}
+      {context === "planning" && (
+        <form onSubmit={handleAddManuel} className="flex gap-2 mb-6 shrink-0 items-start">
+          <div className="flex-grow relative">
+            <input
+              type="text"
+              required
+              placeholder="Nom (ex: tomate)"
+              value={nom}
+              onChange={(e) => {
+                setNom(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
+              className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+            />
+            
+            {showSuggestions && suggestionsFiltrees.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
+                {suggestionsFiltrees.map((nomSuggestion) => (
+                  <button
+                    key={nomSuggestion}
+                    type="button"
+                    onClick={() => {
+                      setNom(nomSuggestion);
+                      setShowSuggestions(false);
+                      const units = cartesIngredientsUnites[nomSuggestion] || [];
+                      if (units.length > 0) {
+                        setUnite(units[0]);
+                      }
+                    }}
+                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-300 transition-all cursor-pointer capitalize font-semibold flex justify-between items-center"
+                  >
+                    <span>{nomSuggestion}</span>
+                    {cartesIngredientsUnites[nomSuggestion] && cartesIngredientsUnites[nomSuggestion].length > 0 && (
+                      <span className="text-[10px] text-slate-400 font-normal normal-case ml-2">
+                        ({cartesIngredientsUnites[nomSuggestion].join(", ")})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <input
             type="text"
             placeholder="Qté"
             value={quantite}
             onChange={(e) => setQuantite(e.target.value)}
-            className="w-20 bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white text-center focus:outline-none"
+            className="w-20 bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
           />
-          <input
-            type="text"
-            placeholder="Unité"
-            value={unite}
-            onChange={(e) => setUnite(e.target.value)}
-            className="w-16 bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2.5 text-sm text-white text-center focus:outline-none"
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-violet-600 hover:bg-violet-500 text-white font-medium rounded-xl text-sm py-2.5 px-4 flex items-center justify-center gap-1.5 transition-colors"
-        >
-          <Plus className="w-4 h-4" /> Ajouter
-        </button>
-      </form>
+
+          <div className="relative w-28 flex-shrink-0">
+            <input
+              type="text"
+              placeholder="Unité"
+              value={unite}
+              onChange={(e) => {
+                setUnite(e.target.value);
+                setShowUnitSuggestions(true);
+              }}
+              onFocus={() => setShowUnitSuggestions(true)}
+              onBlur={() => {
+                setTimeout(() => setShowUnitSuggestions(false), 200);
+              }}
+              className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+            />
+            {showUnitSuggestions && unitesSuggerees.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
+                {unitesSuggerees.map((u) => (
+                  <button
+                    key={u}
+                    type="button"
+                    onClick={() => {
+                      setUnite(u);
+                      setShowUnitSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-355 transition-all cursor-pointer font-semibold"
+                  >
+                    {u}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl flex items-center justify-center flex-shrink-0 w-[38px] h-[38px] transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </form>
+      )}
+
+
 
       {/* Liste des ingrédients par rayons */}
       <div className="flex-grow overflow-y-auto space-y-6 pb-20 md:pb-6">

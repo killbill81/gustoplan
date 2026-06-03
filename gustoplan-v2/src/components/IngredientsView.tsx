@@ -50,8 +50,9 @@ const DroppableIngredientRow: React.FC<{
   id: string;
   nom: string;
   isCustomized: boolean;
+  isRecentlyUpdated: boolean;
   children: React.ReactNode;
-}> = ({ id, nom, isCustomized, children }) => {
+}> = ({ id, nom, isCustomized, isRecentlyUpdated, children }) => {
   const { setNodeRef, isOver } = useDroppable({
     id: `ing-${id}`,
     data: { ingredientId: id, ingredientName: nom }
@@ -61,7 +62,9 @@ const DroppableIngredientRow: React.FC<{
     <div
       ref={setNodeRef}
       className={`transition-all rounded-xl border ${
-        isOver
+        isRecentlyUpdated
+          ? "animate-absorb"
+          : isOver
           ? "bg-violet-900/40 border-violet-500 shadow-lg shadow-violet-500/20 scale-[1.01]"
           : isCustomized
           ? "bg-violet-950/10 border-violet-500/20 hover:border-violet-500/35"
@@ -83,9 +86,9 @@ export const IngredientsView: React.FC = () => {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryValue, setEditCategoryValue] = useState("");
   const [search, setSearch] = useState("");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [lastUpdatedIngId, setLastUpdatedIngId] = useState<string | null>(null);
 
   // Édition d'un ingrédient
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
@@ -141,8 +144,12 @@ export const IngredientsView: React.FC = () => {
   });
 
   const handleUpdateRayon = async (ingredient: IngredientGlobal, newRayon: string) => {
-    if (!user?.uid) return;
-    
+    // Déclencher l'effet visuel d'absorption
+    if (ingredient.id) {
+      setLastUpdatedIngId(ingredient.id);
+      setTimeout(() => setLastUpdatedIngId(null), 600);
+    }
+
     // 1. Mettre à jour l'ingrédient dans la collection globale
     await saveIngredientGlobal({
       ...ingredient,
@@ -164,28 +171,15 @@ export const IngredientsView: React.FC = () => {
       });
       await saveListeCourses(foyer.id, updatedListe);
     }
-
-    // Notification temporaire
-    setStatusMessage(`Catégorie de "${ingredient.name}" mise à jour.`);
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!foyer?.id || !newCategoryName.trim()) return;
     const cleanCat = newCategoryName.trim();
-    
-    if (listRayons.some(r => r.toLowerCase() === cleanCat.toLowerCase())) {
-      setStatusMessage(`La catégorie "${cleanCat}" existe déjà.`);
-      setTimeout(() => setStatusMessage(null), 3000);
-      return;
-    }
-
     const updated = [...activeCategories, cleanCat];
     await saveCustomCategories(foyer.id, updated);
     setNewCategoryName("");
-    setStatusMessage(`Catégorie "${cleanCat}" créée.`);
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   const handleRenameCategory = async (oldCat: string) => {
@@ -197,8 +191,6 @@ export const IngredientsView: React.FC = () => {
     }
 
     if (listRayons.some(r => r.toLowerCase() === newCat.toLowerCase() && r !== oldCat)) {
-      setStatusMessage(`La catégorie "${newCat}" existe déjà.`);
-      setTimeout(() => setStatusMessage(null), 3000);
       return;
     }
 
@@ -234,8 +226,6 @@ export const IngredientsView: React.FC = () => {
     }
 
     setEditingCategory(null);
-    setStatusMessage(`Catégorie "${oldCat}" renommée en "${newCat}" (${changedRayonsCount} ingrédient(s) mis à jour).`);
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   const handleDeleteCategory = async (catToDelete: string) => {
@@ -275,9 +265,6 @@ export const IngredientsView: React.FC = () => {
     if (selectedCategory === catToDelete) {
       setSelectedCategory(null);
     }
-
-    setStatusMessage(`Catégorie "${catToDelete}" supprimée.`);
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   // Créer un ingrédient
@@ -305,8 +292,6 @@ export const IngredientsView: React.FC = () => {
     setNewIngUnit("");
     setNewIngCategory("");
     setIsAddingIngredient(false);
-    setStatusMessage(`Ingrédient "${nameClean}" créé avec succès.`);
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   // Enregistrer les modifications d'un ingrédient
@@ -331,16 +316,12 @@ export const IngredientsView: React.FC = () => {
     }
 
     setEditingIngredientId(null);
-    setStatusMessage(`Ingrédient "${nameClean}" mis à jour.`);
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   // Supprimer un ingrédient
   const handleDeleteIngredient = async (id: string, name: string) => {
     if (!window.confirm(`Supprimer l'ingrédient "${name}" de la base de données ?`)) return;
     await deleteIngredientGlobal(id);
-    setStatusMessage(`Ingrédient "${name}" supprimé.`);
-    setTimeout(() => setStatusMessage(null), 3000);
   };
 
   // Gestion du dépôt Drag & Drop
@@ -415,12 +396,6 @@ export const IngredientsView: React.FC = () => {
                 </button>
               </form>
 
-              {statusMessage && (
-                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all mb-3">
-                  <Check className="w-4 h-4 shrink-0" />
-                  <span className="break-all">{statusMessage}</span>
-                </div>
-              )}
             </div>
 
             {/* List of All Categories (Unified & Click to filter) */}
@@ -556,7 +531,13 @@ export const IngredientsView: React.FC = () => {
                   const isEditing = editingIngredientId === ing.id;
 
                   return (
-                    <DroppableIngredientRow key={ing.id} id={ing.id!} nom={ing.name} isCustomized={isCustomized}>
+                    <DroppableIngredientRow 
+                      key={ing.id} 
+                      id={ing.id!} 
+                      nom={ing.name} 
+                      isCustomized={isCustomized}
+                      isRecentlyUpdated={lastUpdatedIngId === ing.id}
+                    >
                       <div className="flex flex-col sm:flex-row sm:items-center px-4 py-2.5 gap-2 sm:gap-4">
                         
                         {/* Nom de l'ingrédient (et unité) */}
@@ -672,13 +653,40 @@ export const IngredientsView: React.FC = () => {
       </div>
 
       {/* Rendu du DragOverlay pour sortir du conteneur de scroll de gauche */}
-      <DragOverlay>
+      <DragOverlay dropAnimation={null}>
         {activeDragId ? (
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs border bg-violet-600 border-violet-500 text-white font-semibold shadow-xl shadow-violet-500/20 cursor-grabbing">
             {activeDragId}
           </div>
         ) : null}
       </DragOverlay>
+
+      {/* Styles des animations custom */}
+      <style>{`
+        @keyframes absorb-pop {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0px rgba(139, 92, 246, 0.6);
+            border-color: rgba(139, 92, 246, 0.8);
+            background-color: rgba(139, 92, 246, 0.15);
+          }
+          50% {
+            transform: scale(1.025);
+            box-shadow: 0 0 20px 4px rgba(139, 92, 246, 0.4);
+            border-color: rgba(139, 92, 246, 1);
+            background-color: rgba(139, 92, 246, 0.3);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0px rgba(139, 92, 246, 0);
+            border-color: inherit;
+            background-color: inherit;
+          }
+        }
+        .animate-absorb {
+          animation: absorb-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
     </DndContext>
   );
 };
