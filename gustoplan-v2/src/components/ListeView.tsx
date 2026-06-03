@@ -356,6 +356,17 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                         {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
                       </span>
                     )}
+
+                    {item.manuel && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteElement(item.id)}
+                        className="text-slate-500 hover:text-red-400 p-1 rounded transition-colors cursor-pointer shrink-0"
+                        title="Supprimer cet ingrédient manuel"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -426,6 +437,17 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                       <span className="text-sm font-semibold text-slate-500 line-through mr-2">
                         {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
                       </span>
+                    )}
+
+                    {item.manuel && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteElement(item.id)}
+                        className="text-slate-600 hover:text-red-400 p-1 rounded transition-colors cursor-pointer shrink-0"
+                        title="Supprimer cet ingrédient manuel"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                 </div>
