@@ -8,7 +8,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Users, Trash2, Edit, Plus, Heart, 
-  Settings, RefreshCw, Smartphone, Monitor, BookOpen, ShoppingCart
+  Settings, RefreshCw, Smartphone, Monitor, BookOpen, ShoppingCart, Info, X
 } from "lucide-react";
 import { ListeView } from "./ListeView";
 
@@ -174,6 +174,7 @@ interface DroppableRepasCellProps {
   onUpdatePortions: (planifiedId: string, portions: number) => void;
   onAddTexte: (texte: string) => void;
   colors: ColorConfig;
+  onShowDetails?: (repas: RepasPlanifie) => void;
 }
 
 const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
@@ -185,6 +186,7 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
   onUpdatePortions,
   onAddTexte,
   colors,
+  onShowDetails,
 }) => {
   const { isOver, setNodeRef } = useDroppable({
     id: `cell_${prefix}_${jour}_${moment}`,
@@ -244,6 +246,7 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
               onClear={onClear}
               onUpdatePortions={onUpdatePortions}
               colors={colors}
+              onShowDetails={onShowDetails}
             />
           ))}
         </SortableContext>
@@ -283,6 +286,7 @@ interface DraggablePlannedMealProps {
   onClear: (planifiedId: string) => void;
   onUpdatePortions: (planifiedId: string, portions: number) => void;
   colors: ColorConfig;
+  onShowDetails?: (repas: RepasPlanifie) => void;
 }
 
 const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
@@ -293,6 +297,7 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
   onClear,
   onUpdatePortions,
   colors,
+  onShowDetails,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `${prefix}_planned_${repas.planifiedId}`,
@@ -314,10 +319,30 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
         isDragging ? "opacity-20 border-dashed border-violet-500 bg-slate-900/60 shadow-none" : "hover:border-slate-750/80"
       }`}
     >
-      <div className="flex justify-between items-start gap-1">
-        <span className="text-xs font-bold text-white leading-snug break-words flex-grow">
-          {repas.texte}
-        </span>
+      {/* Ligne supérieure avec le badge ou espaceur, et la corbeille tout à droite */}
+      <div className="flex justify-between items-center w-full min-w-0" onClick={(e) => e.stopPropagation()}>
+        {repas.type === "recette" ? (
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onShowDetails) onShowDetails(repas);
+            }}
+            className="text-slate-500 hover:text-violet-400 p-0.5 rounded transition-colors shrink-0 cursor-pointer"
+            title="Voir la fiche recette"
+          >
+            <Info className="w-3.5 h-3.5" />
+          </button>
+        ) : repas.type === "texte" ? (
+          <span className="text-4xs text-slate-400 font-semibold uppercase tracking-wider bg-slate-850 px-1.5 py-0.5 rounded border border-slate-800 inline-block">
+            Repas rapide
+          </span>
+        ) : (
+          <span />
+        )}
         <button
           type="button"
           onMouseDown={(e) => e.stopPropagation()}
@@ -333,13 +358,12 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
         </button>
       </div>
 
-      {repas.type === "texte" && (
-        <div>
-          <span className="text-4xs text-slate-400 font-semibold uppercase tracking-wider bg-slate-850 px-1.5 py-0.5 rounded border border-slate-800 inline-block">
-            Repas rapide
-          </span>
-        </div>
-      )}
+      {/* Titre du repas sur toute la largeur */}
+      <div className="w-full min-w-0">
+        <span className="text-xs font-bold text-white leading-snug block break-words">
+          {repas.texte}
+        </span>
+      </div>
 
       <div 
         className="flex items-center justify-center gap-1 border-t border-slate-850/40 pt-1.5 text-slate-500"
@@ -390,6 +414,7 @@ export const PlanningView: React.FC = () => {
   const [customRayons, setCustomRayons] = useState<{ [key: string]: string }>({});
   const [activeRecipe, setActiveRecipe] = useState<Recette | null>(null);
   const [activePlannedMeal, setActivePlannedMeal] = useState<RepasPlanifie | null>(null);
+  const [previewRecipe, setPreviewRecipe] = useState<Recette | null>(null);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const [isRightCollapsed, setIsRightCollapsed] = useState(false);
   
@@ -401,6 +426,13 @@ export const PlanningView: React.FC = () => {
 
   // Mobile Swipe Jours
   const [activeDayIdxMobile, setActiveDayIdxMobile] = useState(0);
+
+  const handleShowRecipeDetails = (repas: RepasPlanifie) => {
+    const recetteAssociee = recettes.find(r => r.id === repas.id || (repas.texte && r.titre.toLowerCase() === repas.texte.toLowerCase()));
+    if (recetteAssociee) {
+      setPreviewRecipe(recetteAssociee);
+    }
+  };
 
   // Charger recettes + planning
   useEffect(() => {
@@ -710,7 +742,10 @@ export const PlanningView: React.FC = () => {
     };
     setPlanning(planningVide);
     await savePlanning(foyer.id, planningVide);
-    await declencherMiseAJourListe(planningVide);
+    
+    // Nettoyer immédiatement la liste de courses en ne gardant que les ajouts manuels
+    const elementsManuels = listeCourses.filter((item) => item.manuel);
+    await saveListeCourses(foyer.id, elementsManuels);
   };
 
   // Filtrer les recettes du panneau latéral
@@ -912,6 +947,7 @@ export const PlanningView: React.FC = () => {
                     onUpdatePortions={(planifiedId, qty) => handleUpdatePortions(jour, "midi", planifiedId, qty)}
                     onAddTexte={(txt) => handleAddTexteRepas(jour, "midi", txt)}
                     colors={dayColors}
+                    onShowDetails={handleShowRecipeDetails}
                   />
                   
                   <DroppableRepasCell
@@ -923,6 +959,7 @@ export const PlanningView: React.FC = () => {
                     onUpdatePortions={(planifiedId, qty) => handleUpdatePortions(jour, "soir", planifiedId, qty)}
                     onAddTexte={(txt) => handleAddTexteRepas(jour, "soir", txt)}
                     colors={dayColors}
+                    onShowDetails={handleShowRecipeDetails}
                   />
                 </div>
               );
@@ -970,6 +1007,7 @@ export const PlanningView: React.FC = () => {
                         onUpdatePortions={(planifiedId, qty) => handleUpdatePortions(currentDay, "midi", planifiedId, qty)}
                         onAddTexte={(txt) => handleAddTexteRepas(currentDay, "midi", txt)}
                         colors={dayColors}
+                        onShowDetails={handleShowRecipeDetails}
                       />
                     </div>
 
@@ -984,6 +1022,7 @@ export const PlanningView: React.FC = () => {
                         onUpdatePortions={(planifiedId, qty) => handleUpdatePortions(currentDay, "soir", planifiedId, qty)}
                         onAddTexte={(txt) => handleAddTexteRepas(currentDay, "soir", txt)}
                         colors={dayColors}
+                        onShowDetails={handleShowRecipeDetails}
                       />
                     </div>
                   </div>
@@ -1066,6 +1105,82 @@ export const PlanningView: React.FC = () => {
           </div>
         ) : null}
       </DragOverlay>
+
+      {previewRecipe && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer" onClick={() => setPreviewRecipe(null)}>
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col p-6 shadow-2xl overflow-hidden cursor-default" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-4">
+              <div>
+                <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20 text-violet-400">
+                  {previewRecipe.categorie}
+                </span>
+                <h3 className="text-lg font-bold text-white capitalize mt-1.5 leading-tight">
+                  {previewRecipe.titre}
+                </h3>
+              </div>
+              <button
+                onClick={() => setPreviewRecipe(null)}
+                className="text-slate-400 hover:text-white p-1.5 hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Corps */}
+            <div className="flex-grow overflow-y-auto space-y-4 pr-1">
+              {previewRecipe.imageUrl && (
+                <div className="w-full h-44 rounded-2xl overflow-hidden border border-slate-850">
+                  <img src={previewRecipe.imageUrl} alt={previewRecipe.titre} className="w-full h-full object-cover" />
+                </div>
+              )}
+
+              <div>
+                <h4 className="text-3xs uppercase tracking-widest font-black text-slate-500 mb-2">
+                  Portions par défaut
+                </h4>
+                <div className="flex items-center gap-1.5 text-xs text-slate-350 font-semibold">
+                  <Users className="w-4 h-4 text-violet-400" />
+                  <span>{previewRecipe.portionsDefaut} personnes</span>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-850/60 pt-4">
+                <h4 className="text-3xs uppercase tracking-widest font-black text-slate-500 mb-3">
+                  Ingrédients requis
+                </h4>
+                <div className="bg-slate-950/20 border border-slate-850/80 rounded-2xl p-3 space-y-2">
+                  {previewRecipe.ingredients && previewRecipe.ingredients.length > 0 ? (
+                    previewRecipe.ingredients.map((ing, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-slate-850/30 last:border-b-0">
+                        <span className="capitalize text-slate-200 font-medium">{ing.nom}</span>
+                        <span className="text-violet-300 font-bold bg-violet-500/5 px-2 py-0.5 rounded border border-violet-500/10">
+                          {ing.quantite > 0 ? `${ing.quantite} ` : ""}{ing.unite}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-slate-500 italic text-center py-4">
+                      Aucun ingrédient renseigné pour cette recette.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-slate-850 pt-4 mt-4 flex">
+              <button
+                onClick={() => setPreviewRecipe(null)}
+                className="w-full bg-slate-800 hover:bg-slate-750 text-slate-300 py-2.5 rounded-xl font-bold transition-all text-xs cursor-pointer"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DndContext>
   );
 };
