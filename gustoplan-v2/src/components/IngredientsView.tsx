@@ -131,13 +131,25 @@ export const IngredientsView: React.FC = () => {
     a.localeCompare(b, "fr", { sensitivity: "base" })
   );
 
+  // Résoudre la catégorie d'un ingrédient en prenant en compte les customRayons
+  const getResolvedCategory = (ingName: string, categoryFromDb: string) => {
+    const custom = customRayons[ingName.toLowerCase()];
+    const resolved = custom || categoryFromDb;
+    if (listRayons.includes(resolved)) {
+      return resolved;
+    }
+    const matchInsensitive = listRayons.find(r => r.toLowerCase() === resolved.toLowerCase());
+    if (matchInsensitive) return matchInsensitive;
+    return listRayons[0] || "Autre / Divers";
+  };
+
   // Filtrer la liste des ingrédients par recherche ET par catégorie sélectionnée
   const ingredientsFiltres = ingredients.filter((ing) => {
     const matchesSearch = ing.name.toLowerCase().includes(search.trim().toLowerCase());
     if (!matchesSearch) return false;
     
     if (selectedCategory) {
-      return ing.category === selectedCategory;
+      return getResolvedCategory(ing.name, ing.category) === selectedCategory;
     }
     
     return true;
@@ -558,7 +570,7 @@ export const IngredientsView: React.FC = () => {
                                 className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-400"
                               />
                               <button
-                                onClick={() => handleSaveIngredient(ing.id!, ing.category)}
+                                onClick={() => handleSaveIngredient(ing.id!, getResolvedCategory(ing.name, ing.category))}
                                 className="p-1 hover:text-emerald-500 text-slate-400 transition-colors"
                                 title="Sauvegarder"
                               >
@@ -613,7 +625,7 @@ export const IngredientsView: React.FC = () => {
                           <div className="w-full sm:w-[45%] flex items-center justify-between sm:justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                             <span className="sm:hidden text-2xs text-slate-500 uppercase font-bold">Rayon :</span>
                             <select
-                              value={ing.category}
+                              value={getResolvedCategory(ing.name, ing.category)}
                               onChange={(e) => handleUpdateRayon(ing, e.target.value)}
                               className="bg-white border border-slate-200 hover:border-slate-350 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-400 transition-colors w-full sm:w-72 md:w-80 lg:w-96 cursor-pointer shadow-2xs hover:bg-slate-50/50"
                             >
