@@ -15,7 +15,7 @@ import {
 import { devinerRayon } from "../services/courseEngine";
 import { useAuth } from "../contexts/AuthContext";
 import { Recette, ElementListeCourses } from "../types";
-import { Search, Tag, HelpCircle, Check, Info, Plus, Edit2, Trash2 } from "lucide-react";
+import { Search, Tag, HelpCircle, Check, Info, Plus, Edit2, Trash2, X } from "lucide-react";
 import { DndContext, useDraggable, useDroppable, DragOverlay, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
 
 const DEFAULT_RAYONS = [
@@ -516,8 +516,18 @@ export const IngredientsView: React.FC = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onFocus={(e) => e.target.select()}
-                className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 placeholder-slate-400 text-slate-855 focus:outline-none focus:border-indigo-400 transition-colors shadow-sm"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-10 py-3 placeholder-slate-400 text-slate-855 focus:outline-none focus:border-indigo-400 transition-colors shadow-sm"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors p-0.5 rounded cursor-pointer"
+                  title="Effacer la recherche"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {/* List of Ingredients */}

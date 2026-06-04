@@ -279,6 +279,33 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
   );
 };
 
+// --- HELPER DE CÉSURÈS (HYPHENATION) EN FRANÇAIS ---
+const hyphenateFrenchWord = (word: string): string => {
+  let w = word;
+  const v = "[aeiouyâêîôûéèàùœæ]";
+  const c = "[bcdfghjklmnpqrstvwxz]";
+  
+  // Règle V-CV -> V\u00adCV
+  const r1 = new RegExp(`(${v})(${c}${v})`, "gi");
+  w = w.replace(r1, "$1\u00ad$2");
+  
+  // Règle VC-CV -> VC\u00adCV
+  const r2 = new RegExp(`(${v}${c})(${c}${v})`, "gi");
+  w = w.replace(r2, "$1\u00ad$2");
+  
+  return w;
+};
+
+const hyphenateText = (text: string): string => {
+  if (!text) return "";
+  return text.split(/(\b[a-zA-Zà-üÀ-Ü]+\b)/g).map((part) => {
+    if (/^[a-zA-Zà-üÀ-Ü]+$/.test(part)) {
+      return hyphenateFrenchWord(part);
+    }
+    return part;
+  }).join("");
+};
+
 // --- DRAGGABLE PLANNED MEAL COMPONENT ---
 interface DraggablePlannedMealProps {
   prefix: "pc" | "mobile";
@@ -359,10 +386,9 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-      {/* Titre du repas sur toute la largeur */}
       <div className="w-full min-w-0">
-        <span className="text-xs font-bold text-slate-800 leading-snug block break-words hyphens-auto" style={{ hyphens: 'auto' }}>
-          {repas.texte}
+        <span className="text-xs font-bold text-slate-800 leading-snug block break-words">
+          {hyphenateText(repas.texte || "")}
         </span>
       </div>
 
@@ -821,14 +847,26 @@ export const PlanningView: React.FC = () => {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
               </div>
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onFocus={(e) => e.target.select()}
-                className="w-full bg-slate-55 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-850 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:bg-white mb-4"
-              />
+              <div className="relative mb-4 w-full">
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  className="w-full bg-slate-55 border border-slate-200 rounded-lg pl-3 pr-8 py-1.5 text-xs text-slate-855 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:bg-white"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors p-0.5 rounded cursor-pointer"
+                    title="Effacer la recherche"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
 
               <div className="flex gap-1.5 mb-3">
                 {["all", "entree", "plat", "dessert"].map((cat) => (
