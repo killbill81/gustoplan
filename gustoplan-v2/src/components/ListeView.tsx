@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { subscribeListeCourses, saveListeCourses, subscribeRecettes } from "../services/db";
+import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses, Recette } from "../types";
 import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { devinerRayon } from "../services/courseEngine";
 
 interface ListeViewProps {
   onCollapse?: () => void;
@@ -10,31 +11,57 @@ interface ListeViewProps {
 }
 
 export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "liste" }) => {
-  const { foyer } = useAuth();
+  const { user, foyer } = useAuth();
   const [elements, setElements] = useState<ElementListeCourses[]>([]);
   const [recettes, setRecettes] = useState<Recette[]>([]);
+  const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
 
   // Formulaire ajout manuel
   const [nom, setNom] = useState("");
   const [quantite, setQuantite] = useState("");
   const [unite, setUnite] = useState("");
   const [rayon, setRayon] = useState("Autre / Divers");
+  const [customRayons, setCustomRayons] = useState<{ [key: string]: string }>({});
 
   // Suggestions autocomplétion
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
 
   useEffect(() => {
-    if (!foyer?.id) return;
+    if (!foyer?.id || !user?.uid) return;
     const unsubscribe = subscribeListeCourses(foyer.id, (loadedElements) => {
       setElements(loadedElements);
     });
     const unsubRecettes = subscribeRecettes(foyer.id, setRecettes);
+    const unsubRayons = subscribeRayonsIngredients(foyer.id, setCustomRayons);
+    const unsubIngredients = subscribeIngredientsGlobal(user.uid, setGlobalIngredients);
     return () => {
       unsubscribe();
       unsubRecettes();
+      unsubRayons();
+      unsubIngredients();
     };
-  }, [foyer?.id]);
+  }, [foyer?.id, user?.uid]);
+
+  const resolveCategoryForIngredient = (name: string): string => {
+    const cleanName = name.trim().toLowerCase();
+    
+    // 1. Vérifier customRayons du foyer
+    if (customRayons && customRayons[cleanName]) {
+      return customRayons[cleanName];
+    }
+    
+    // 2. Vérifier la base globale des ingrédients
+    const globalIng = globalIngredients.find(
+      (ing) => ing.name.toLowerCase() === cleanName
+    );
+    if (globalIng && globalIng.category) {
+      return globalIng.category;
+    }
+    
+    // 3. Deviner avec le dico statique
+    return devinerRayon(name, customRayons);
+  };
 
   const getStep = (unite: string, quantite: number) => {
     const u = (unite || "").toLowerCase().trim();
@@ -77,12 +104,15 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     if (!foyer?.id || !nom.trim()) return;
 
     const qty = parseFloat(quantite) || 0;
+    const resolvedRayon = resolveCategoryForIngredient(nom);
+    const finalRayon = resolvedRayon !== "Autre / Divers" ? resolvedRayon : rayon;
+
     const newElement: ElementListeCourses = {
       id: "manuel_" + Date.now(),
       nom: nom.trim(),
       quantite: qty,
       unite: unite.trim(),
-      rayon: rayon,
+      rayon: finalRayon,
       dejaAcquis: false,
       achete: false,
       manuel: true
@@ -147,10 +177,12 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
   const rayonsGroupes: { [key: string]: ElementListeCourses[] } = {};
   elementsNonCoches.forEach((item) => {
-    if (!rayonsGroupes[item.rayon]) {
-      rayonsGroupes[item.rayon] = [];
+    const resolvedRayon = resolveCategoryForIngredient(item.nom);
+    const itemRayon = resolvedRayon !== "Autre / Divers" ? resolvedRayon : (item.rayon || "Autre / Divers");
+    if (!rayonsGroupes[itemRayon]) {
+      rayonsGroupes[itemRayon] = [];
     }
-    rayonsGroupes[item.rayon].push(item);
+    rayonsGroupes[itemRayon].push(item);
   });
 
   const getRayonColors = (rayonName: string) => {
