@@ -29,9 +29,9 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   lundi: {
     text: "text-indigo-800",
     activeText: "text-indigo-600",
-    border: "border-indigo-100",
+    border: "border-indigo-150",
     borderHover: "hover:border-indigo-300",
-    bgHeader: "bg-indigo-50 border-indigo-200/50",
+    bgHeader: "bg-indigo-100 border-indigo-200",
     cellBg: "bg-white border-slate-200/80 hover:border-indigo-300",
     cellIsOver: "bg-orange-50/50 border-orange-300",
     glow: "shadow-md shadow-indigo-100"
@@ -39,9 +39,9 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   mardi: {
     text: "text-rose-800",
     activeText: "text-rose-600",
-    border: "border-rose-100",
+    border: "border-rose-150",
     borderHover: "hover:border-rose-300",
-    bgHeader: "bg-rose-50 border-rose-200/50",
+    bgHeader: "bg-rose-100 border-rose-200",
     cellBg: "bg-white border-slate-200/80 hover:border-rose-300",
     cellIsOver: "bg-orange-50/50 border-orange-300",
     glow: "shadow-md shadow-rose-100"
@@ -49,9 +49,9 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   mercredi: {
     text: "text-emerald-800",
     activeText: "text-emerald-600",
-    border: "border-emerald-100",
+    border: "border-emerald-150",
     borderHover: "hover:border-emerald-300",
-    bgHeader: "bg-emerald-50 border-emerald-200/50",
+    bgHeader: "bg-emerald-100 border-emerald-200",
     cellBg: "bg-white border-slate-200/80 hover:border-emerald-300",
     cellIsOver: "bg-orange-50/50 border-orange-300",
     glow: "shadow-md shadow-emerald-100"
@@ -59,9 +59,9 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   jeudi: {
     text: "text-sky-800",
     activeText: "text-sky-600",
-    border: "border-sky-100",
+    border: "border-sky-150",
     borderHover: "hover:border-sky-300",
-    bgHeader: "bg-sky-50 border-sky-200/50",
+    bgHeader: "bg-sky-100 border-sky-200",
     cellBg: "bg-white border-slate-200/80 hover:border-sky-300",
     cellIsOver: "bg-orange-50/50 border-orange-300",
     glow: "shadow-md shadow-sky-100"
@@ -69,9 +69,9 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   vendredi: {
     text: "text-amber-800",
     activeText: "text-amber-600",
-    border: "border-amber-100",
+    border: "border-amber-150",
     borderHover: "hover:border-amber-300",
-    bgHeader: "bg-amber-50 border-amber-200/50",
+    bgHeader: "bg-amber-100 border-amber-200",
     cellBg: "bg-white border-slate-200/80 hover:border-amber-300",
     cellIsOver: "bg-orange-50/50 border-orange-300",
     glow: "shadow-md shadow-amber-100"
@@ -79,9 +79,9 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   samedi: {
     text: "text-fuchsia-800",
     activeText: "text-fuchsia-600",
-    border: "border-fuchsia-100",
+    border: "border-fuchsia-150",
     borderHover: "hover:border-fuchsia-300",
-    bgHeader: "bg-fuchsia-50 border-fuchsia-200/50",
+    bgHeader: "bg-fuchsia-100 border-fuchsia-200",
     cellBg: "bg-white border-slate-200/80 hover:border-fuchsia-300",
     cellIsOver: "bg-orange-50/50 border-orange-300",
     glow: "shadow-md shadow-fuchsia-100"
@@ -89,9 +89,9 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   dimanche: {
     text: "text-teal-800",
     activeText: "text-teal-600",
-    border: "border-teal-100",
+    border: "border-teal-150",
     borderHover: "hover:border-teal-300",
-    bgHeader: "bg-teal-50 border-teal-200/50",
+    bgHeader: "bg-teal-100 border-teal-200",
     cellBg: "bg-white border-slate-200/80 hover:border-teal-300",
     cellIsOver: "bg-orange-50/50 border-orange-300",
     glow: "shadow-md shadow-teal-100"
@@ -207,6 +207,8 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
   // Traitement robuste de l'état hérité (si c'est un seul objet plutôt qu'un tableau)
   const listAsArray = Array.isArray(repasListe) ? repasListe : (repasListe ? [repasListe] : []);
 
+  const bgClass = colors.bgHeader.split(" ")[0]; // e.g. "bg-sky-50"
+
   return (
     <div
       ref={setNodeRef}
@@ -214,8 +216,8 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
         isOver
           ? "border-dashed border-2 border-orange-300 bg-orange-50/50 shadow-sm shadow-orange-100/30 scale-[1.02]"
           : listAsArray.length > 0
-          ? `${moment === "midi" ? "bg-amber-50/40" : "bg-indigo-50/30"} border-slate-200/80 ${colors.borderHover}`
-          : `${moment === "midi" ? "bg-amber-50/20" : "bg-indigo-50/15"} border-slate-200/60`
+          ? `${bgClass} border-slate-200/80 ${colors.borderHover}`
+          : `${bgClass}/45 border-slate-200/60`
       }`}
     >
       <div className="flex justify-between items-center pb-1 border-b border-slate-200/80">
