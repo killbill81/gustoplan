@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Personnalisation de la barre de défilement (scrollbar) pour le thème sombre */
+/* Personnalisation de la barre de défilement (scrollbar) pour le thème clair */
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -8,22 +8,22 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b1326; /* Couleur de fond (Slate-950 / surface de Stitch) */
+  background: #f8fafc; /* Slate-50, correspond au fond de l'application */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b; /* Couleur de l'ascenseur au repos (Slate-800) */
+  background: #cbd5e1; /* Slate-300, gris doux et discret */
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #8b5cf6; /* Couleur de l'ascenseur au survol (Violet-500) */
+  background: #94a3b8; /* Slate-400 au survol */
 }
 
 /* Compatibilité Standard (comme Firefox) */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1e293b #0b1326;
+  scrollbar-color: #cbd5e1 #f8fafc;
 }
 
 /* Masquer les flèches des inputs number pour gagner de la place */

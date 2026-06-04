@@ -315,7 +315,7 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
       style={style}
       {...listeners}
       {...attributes}
-      className={`relative bg-white p-2.5 pr-7 rounded-xl border border-slate-200 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing transition-all shadow-sm ${
+      className={`relative bg-white p-2.5 rounded-xl border border-slate-200 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing transition-all shadow-sm ${
         isDragging ? "opacity-20 border-dashed border-orange-350 bg-slate-50 shadow-none" : "hover:border-slate-350"
       }`}
     >
@@ -359,7 +359,7 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
       </div>
       {/* Titre du repas sur toute la largeur */}
       <div className="w-full min-w-0">
-        <span className="text-xs font-bold text-slate-800 leading-snug block break-words">
+        <span className="text-xs font-bold text-slate-800 leading-snug block break-words hyphens-auto" style={{ hyphens: 'auto' }}>
           {repas.texte}
         </span>
       </div>
@@ -615,20 +615,34 @@ export const PlanningView: React.FC = () => {
       
       targetList.splice(finalTargetIndex, 0, repasPlanifie);
 
-      planningModifie = {
-        ...planning,
-        jours: {
-          ...planning.jours,
-          [sourceJour]: {
-            ...planning.jours[sourceJour],
-            [sourceMoment]: sourceList
-          },
-          [targetJour]: {
-            ...planning.jours[targetJour],
-            [targetMoment]: targetList
+      if (sourceJour === targetJour) {
+        planningModifie = {
+          ...planning,
+          jours: {
+            ...planning.jours,
+            [sourceJour]: {
+              ...planning.jours[sourceJour],
+              [sourceMoment]: sourceList,
+              [targetMoment]: targetList
+            }
           }
-        }
-      };
+        };
+      } else {
+        planningModifie = {
+          ...planning,
+          jours: {
+            ...planning.jours,
+            [sourceJour]: {
+              ...planning.jours[sourceJour],
+              [sourceMoment]: sourceList
+            },
+            [targetJour]: {
+              ...planning.jours[targetJour],
+              [targetMoment]: targetList
+            }
+          }
+        };
+      }
     } else {
       return;
     }
@@ -834,7 +848,7 @@ export const PlanningView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setOnlyFavs(!onlyFavs)}
-                  className={`flex-grow min-h-[38px] py-1.5 px-2 rounded-lg border text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  className={`flex-grow min-h-[38px] py-1.5 px-2 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     onlyFavs
                       ? "bg-rose-100 border-rose-200 text-rose-700 font-bold"
                       : "bg-slate-50 border-slate-150 text-slate-500 hover:bg-slate-100 hover:text-slate-750"
@@ -848,7 +862,7 @@ export const PlanningView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setFavsFirst(!favsFirst)}
-                  className={`flex-grow min-h-[38px] py-1 px-2 rounded-lg border text-[9px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  className={`flex-grow min-h-[38px] py-1 px-2 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     favsFirst
                       ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-bold"
                       : "bg-slate-50 border-slate-150 text-slate-500 hover:bg-slate-100 hover:text-slate-750"

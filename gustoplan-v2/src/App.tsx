@@ -33,7 +33,7 @@ const AppContent: React.FC = () => {
       
       {/* ================= HEADER COMMUN (PC & TABLETTE) ================= */}
       <header 
-        className="border-b border-slate-200 px-6 py-4 flex items-center justify-between z-10 relative overflow-hidden bg-cover bg-center"
+        className="h-[88px] shrink-0 border-b border-slate-200 px-6 flex items-center justify-between z-10 relative overflow-hidden bg-cover bg-center"
         style={{ backgroundImage: "url('/header_banner.png')" }}
       >
         {/* Voile blanc de gradation pour la lisibilité en thème clair */}

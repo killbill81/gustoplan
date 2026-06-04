@@ -526,7 +526,7 @@ export const IngredientsView: React.FC = () => {
                 {/* Header Row for Desktop */}
                 {ingredientsFiltres.length > 0 && (
                   <div className="hidden sm:flex items-center px-4 py-2 text-2xs uppercase font-extrabold tracking-widest text-slate-500 border-b border-slate-100 mb-1">
-                    <div className="w-[55%] flex items-center gap-2">
+                    <div className="w-[65%] flex items-center gap-2">
                       <span>Nom de l'ingrédient</span>
                       {selectedCategory && (
                         <span className="text-3xs font-extrabold uppercase px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-150 text-indigo-750 normal-case tracking-normal">
@@ -534,7 +534,11 @@ export const IngredientsView: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <div className="w-[45%] text-right">Rayon de course</div>
+                    <div className="w-[35%] flex sm:justify-end">
+                      <div className="w-full sm:w-56 md:w-64 lg:w-72 text-left">
+                        Rayon de course
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -553,7 +557,7 @@ export const IngredientsView: React.FC = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center px-4 py-2.5 gap-2 sm:gap-4">
                         
                         {/* Nom de l'ingrédient (et unité) */}
-                        <div className="w-full sm:w-[55%] flex items-center gap-2 min-w-0">
+                        <div className="w-full sm:w-[65%] flex items-center gap-2 min-w-0">
                           {isEditing ? (
                             <div className="flex gap-2 w-full" onClick={(e) => e.stopPropagation()}>
                               <input
@@ -589,7 +593,7 @@ export const IngredientsView: React.FC = () => {
                               <h3 className="text-sm font-semibold text-slate-800 capitalize truncate" title={ing.name}>
                                 {ing.name}
                                 {ing.unit && (
-                                  <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider bg-indigo-50 border border-indigo-150 text-indigo-750">
+                                  <span className="ml-2 inline-flex items-center justify-center text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider bg-indigo-50 border border-indigo-150 text-indigo-750 leading-none align-middle">
                                     {ing.unit}
                                   </span>
                                 )}
@@ -622,12 +626,12 @@ export const IngredientsView: React.FC = () => {
 
                         {/* Rayon Select */}
                         {!isEditing && (
-                          <div className="w-full sm:w-[45%] flex items-center justify-between sm:justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          <div className="w-full sm:w-[35%] flex items-center justify-between sm:justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                             <span className="sm:hidden text-2xs text-slate-500 uppercase font-bold">Rayon :</span>
                             <select
                               value={getResolvedCategory(ing.name, ing.category)}
                               onChange={(e) => handleUpdateRayon(ing, e.target.value)}
-                              className="bg-white border border-slate-200 hover:border-slate-350 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-400 transition-colors w-full sm:w-72 md:w-80 lg:w-96 cursor-pointer shadow-2xs hover:bg-slate-50/50"
+                              className="bg-white border border-slate-200 hover:border-slate-350 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-400 transition-colors w-full sm:w-56 md:w-64 lg:w-72 cursor-pointer shadow-2xs hover:bg-slate-50/50"
                             >
                               {listRayons.map((rayon) => (
                                 <option key={rayon} value={rayon}>
