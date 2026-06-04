@@ -8,7 +8,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Users, Trash2, Edit, Plus, Heart, 
-  Settings, RefreshCw, Smartphone, Monitor, BookOpen, ShoppingCart, Info, X
+  Settings, RefreshCw, Smartphone, Monitor, BookOpen, ShoppingCart, Info, X, FilePenLine
 } from "lucide-react";
 import { ListeView } from "./ListeView";
 
@@ -226,9 +226,9 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
           <button
             onClick={() => setShowInput(true)}
             className={`p-0.5 rounded transition-colors ${moment === 'midi' ? 'text-amber-800 hover:text-orange-500' : 'text-indigo-850 hover:text-indigo-600'} cursor-pointer`}
-            title="Ajouter un repas rapide"
+            title="Ajouter une note rapide"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <FilePenLine className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
