@@ -476,6 +476,24 @@ export const PlanningView: React.FC = () => {
     };
   }, [foyer?.id]);
 
+  // Synchronisation automatique de la liste de courses si le planning, les recettes ou les rayons changent
+  useEffect(() => {
+    if (!foyer?.id || !planning || recettes.length === 0) return;
+
+    const nouvelleListe = genererListeCourses(planning, recettes, listeCourses, customRayons);
+
+    // Comparaison stricte et triée pour éviter les écritures Firebase en boucle
+    const hash = (list: ElementListeCourses[]) => 
+      [...list]
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map(i => `${i.id}_${i.nom}_${i.quantite}_${i.unite}_${i.dejaAcquis}_${i.achete}`)
+        .join("|");
+
+    if (hash(nouvelleListe) !== hash(listeCourses)) {
+      saveListeCourses(foyer.id, nouvelleListe);
+    }
+  }, [planning, recettes, customRayons, listeCourses, foyer?.id]);
+
   // Initialiser planning s'il n'existe pas en base (planning === null)
   useEffect(() => {
     if (!foyer?.id || planning !== null) return;
