@@ -27,74 +27,74 @@ export interface ColorConfig {
 
 export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
   lundi: {
-    text: "text-indigo-300",
-    activeText: "text-indigo-400",
-    border: "border-indigo-500/25",
-    borderHover: "hover:border-indigo-500/45",
-    bgHeader: "bg-indigo-950/40 border-indigo-500/30",
-    cellBg: "bg-indigo-950/15 border-indigo-500/10 hover:border-indigo-500/35 hover:bg-indigo-950/25",
-    cellIsOver: "bg-indigo-500/25 border-indigo-400",
-    glow: "shadow-[0_0_18px_rgba(129,140,248,0.25)]"
+    text: "text-indigo-800",
+    activeText: "text-indigo-600",
+    border: "border-indigo-100",
+    borderHover: "hover:border-indigo-300",
+    bgHeader: "bg-indigo-50 border-indigo-200/50",
+    cellBg: "bg-white border-slate-200/80 hover:border-indigo-300",
+    cellIsOver: "bg-orange-50/50 border-orange-300",
+    glow: "shadow-md shadow-indigo-100"
   },
   mardi: {
-    text: "text-rose-300",
-    activeText: "text-rose-400",
-    border: "border-rose-500/25",
-    borderHover: "hover:border-rose-500/45",
-    bgHeader: "bg-rose-950/40 border-rose-500/30",
-    cellBg: "bg-rose-950/15 border-rose-500/10 hover:border-rose-500/35 hover:bg-rose-950/25",
-    cellIsOver: "bg-rose-500/25 border-rose-400",
-    glow: "shadow-[0_0_18px_rgba(251,113,133,0.25)]"
+    text: "text-rose-800",
+    activeText: "text-rose-600",
+    border: "border-rose-100",
+    borderHover: "hover:border-rose-300",
+    bgHeader: "bg-rose-50 border-rose-200/50",
+    cellBg: "bg-white border-slate-200/80 hover:border-rose-300",
+    cellIsOver: "bg-orange-50/50 border-orange-300",
+    glow: "shadow-md shadow-rose-100"
   },
   mercredi: {
-    text: "text-emerald-300",
-    activeText: "text-emerald-400",
-    border: "border-emerald-500/25",
-    borderHover: "hover:border-emerald-500/45",
-    bgHeader: "bg-emerald-950/40 border-emerald-500/30",
-    cellBg: "bg-emerald-950/15 border-emerald-500/10 hover:border-emerald-500/35 hover:bg-emerald-950/25",
-    cellIsOver: "bg-emerald-500/25 border-emerald-400",
-    glow: "shadow-[0_0_18px_rgba(52,211,153,0.25)]"
+    text: "text-emerald-800",
+    activeText: "text-emerald-600",
+    border: "border-emerald-100",
+    borderHover: "hover:border-emerald-300",
+    bgHeader: "bg-emerald-50 border-emerald-200/50",
+    cellBg: "bg-white border-slate-200/80 hover:border-emerald-300",
+    cellIsOver: "bg-orange-50/50 border-orange-300",
+    glow: "shadow-md shadow-emerald-100"
   },
   jeudi: {
-    text: "text-sky-300",
-    activeText: "text-sky-400",
-    border: "border-sky-500/25",
-    borderHover: "hover:border-sky-500/45",
-    bgHeader: "bg-sky-950/40 border-sky-500/30",
-    cellBg: "bg-sky-950/15 border-sky-500/10 hover:border-sky-500/35 hover:bg-sky-950/25",
-    cellIsOver: "bg-sky-500/25 border-sky-400",
-    glow: "shadow-[0_0_18px_rgba(56,189,248,0.25)]"
+    text: "text-sky-800",
+    activeText: "text-sky-600",
+    border: "border-sky-100",
+    borderHover: "hover:border-sky-300",
+    bgHeader: "bg-sky-50 border-sky-200/50",
+    cellBg: "bg-white border-slate-200/80 hover:border-sky-300",
+    cellIsOver: "bg-orange-50/50 border-orange-300",
+    glow: "shadow-md shadow-sky-100"
   },
   vendredi: {
-    text: "text-amber-300",
-    activeText: "text-amber-400",
-    border: "border-amber-500/25",
-    borderHover: "hover:border-amber-500/45",
-    bgHeader: "bg-amber-950/40 border-amber-500/30",
-    cellBg: "bg-amber-950/15 border-amber-500/10 hover:border-amber-500/35 hover:bg-amber-950/25",
-    cellIsOver: "bg-amber-500/25 border-amber-400",
-    glow: "shadow-[0_0_18px_rgba(251,191,36,0.25)]"
+    text: "text-amber-800",
+    activeText: "text-amber-600",
+    border: "border-amber-100",
+    borderHover: "hover:border-amber-300",
+    bgHeader: "bg-amber-50 border-amber-200/50",
+    cellBg: "bg-white border-slate-200/80 hover:border-amber-300",
+    cellIsOver: "bg-orange-50/50 border-orange-300",
+    glow: "shadow-md shadow-amber-100"
   },
   samedi: {
-    text: "text-fuchsia-300",
-    activeText: "text-fuchsia-400",
-    border: "border-fuchsia-500/25",
-    borderHover: "hover:border-fuchsia-500/45",
-    bgHeader: "bg-fuchsia-950/40 border-fuchsia-500/30",
-    cellBg: "bg-fuchsia-950/15 border-fuchsia-500/10 hover:border-fuchsia-500/35 hover:bg-fuchsia-950/25",
-    cellIsOver: "bg-fuchsia-500/25 border-fuchsia-400",
-    glow: "shadow-[0_0_18px_rgba(232,121,249,0.25)]"
+    text: "text-fuchsia-800",
+    activeText: "text-fuchsia-600",
+    border: "border-fuchsia-100",
+    borderHover: "hover:border-fuchsia-300",
+    bgHeader: "bg-fuchsia-50 border-fuchsia-200/50",
+    cellBg: "bg-white border-slate-200/80 hover:border-fuchsia-300",
+    cellIsOver: "bg-orange-50/50 border-orange-300",
+    glow: "shadow-md shadow-fuchsia-100"
   },
   dimanche: {
-    text: "text-teal-300",
-    activeText: "text-teal-400",
-    border: "border-teal-500/25",
-    borderHover: "hover:border-teal-500/45",
-    bgHeader: "bg-teal-950/40 border-teal-500/30",
-    cellBg: "bg-teal-950/15 border-teal-500/10 hover:border-teal-500/35 hover:bg-teal-950/25",
-    cellIsOver: "bg-teal-500/25 border-teal-400",
-    glow: "shadow-[0_0_18px_rgba(45,212,191,0.25)]"
+    text: "text-teal-800",
+    activeText: "text-teal-600",
+    border: "border-teal-100",
+    borderHover: "hover:border-teal-300",
+    bgHeader: "bg-teal-50 border-teal-200/50",
+    cellBg: "bg-white border-slate-200/80 hover:border-teal-300",
+    cellIsOver: "bg-orange-50/50 border-orange-300",
+    glow: "shadow-md shadow-teal-100"
   }
 };
 
@@ -116,12 +116,12 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`p-2.5 bg-slate-800 hover:bg-slate-700/80 border border-slate-700/50 rounded-xl cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 ${
-        isDragging ? "opacity-25 border-dashed border-violet-500 bg-slate-900/60 shadow-none" : "shadow-md hover:border-slate-600"
+      className={`p-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl cursor-grab active:cursor-grabbing transition-all flex items-center gap-3 ${
+        isDragging ? "opacity-25 border-dashed border-orange-300 bg-slate-100 shadow-none" : "shadow-sm hover:border-slate-300"
       }`}
     >
       {/* Mini-image de recette ou icône par défaut */}
-      <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-900 shrink-0 flex items-center justify-center border border-slate-750">
+      <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 shrink-0 flex items-center justify-center border border-slate-200">
         {recette.imageUrl ? (
           <img src={recette.imageUrl} alt={recette.titre} className="w-full h-full object-cover" />
         ) : (
@@ -131,7 +131,7 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
 
       <div className="flex-grow min-w-0">
         <div className="flex justify-between items-center gap-1">
-          <span className="text-sm font-semibold truncate text-white capitalize">{recette.titre}</span>
+          <span className="text-sm font-semibold truncate text-slate-800 capitalize">{recette.titre}</span>
           <button
             type="button"
             onMouseDown={(e) => e.stopPropagation()}
@@ -143,19 +143,19 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
                 onToggleFavori(recette);
               }
             }}
-            className="p-1 hover:bg-slate-700 rounded-lg transition-colors shrink-0"
+            className="p-1 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer"
             title={recette.favori ? "Retirer des favoris" : "Ajouter aux favoris"}
           >
             <Heart 
               className={`w-3.5 h-3.5 transition-all ${
                 recette.favori 
-                  ? "fill-fuchsia-500 text-fuchsia-500 scale-110" 
-                  : "text-slate-500 hover:text-fuchsia-400"
+                  ? "fill-amber-400 text-amber-400 scale-110" 
+                  : "text-slate-350 hover:text-amber-400"
               }`} 
             />
           </button>
         </div>
-        <div className="flex items-center justify-between mt-1 text-3xs uppercase tracking-wider font-extrabold text-slate-400">
+        <div className="flex items-center justify-between mt-1 text-3xs uppercase tracking-wider font-extrabold text-slate-450">
           <span>{recette.categorie}</span>
           <span>{recette.portionsDefaut} pers.</span>
         </div>
@@ -212,18 +212,18 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
       ref={setNodeRef}
       className={`min-h-24 p-2.5 rounded-2xl border transition-all duration-200 flex flex-col gap-2 ${
         isOver
-          ? `${colors.cellIsOver} ${colors.glow} scale-[1.02]`
+          ? "border-dashed border-2 border-orange-300 bg-orange-50/50 shadow-sm shadow-orange-100/30 scale-[1.02]"
           : listAsArray.length > 0
-          ? `${colors.bgHeader} ${colors.borderHover}`
-          : `${colors.cellBg}`
+          ? `${moment === "midi" ? "bg-amber-50/40" : "bg-indigo-50/30"} border-slate-200/80 ${colors.borderHover}`
+          : `${moment === "midi" ? "bg-amber-50/20" : "bg-indigo-50/15"} border-slate-200/60`
       }`}
     >
-      <div className="flex justify-between items-center pb-1 border-b border-slate-850/65">
-        <span className={`text-3xs uppercase tracking-widest font-extrabold ${colors.text}`}>{moment}</span>
+      <div className="flex justify-between items-center pb-1 border-b border-slate-200/80">
+        <span className={`text-3xs uppercase tracking-widest font-black ${moment === 'midi' ? 'text-amber-800' : 'text-indigo-850'}`}>{moment}</span>
         {!showInput && (
           <button
             onClick={() => setShowInput(true)}
-            className={`p-0.5 rounded transition-colors ${colors.text} hover:text-violet-400`}
+            className={`p-0.5 rounded transition-colors ${moment === 'midi' ? 'text-amber-800 hover:text-orange-500' : 'text-indigo-850 hover:text-indigo-600'} cursor-pointer`}
             title="Ajouter un repas rapide"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -266,10 +266,10 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
               placeholder="Ex: Restes, Pizza..."
               value={textVal}
               onChange={(e) => setTextVal(e.target.value)}
-              className="flex-grow bg-slate-850 border border-slate-750 rounded-lg px-2 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+              className="flex-grow bg-slate-50 border border-slate-250 rounded-lg px-2 py-1 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-orange-400"
             />
-            <button type="submit" className="bg-violet-600 hover:bg-violet-500 px-2 py-1 rounded-lg text-xs font-semibold">OK</button>
-            <button type="button" onClick={() => setShowInput(false)} className="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded-lg text-xs text-slate-300">X</button>
+            <button type="submit" className="bg-orange-100 hover:bg-orange-200 text-orange-850 px-2 py-1 rounded-lg text-xs font-bold cursor-pointer">OK</button>
+            <button type="button" onClick={() => setShowInput(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg text-xs font-bold cursor-pointer">X</button>
           </form>
         )}
       </div>
@@ -315,8 +315,8 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
       style={style}
       {...listeners}
       {...attributes}
-      className={`bg-slate-950/45 p-2 rounded-xl border border-slate-850/60 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing transition-all ${
-        isDragging ? "opacity-20 border-dashed border-violet-500 bg-slate-900/60 shadow-none" : "hover:border-slate-750/80"
+      className={`relative bg-white p-2.5 pr-7 rounded-xl border border-slate-200 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing transition-all shadow-sm ${
+        isDragging ? "opacity-20 border-dashed border-orange-350 bg-slate-50 shadow-none" : "hover:border-slate-350"
       }`}
     >
       {/* Ligne supérieure avec le badge ou espaceur, et la corbeille tout à droite */}
@@ -331,13 +331,13 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
               e.stopPropagation();
               if (onShowDetails) onShowDetails(repas);
             }}
-            className="text-slate-500 hover:text-violet-400 p-0.5 rounded transition-colors shrink-0 cursor-pointer"
+            className="text-slate-400 hover:text-indigo-600 p-0.5 rounded transition-colors shrink-0 cursor-pointer"
             title="Voir la fiche recette"
           >
             <Info className="w-3.5 h-3.5" />
           </button>
         ) : repas.type === "texte" ? (
-          <span className="text-4xs text-slate-400 font-semibold uppercase tracking-wider bg-slate-850 px-1.5 py-0.5 rounded border border-slate-800 inline-block">
+          <span className="text-4xs text-amber-900 font-extrabold uppercase tracking-wider bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 inline-block">
             Repas rapide
           </span>
         ) : (
@@ -352,21 +352,20 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
             e.stopPropagation();
             onClear(repas.planifiedId);
           }}
-          className="text-slate-500 hover:text-red-400 p-0.5 rounded transition-colors shrink-0"
+          className="text-slate-400 hover:text-red-500 p-0.5 rounded transition-colors shrink-0 cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-
       {/* Titre du repas sur toute la largeur */}
       <div className="w-full min-w-0">
-        <span className="text-xs font-bold text-white leading-snug block break-words">
+        <span className="text-xs font-bold text-slate-800 leading-snug block break-words">
           {repas.texte}
         </span>
       </div>
 
       <div 
-        className="flex items-center justify-center gap-1 border-t border-slate-850/40 pt-1.5 text-slate-500"
+        className="flex items-center justify-center gap-1 border-t border-slate-100 pt-1.5 text-slate-400"
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
@@ -377,17 +376,17 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
             e.stopPropagation();
             onUpdatePortions(repas.planifiedId, Math.max(1, repas.portions - 1));
           }}
-          className="p-0.5 hover:bg-slate-850 hover:text-violet-400 rounded transition-colors text-slate-550"
+          className="p-0.5 hover:bg-slate-100 hover:text-orange-600 rounded transition-colors text-slate-400 cursor-pointer"
           title="Diminuer les portions"
         >
           <ChevronDown className="w-3.5 h-3.5" />
         </button>
         
-        <span className={`font-extrabold ${colors.activeText} text-xs px-0.5 min-w-4 text-center`}>
+        <span className="font-extrabold text-orange-600 text-xs px-0.5 min-w-4 text-center">
           {repas.portions}
         </span>
         
-        <Users className="w-3.5 h-3.5 text-slate-550 shrink-0 mr-0.5" />
+        <Users className="w-3.5 h-3.5 text-slate-450 shrink-0 mr-0.5" />
 
         <button
           type="button"
@@ -395,7 +394,7 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
             e.stopPropagation();
             onUpdatePortions(repas.planifiedId, repas.portions + 1);
           }}
-          className="p-0.5 hover:bg-slate-850 hover:text-violet-400 rounded transition-colors text-slate-550"
+          className="p-0.5 hover:bg-slate-100 hover:text-orange-600 rounded transition-colors text-slate-400 cursor-pointer"
           title="Augmenter les portions"
         >
           <ChevronUp className="w-3.5 h-3.5" />
@@ -766,23 +765,23 @@ export const PlanningView: React.FC = () => {
 
   return (
     <DndContext collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-      <div className="h-[calc(100vh-73px)] flex flex-col md:flex-row bg-slate-950 text-white overflow-hidden">
+      <div className="h-[calc(100vh-73px)] flex flex-col md:flex-row bg-slate-50 text-slate-800 overflow-hidden">
         
         {/* ================= PANNEAU GAUCHE : RECETTES (PC UNIQUEMENT) ================= */}
-        <div className={`hidden md:flex shrink-0 flex-col border-r border-slate-900 bg-slate-900/45 h-full overflow-hidden transition-all duration-300 ease-in-out ${
+        <div className={`hidden md:flex shrink-0 flex-col border-r border-slate-200 bg-white h-full overflow-hidden transition-all duration-300 ease-in-out ${
           isLeftCollapsed ? "w-12 p-2 items-center" : "w-[22%] p-4"
         }`}>
           {isLeftCollapsed ? (
             <div className="flex flex-col items-center py-4 h-full gap-6 select-none w-full">
               <button
                 onClick={() => setIsLeftCollapsed(false)}
-                className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-850 hover:border-violet-500/50 rounded-lg text-slate-400 hover:text-violet-400 transition-all cursor-pointer"
+                className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-indigo-300 rounded-lg text-slate-500 hover:text-indigo-650 transition-all cursor-pointer"
                 title="Développer les recettes"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
               <div 
-                className="flex flex-col items-center gap-2 text-violet-400/80 hover:text-violet-400 cursor-pointer group mt-2" 
+                className="flex flex-col items-center gap-2 text-indigo-500 hover:text-indigo-700 cursor-pointer group mt-2" 
                 onClick={() => setIsLeftCollapsed(false)}
                 title="Développer les recettes"
               >
@@ -795,12 +794,12 @@ export const PlanningView: React.FC = () => {
           ) : (
             <>
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-base font-bold flex items-center gap-2 text-violet-400">
+                <h3 className="text-base font-bold flex items-center gap-2 text-indigo-750">
                   <BookOpen className="w-4 h-4" /> Recettes
                 </h3>
                 <button
                   onClick={() => setIsLeftCollapsed(true)}
-                  className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-850 hover:border-violet-500/50 rounded-lg text-slate-400 hover:text-violet-400 transition-all cursor-pointer"
+                  className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-indigo-300 rounded-lg text-slate-500 hover:text-indigo-650 transition-all cursor-pointer"
                   title="Réduire les recettes"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -812,7 +811,7 @@ export const PlanningView: React.FC = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onFocus={(e) => e.target.select()}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 mb-4"
+                className="w-full bg-slate-55 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-850 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:bg-white mb-4"
               />
 
               <div className="flex gap-1.5 mb-3">
@@ -820,10 +819,10 @@ export const PlanningView: React.FC = () => {
                   <button
                     key={cat}
                     onClick={() => setCategoryFilter(cat)}
-                    className={`flex-grow py-1 px-1 rounded-lg text-4xs font-extrabold uppercase border tracking-wider transition-all ${
+                    className={`flex-grow py-1 px-1 rounded-lg text-4xs font-extrabold uppercase border tracking-wider transition-all cursor-pointer ${
                       categoryFilter === cat
-                        ? "bg-violet-600/20 border-violet-500/50 text-violet-400"
-                        : "bg-slate-900 border-slate-850 text-slate-500 hover:text-slate-300"
+                        ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-bold"
+                        : "bg-slate-50 border-slate-150 text-slate-500 hover:bg-slate-100 hover:text-slate-750"
                     }`}
                   >
                     {cat === "all" ? "Toutes" : cat.slice(0, 3)}
@@ -835,28 +834,28 @@ export const PlanningView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setOnlyFavs(!onlyFavs)}
-                  className={`flex-grow min-h-[38px] py-1.5 px-2 rounded-lg border text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  className={`flex-grow min-h-[38px] py-1.5 px-2 rounded-lg border text-[10px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     onlyFavs
-                      ? "bg-fuchsia-600/10 border-fuchsia-500/30 text-fuchsia-400"
-                      : "bg-slate-900 border-slate-850 text-slate-500 hover:text-slate-300"
+                      ? "bg-rose-100 border-rose-200 text-rose-700 font-bold"
+                      : "bg-slate-50 border-slate-150 text-slate-500 hover:bg-slate-100 hover:text-slate-750"
                   }`}
                   title="Afficher uniquement les favoris"
                 >
-                  <Heart className={`w-3.5 h-3.5 ${onlyFavs ? "fill-fuchsia-500 text-fuchsia-500" : ""}`} />
+                  <Heart className={`w-3.5 h-3.5 ${onlyFavs ? "fill-rose-500 text-rose-500" : ""}`} />
                   <span>Favoris</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setFavsFirst(!favsFirst)}
-                  className={`flex-grow min-h-[38px] py-1 px-2 rounded-lg border text-[9px] font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  className={`flex-grow min-h-[38px] py-1 px-2 rounded-lg border text-[9px] font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     favsFirst
-                      ? "bg-violet-600/10 border-violet-500/30 text-violet-400"
-                      : "bg-slate-900 border-slate-850 text-slate-500 hover:text-slate-300"
+                      ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-bold"
+                      : "bg-slate-50 border-slate-150 text-slate-500 hover:bg-slate-100 hover:text-slate-750"
                   }`}
                   title="Afficher les recettes favorites en premier dans la liste"
                 >
-                  <svg className={`w-3.5 h-3.5 ${favsFirst ? "text-violet-400" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <svg className={`w-3.5 h-3.5 ${favsFirst ? "text-indigo-650" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
                   </svg>
                   <span className="leading-tight text-left">
@@ -876,7 +875,7 @@ export const PlanningView: React.FC = () => {
                   />
                 ))}
                 {sortedRecettesPanneau.length === 0 && (
-                  <div className="text-xs text-slate-600 text-center py-6">Aucune recette</div>
+                  <div className="text-xs text-slate-500 text-center py-6">Aucune recette</div>
                 )}
               </div>
             </>
@@ -889,15 +888,15 @@ export const PlanningView: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-extrabold flex items-center gap-2 text-white">
-                <Calendar className="text-violet-500" />
+              <h2 className="text-xl font-extrabold flex items-center gap-2 text-slate-800">
+                <Calendar className="text-orange-500" />
                 Mon Planning
               </h2>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-400">
-                <span>Foyer : <span className="font-semibold text-white">{foyer?.nom}</span> ({foyer?.codeFoyer})</span>
-                <span className="hidden sm:inline text-slate-700">•</span>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
+                <span>Foyer : <span className="font-semibold text-slate-850">{foyer?.nom}</span> ({foyer?.codeFoyer})</span>
+                <span className="hidden sm:inline text-slate-300">•</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500">1er jour :</span>
+                  <span className="text-slate-550">1er jour :</span>
                   <select
                     value={foyer?.jourDebutSemaine !== undefined ? foyer.jourDebutSemaine : 1}
                     onChange={async (e) => {
@@ -906,7 +905,7 @@ export const PlanningView: React.FC = () => {
                         await refreshFoyer();
                       }
                     }}
-                    className="bg-slate-900 border border-slate-800 rounded px-2 py-0.5 text-3xs font-black text-violet-400 focus:outline-none focus:border-violet-500 uppercase tracking-wider"
+                    className="bg-white border border-slate-200 rounded px-2 py-0.5 text-3xs font-black text-indigo-650 focus:outline-none focus:border-indigo-500 uppercase tracking-wider cursor-pointer shadow-2xs hover:border-slate-350"
                   >
                     <option value="1">Lundi</option>
                     <option value="2">Mardi</option>
@@ -922,7 +921,7 @@ export const PlanningView: React.FC = () => {
             
             <button
               onClick={handleClearWeek}
-              className="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 rounded-xl text-xs font-bold transition-all active:scale-98"
+              className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold transition-all active:scale-98 cursor-pointer shadow-sm"
             >
               Vider la semaine
             </button>
@@ -934,8 +933,8 @@ export const PlanningView: React.FC = () => {
               const dayColors = CONFIG_COULEURS_JOURS[jour];
               return (
                 <div key={jour} className="flex flex-col gap-3">
-                  <div className={`text-center py-2 border rounded-xl transition-all ${dayColors?.bgHeader || "bg-slate-900 border-slate-800"}`}>
-                    <span className={`text-xs font-black capitalize tracking-wide ${dayColors?.text || "text-slate-300"}`}>{jour}</span>
+                  <div className={`text-center py-2 border rounded-xl transition-all shadow-2xs ${dayColors?.bgHeader || "bg-white border-slate-200"}`}>
+                    <span className={`text-xs font-black capitalize tracking-wide ${dayColors?.text || "text-slate-700"}`}>{jour}</span>
                   </div>
                   
                   <DroppableRepasCell
@@ -974,21 +973,21 @@ export const PlanningView: React.FC = () => {
               const dayColors = CONFIG_COULEURS_JOURS[currentDay];
               return (
                 <>
-                  <div className={`flex items-center justify-between mb-6 border p-2 rounded-2xl transition-all ${dayColors?.bgHeader || "bg-slate-900/60 border-slate-850"}`}>
+                  <div className={`flex items-center justify-between mb-6 border p-2 rounded-2xl transition-all shadow-sm bg-white ${dayColors?.bgHeader || "border-slate-200"}`}>
                     <button
                       onClick={() => setActiveDayIdxMobile((prev) => (prev > 0 ? prev - 1 : 6))}
-                      className={`p-2 hover:bg-slate-800 rounded-xl transition-colors ${dayColors?.text || "text-slate-400"}`}
+                      className={`p-2 hover:bg-slate-100 rounded-xl transition-colors ${dayColors?.text || "text-slate-550"}`}
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     
-                    <span className={`text-base font-extrabold capitalize tracking-wide ${dayColors?.text || "text-white"}`}>
+                    <span className={`text-base font-extrabold capitalize tracking-wide ${dayColors?.text || "text-slate-800"}`}>
                       {currentDay}
                     </span>
 
                     <button
                       onClick={() => setActiveDayIdxMobile((prev) => (prev < 6 ? prev + 1 : 0))}
-                      className={`p-2 hover:bg-slate-800 rounded-xl transition-colors ${dayColors?.text || "text-slate-400"}`}
+                      className={`p-2 hover:bg-slate-100 rounded-xl transition-colors ${dayColors?.text || "text-slate-550"}`}
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -996,7 +995,7 @@ export const PlanningView: React.FC = () => {
 
                   {/* Carte du jour actif */}
                   <div className="space-y-4">
-                    <div className="bg-slate-900/40 border border-slate-850 rounded-3xl p-5">
+                    <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5">
                       <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Repas du Midi</h4>
                       <DroppableRepasCell
                         prefix="mobile"
@@ -1011,7 +1010,7 @@ export const PlanningView: React.FC = () => {
                       />
                     </div>
 
-                    <div className="bg-slate-900/40 border border-slate-850 rounded-3xl p-5">
+                    <div className="bg-white border border-slate-200 shadow-sm rounded-3xl p-5">
                       <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Repas du Soir</h4>
                       <DroppableRepasCell
                         prefix="mobile"
@@ -1040,20 +1039,20 @@ export const PlanningView: React.FC = () => {
         </div>
 
         {/* ================= PANNEAU DROIT : LISTE DE COURSES TEMPS RÉEL (PC UNIQUEMENT) ================= */}
-        <div className={`hidden md:flex shrink-0 flex-col border-l border-slate-900 bg-slate-900/45 h-full overflow-hidden transition-all duration-300 ease-in-out ${
+        <div className={`hidden md:flex shrink-0 flex-col border-l border-slate-200 bg-white h-full overflow-hidden transition-all duration-300 ease-in-out ${
           isRightCollapsed ? "w-12 p-2 items-center" : "w-[25%] relative"
         }`}>
           {isRightCollapsed ? (
             <div className="flex flex-col items-center py-4 h-full gap-6 select-none w-full">
               <button
                 onClick={() => setIsRightCollapsed(false)}
-                className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-850 hover:border-violet-500/50 rounded-lg text-slate-400 hover:text-violet-400 transition-all cursor-pointer"
+                className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-indigo-300 rounded-lg text-slate-500 hover:text-indigo-650 transition-all cursor-pointer"
                 title="Développer la liste de courses"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <div 
-                className="flex flex-col items-center gap-2 text-emerald-400/80 hover:text-emerald-400 cursor-pointer group mt-2" 
+                className="flex flex-col items-center gap-2 text-emerald-550/80 hover:text-emerald-600 cursor-pointer group mt-2" 
                 onClick={() => setIsRightCollapsed(false)}
                 title="Développer la liste de courses"
               >
@@ -1071,8 +1070,8 @@ export const PlanningView: React.FC = () => {
       </div>
       <DragOverlay dropAnimation={null}>
         {activeRecipe ? (
-          <div className="p-2.5 bg-slate-800 border border-slate-650 rounded-xl flex items-center gap-3 shadow-2xl opacity-90 w-[240px] pointer-events-none cursor-grabbing">
-            <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-900 shrink-0 flex items-center justify-center border border-slate-750">
+          <div className="p-2.5 bg-white border border-slate-300 rounded-xl flex items-center gap-3 shadow-2xl opacity-95 w-[240px] pointer-events-none cursor-grabbing text-slate-800">
+            <div className="w-12 h-12 rounded-lg overflow-hidden bg-slate-50 shrink-0 flex items-center justify-center border border-slate-200">
               {activeRecipe.imageUrl ? (
                 <img src={activeRecipe.imageUrl} alt={activeRecipe.titre} className="w-full h-full object-cover" />
               ) : (
@@ -1080,49 +1079,49 @@ export const PlanningView: React.FC = () => {
               )}
             </div>
             <div className="flex-grow min-w-0">
-              <span className="text-sm font-semibold truncate text-white capitalize block">{activeRecipe.titre}</span>
-              <span className="text-3xs uppercase tracking-wider font-extrabold text-slate-400 block mt-0.5">{activeRecipe.categorie}</span>
+              <span className="text-sm font-semibold truncate text-slate-800 capitalize block">{activeRecipe.titre}</span>
+              <span className="text-3xs uppercase tracking-wider font-extrabold text-slate-450 block mt-0.5">{activeRecipe.categorie}</span>
             </div>
           </div>
         ) : activePlannedMeal ? (
-          <div className="p-2.5 bg-slate-800 border border-slate-650 rounded-xl flex flex-col gap-1.5 shadow-2xl opacity-95 w-[160px] pointer-events-none cursor-grabbing text-left">
-            <span className="text-xs font-bold text-white leading-snug break-words">
+          <div className="p-2.5 bg-white border border-slate-300 rounded-xl flex flex-col gap-1.5 shadow-2xl opacity-95 w-[160px] pointer-events-none cursor-grabbing text-left text-slate-800">
+            <span className="text-xs font-bold text-slate-800 leading-snug break-words">
               {activePlannedMeal.texte}
             </span>
             {activePlannedMeal.type === "texte" && (
               <div>
-                <span className="text-4xs text-slate-400 font-semibold uppercase tracking-wider bg-slate-850 px-1.5 py-0.5 rounded border border-slate-800 inline-block">
+                <span className="text-4xs text-amber-900 font-semibold uppercase tracking-wider bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 inline-block">
                   Repas rapide
                 </span>
               </div>
             )}
-            <div className="flex items-center justify-center gap-1 border-t border-slate-850/40 pt-1.5 text-slate-500">
-              <span className="font-extrabold text-violet-400 text-xs px-0.5 min-w-4 text-center">
+            <div className="flex items-center justify-center gap-1 border-t border-slate-100 pt-1.5 text-slate-400">
+              <span className="font-extrabold text-indigo-650 text-xs px-0.5 min-w-4 text-center">
                 {activePlannedMeal.portions}
               </span>
-              <Users className="w-3.5 h-3.5 text-slate-550 shrink-0 mr-0.5" />
+              <Users className="w-3.5 h-3.5 text-slate-500 shrink-0 mr-0.5" />
             </div>
           </div>
         ) : null}
       </DragOverlay>
 
       {previewRecipe && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer" onClick={() => setPreviewRecipe(null)}>
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col p-6 shadow-2xl overflow-hidden cursor-default" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer" onClick={() => setPreviewRecipe(null)}>
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col p-6 shadow-2xl overflow-hidden cursor-default text-slate-800" onClick={(e) => e.stopPropagation()}>
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-850 pb-4 mb-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
               <div>
-                <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded bg-violet-500/10 border border-violet-500/20 text-violet-400">
+                <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-50 border border-indigo-150 text-indigo-750">
                   {previewRecipe.categorie}
                 </span>
-                <h3 className="text-lg font-bold text-white capitalize mt-1.5 leading-tight">
+                <h3 className="text-lg font-bold text-slate-800 capitalize mt-1.5 leading-tight">
                   {previewRecipe.titre}
                 </h3>
               </div>
               <button
                 onClick={() => setPreviewRecipe(null)}
-                className="text-slate-400 hover:text-white p-1.5 hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1131,7 +1130,7 @@ export const PlanningView: React.FC = () => {
             {/* Corps */}
             <div className="flex-grow overflow-y-auto space-y-4 pr-1">
               {previewRecipe.imageUrl && (
-                <div className="w-full h-44 rounded-2xl overflow-hidden border border-slate-850">
+                <div className="w-full h-44 rounded-2xl overflow-hidden border border-slate-150 shadow-xs">
                   <img src={previewRecipe.imageUrl} alt={previewRecipe.titre} className="w-full h-full object-cover" />
                 </div>
               )}
@@ -1140,22 +1139,22 @@ export const PlanningView: React.FC = () => {
                 <h4 className="text-3xs uppercase tracking-widest font-black text-slate-500 mb-2">
                   Portions par défaut
                 </h4>
-                <div className="flex items-center gap-1.5 text-xs text-slate-350 font-semibold">
-                  <Users className="w-4 h-4 text-violet-400" />
+                <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
+                  <Users className="w-4 h-4 text-indigo-550" />
                   <span>{previewRecipe.portionsDefaut} personnes</span>
                 </div>
               </div>
 
-              <div className="border-t border-slate-850/60 pt-4">
+              <div className="border-t border-slate-100 pt-4">
                 <h4 className="text-3xs uppercase tracking-widest font-black text-slate-500 mb-3">
                   Ingrédients requis
                 </h4>
-                <div className="bg-slate-950/20 border border-slate-850/80 rounded-2xl p-3 space-y-2">
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 space-y-2">
                   {previewRecipe.ingredients && previewRecipe.ingredients.length > 0 ? (
                     previewRecipe.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-slate-850/30 last:border-b-0">
-                        <span className="capitalize text-slate-200 font-medium">{ing.nom}</span>
-                        <span className="text-violet-300 font-bold bg-violet-500/5 px-2 py-0.5 rounded border border-violet-500/10">
+                      <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-slate-100 last:border-b-0">
+                        <span className="capitalize text-slate-700 font-medium">{ing.nom}</span>
+                        <span className="text-indigo-650 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-150">
                           {ing.quantite > 0 ? `${ing.quantite} ` : ""}{ing.unite}
                         </span>
                       </div>
@@ -1170,10 +1169,10 @@ export const PlanningView: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-slate-850 pt-4 mt-4 flex">
+            <div className="border-t border-slate-100 pt-4 mt-4 flex">
               <button
                 onClick={() => setPreviewRecipe(null)}
-                className="w-full bg-slate-800 hover:bg-slate-750 text-slate-300 py-2.5 rounded-xl font-bold transition-all text-xs cursor-pointer"
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-all text-xs cursor-pointer"
               >
                 Fermer
               </button>

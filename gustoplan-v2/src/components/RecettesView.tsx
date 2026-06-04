@@ -178,15 +178,15 @@ export const RecettesView: React.FC = () => {
   const unitesSuggerees = cartesIngredientsUnites[ingNom.trim().toLowerCase()] || [];
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 bg-slate-950 text-white">
+    <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50 text-slate-800">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="text-violet-500" />
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+            <BookOpen className="text-indigo-650" />
             Mes Recettes
           </h2>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-550 text-sm mt-1">
             Gérez vos plats pour le planning ({recettes.length} recettes)
           </p>
         </div>
@@ -195,7 +195,7 @@ export const RecettesView: React.FC = () => {
             resetForm();
             setIsModalOpen(true);
           }}
-          className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-violet-600/10 flex items-center justify-center gap-2 transition-all active:scale-98"
+          className="bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-sm"
         >
           <Plus className="w-5 h-5" /> Nouvelle recette
         </button>
@@ -204,14 +204,14 @@ export const RecettesView: React.FC = () => {
       {/* Barre de recherche et filtres */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="relative">
-          <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
+          <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Rechercher une recette..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onFocus={(e) => e.target.select()}
-            className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 placeholder-slate-500 text-white focus:outline-none focus:border-violet-500 transition-colors"
+            className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 placeholder-slate-400 text-slate-850 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all shadow-2xs"
           />
         </div>
 
@@ -220,10 +220,10 @@ export const RecettesView: React.FC = () => {
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`flex-1 py-3 px-3 rounded-xl border text-xs font-semibold uppercase tracking-wider transition-all ${
+              className={`flex-1 py-3 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 categoryFilter === cat
-                  ? "bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-600/10"
-                  : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+                  ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-black shadow-xs"
+                  : "bg-white border-slate-200 text-slate-550 hover:bg-slate-50 hover:text-slate-850"
               }`}
             >
               {cat === "all" ? "Toutes" : cat}
@@ -233,23 +233,23 @@ export const RecettesView: React.FC = () => {
 
         <button
           onClick={() => setOnlyFavorites(!onlyFavorites)}
-          className={`py-3 px-4 rounded-xl border flex items-center justify-center gap-2 text-sm font-semibold transition-all ${
+          className={`py-3 px-4 rounded-xl border flex items-center justify-center gap-2 text-sm font-bold transition-all cursor-pointer ${
             onlyFavorites
-              ? "bg-fuchsia-600/10 border-fuchsia-500/30 text-fuchsia-400"
-              : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white"
+              ? "bg-rose-100 border-rose-200 text-rose-700 font-extrabold shadow-xs"
+              : "bg-white border-slate-200 text-slate-550 hover:bg-slate-50 hover:text-slate-850"
           }`}
         >
-          <Heart className={`w-4 h-4 ${onlyFavorites ? "fill-fuchsia-500 text-fuchsia-500" : ""}`} />
+          <Heart className={`w-4 h-4 ${onlyFavorites ? "fill-rose-500 text-rose-500" : ""}`} />
           Favoris uniquement
         </button>
       </div>
 
-      {/* Grille des recettes avec hauteur calculée pour éviter l'écrasement CSS Grid */}
+      {/* Grille des recettes */}
       <div className="h-[calc(100vh-220px)] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20 md:pb-6">
         {sortedRecettes.map((recette) => (
           <div
             key={recette.id}
-            className="bg-slate-900/60 border border-slate-800/80 rounded-2xl flex flex-col justify-between hover:border-slate-700 transition-all hover:scale-[1.01] overflow-hidden h-[260px] shadow-lg relative group"
+            className="bg-white border border-slate-200/85 rounded-3xl flex flex-col justify-between hover:border-slate-350 transition-all hover:scale-[1.01] overflow-hidden h-[260px] shadow-sm relative group"
           >
             {/* Image de la recette en arrière-plan complet */}
             {recette.imageUrl ? (
@@ -260,41 +260,41 @@ export const RecettesView: React.FC = () => {
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 {/* Voile sombre pour le contraste */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
               </div>
             ) : (
-              <div className="absolute inset-0 w-full h-full bg-slate-950/40 flex items-center justify-center">
-                <BookOpen className="w-12 h-12 text-slate-800" />
+              <div className="absolute inset-0 w-full h-full bg-slate-50 flex items-center justify-center">
+                <BookOpen className="w-12 h-12 text-slate-300" />
               </div>
             )}
 
             {/* Catégorie et favoris en haut (flottants sur l'image) */}
             <div className="relative z-10 p-3 flex items-start justify-between gap-2">
-              <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider bg-slate-950/80 backdrop-blur-sm ${
+              <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider backdrop-blur-sm border ${
                 recette.categorie === "entree" 
-                  ? "text-emerald-400 border border-emerald-500/20"
+                  ? "text-emerald-700 border-emerald-350 bg-emerald-50/90"
                   : recette.categorie === "plat"
-                  ? "text-violet-400 border border-violet-500/20"
-                  : "text-amber-400 border border-amber-500/20"
+                  ? "text-indigo-700 border-indigo-350 bg-indigo-50/90"
+                  : "text-amber-700 border-amber-355 bg-amber-50/90"
               }`}>
                 {recette.categorie}
               </span>
               <button 
                 onClick={() => handleToggleFavori(recette)}
-                className="text-white/70 hover:text-fuchsia-500 bg-slate-950/80 backdrop-blur-sm rounded-full p-1 transition-colors"
+                className="text-slate-500 hover:text-rose-600 bg-white/95 backdrop-blur-sm rounded-full p-1.5 transition-colors border border-slate-100 shadow-2xs cursor-pointer"
               >
-                <Heart className={`w-3.5 h-3.5 ${recette.favori ? "fill-fuchsia-500 text-fuchsia-500" : ""}`} />
+                <Heart className={`w-3.5 h-3.5 ${recette.favori ? "fill-rose-500 text-rose-500" : ""}`} />
               </button>
             </div>
 
-            {/* Conteneur flouté en bas pour le texte et les boutons (effet verre dépoli) */}
-            <div className="relative z-10 p-3 bg-slate-800/25 backdrop-blur-md border-t border-white/5 flex flex-col gap-2">
+            {/* Conteneur flouté en bas pour le texte et les boutons */}
+            <div className="relative z-10 p-3 bg-white/95 backdrop-blur-xs border-t border-slate-100 flex flex-col gap-1.5 shadow-md">
               <div>
-                <h3 className="text-sm font-bold text-white capitalize truncate leading-tight" title={recette.titre}>
+                <h3 className="text-sm font-bold text-slate-850 capitalize truncate leading-tight" title={recette.titre}>
                   {recette.titre}
                 </h3>
-                <p className="text-[11px] font-semibold text-slate-350 mt-1 flex items-center gap-1">
-                  Portions : <span className="text-violet-400 font-extrabold">{recette.portionsDefaut}</span> pers.
+                <p className="text-[11px] font-semibold text-slate-500 mt-0.5 flex items-center gap-1">
+                  Portions : <span className="text-indigo-650 font-black">{recette.portionsDefaut}</span> pers.
                 </p>
               </div>
 
@@ -302,13 +302,13 @@ export const RecettesView: React.FC = () => {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => handleEdit(recette)}
-                  className="flex-grow bg-white/10 hover:bg-white/15 border border-white/10 text-white py-1.5 rounded-xl text-3xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all"
+                  className="flex-grow bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-750 py-1.5 rounded-xl text-3xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer"
                 >
                   <Edit3 className="w-3.5 h-3.5" /> Éditer
                 </button>
                 <button
                   onClick={() => handleDelete(recette.id)}
-                  className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 p-1.5 rounded-xl transition-all"
+                  className="bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 p-1.5 rounded-xl transition-all cursor-pointer"
                   title="Supprimer la recette"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -319,25 +319,25 @@ export const RecettesView: React.FC = () => {
         ))}
 
         {sortedRecettes.length === 0 && (
-          <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-500">
-            <BookOpen className="w-12 h-12 text-slate-600 mb-3" />
-            <p className="text-center font-medium">Aucune recette trouvée.</p>
-            <p className="text-center text-xs text-slate-600 mt-1">Créez votre première recette pour démarrer.</p>
+          <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400">
+            <BookOpen className="w-12 h-12 text-slate-300 mb-3" />
+            <p className="text-center font-bold text-slate-650 text-sm">Aucune recette trouvée.</p>
+            <p className="text-center text-xs text-slate-450 mt-1">Créez votre première recette pour démarrer.</p>
           </div>
         )}
       </div>
 
       {/* Modal d'ajout/édition */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-              <h3 className="text-xl font-bold text-white">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col p-6 shadow-2xl text-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+              <h3 className="text-xl font-bold text-slate-800">
                 {editingId ? "Modifier la recette" : "Ajouter une recette"}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-500 hover:text-white p-1 transition-colors"
+                className="text-slate-400 hover:text-slate-600 p-1 transition-colors cursor-pointer"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -345,7 +345,7 @@ export const RecettesView: React.FC = () => {
 
             <form onSubmit={handleSave} className="flex-grow overflow-y-auto space-y-4 pr-1">
               <div>
-                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+                <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
                   Titre de la recette
                 </label>
                 <input
@@ -354,12 +354,12 @@ export const RecettesView: React.FC = () => {
                   value={titre}
                   onChange={(e) => setTitre(e.target.value)}
                   placeholder="Ex: Pâtes Carbonara, Salade César..."
-                  className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+                <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
                   URL de l'image (optionnel)
                 </label>
                 <input
@@ -367,20 +367,19 @@ export const RecettesView: React.FC = () => {
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://exemple.com/image.jpg"
-                  className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
                 />
               </div>
 
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+                  <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
                     Catégorie
                   </label>
                   <select
                     value={categorie}
                     onChange={(e: any) => setCategorie(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer"
                   >
                     <option value="entree">Entrée</option>
                     <option value="plat">Plat</option>
@@ -389,7 +388,7 @@ export const RecettesView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+                  <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
                     Portions par défaut
                   </label>
                   <input
@@ -398,14 +397,14 @@ export const RecettesView: React.FC = () => {
                     required
                     value={portions}
                     onChange={(e) => setPortions(parseInt(e.target.value) || 1)}
-                    className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-violet-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Bloc ingrédients */}
-              <div className="border-t border-slate-800 pt-4">
-                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+              <div className="border-t border-slate-100 pt-4">
+                <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
                   Ingrédients
                 </label>
                 
@@ -421,14 +420,13 @@ export const RecettesView: React.FC = () => {
                       }}
                       onFocus={() => setShowSuggestions(true)}
                       onBlur={() => {
-                        // Petit délai pour laisser l'événement onClick de la suggestion se déclencher
                         setTimeout(() => setShowSuggestions(false), 200);
                       }}
-                      className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
                     />
                     
                     {showSuggestions && suggestionsFiltrees.length > 0 && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
+                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
                         {suggestionsFiltrees.map((nom) => (
                           <button
                             key={nom}
@@ -436,13 +434,12 @@ export const RecettesView: React.FC = () => {
                             onClick={() => {
                               setIngNom(nom);
                               setShowSuggestions(false);
-                              // Pré-remplir l'unité avec la première unité déjà utilisée
                               const units = cartesIngredientsUnites[nom] || [];
                               if (units.length > 0) {
                                 setIngUnite(units[0]);
                               }
                             }}
-                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-300 transition-all cursor-pointer capitalize font-semibold flex justify-between items-center"
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer capitalize font-semibold flex justify-between items-center"
                           >
                             <span>{nom}</span>
                             {cartesIngredientsUnites[nom] && cartesIngredientsUnites[nom].length > 0 && (
@@ -460,7 +457,7 @@ export const RecettesView: React.FC = () => {
                     placeholder="Qté (ex: 200)"
                     value={ingQuantite}
                     onChange={(e) => setIngQuantite(e.target.value)}
-                    className="w-20 bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
+                    className="w-20 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
                   />
                   <div className="relative w-28 flex-shrink-0">
                     <input
@@ -473,13 +470,12 @@ export const RecettesView: React.FC = () => {
                       }}
                       onFocus={() => setShowUnitSuggestions(true)}
                       onBlur={() => {
-                        // Petit délai pour laisser l'événement onClick de la suggestion se déclencher
                         setTimeout(() => setShowUnitSuggestions(false), 200);
                       }}
-                      className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
                     />
                     {showUnitSuggestions && unitesSuggerees.length > 0 && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
+                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
                         {unitesSuggerees.map((u) => (
                           <button
                             key={u}
@@ -488,7 +484,7 @@ export const RecettesView: React.FC = () => {
                               setIngUnite(u);
                               setShowUnitSuggestions(false);
                             }}
-                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-300 transition-all cursor-pointer font-semibold"
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer font-semibold"
                           >
                             {u}
                           </button>
@@ -499,23 +495,25 @@ export const RecettesView: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleAddIngredient}
-                    className="bg-violet-600 hover:bg-violet-500 text-white p-2 rounded-xl flex items-center justify-center flex-shrink-0"
+                    className="bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 p-2 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer"
                   >
                     <Plus className="w-5 h-5" />
                   </button>
                 </div>
 
                 {/* Liste des ingrédients ajoutés */}
-                <div className="bg-slate-800/40 rounded-xl p-3 max-h-40 overflow-y-auto space-y-1">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-40 overflow-y-auto space-y-1">
                   {ingredients.map((ing, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-slate-800/50 last:border-b-0">
-                      <span className="capitalize text-slate-300">{ing.nom}</span>
+                    <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-slate-100 last:border-b-0 text-slate-700">
+                      <span className="capitalize text-slate-700 font-medium">{ing.nom}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400">{ing.quantite > 0 ? `${ing.quantite} ${ing.unite}` : ing.unite}</span>
+                        <span className="text-indigo-650 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-150 text-xs">
+                          {ing.quantite > 0 ? `${ing.quantite} ${ing.unite}` : ing.unite}
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleRemoveIngredient(idx)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-rose-500 hover:text-rose-700 p-0.5 rounded cursor-pointer"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -523,24 +521,24 @@ export const RecettesView: React.FC = () => {
                     </div>
                   ))}
                   {ingredients.length === 0 && (
-                    <div className="text-xs text-slate-500 text-center py-4">
+                    <div className="text-xs text-slate-400 text-center py-4">
                       Aucun ingrédient ajouté pour l'instant.
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="border-t border-slate-800 pt-4 flex gap-3">
+              <div className="border-t border-slate-100 pt-4 flex gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-semibold transition-colors"
+                  className="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-semibold transition-all cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white py-3 rounded-xl font-semibold shadow-lg shadow-violet-600/10 transition-colors"
+                  className="flex-grow bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 py-3 rounded-xl font-bold transition-all cursor-pointer shadow-sm"
                 >
                   Sauvegarder
                 </button>

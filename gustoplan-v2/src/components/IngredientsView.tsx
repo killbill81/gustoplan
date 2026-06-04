@@ -65,10 +65,10 @@ const DroppableIngredientRow: React.FC<{
         isRecentlyUpdated
           ? "animate-absorb"
           : isOver
-          ? "bg-violet-900/40 border-violet-500 shadow-lg shadow-violet-500/20 scale-[1.01]"
+          ? "bg-indigo-50 border-indigo-400 shadow-md shadow-indigo-100 scale-[1.01]"
           : isCustomized
-          ? "bg-violet-950/10 border-violet-500/20 hover:border-violet-500/35"
-          : "bg-slate-900/40 border-slate-800/80 hover:border-slate-800"
+          ? "bg-indigo-50/20 border-indigo-150 hover:border-indigo-300"
+          : "bg-white border-slate-200/80 hover:border-slate-350 shadow-3xs"
       }`}
     >
       {children}
@@ -347,25 +347,25 @@ export const IngredientsView: React.FC = () => {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="h-full flex flex-col p-4 md:p-6 bg-slate-955 text-white overflow-hidden">
+      <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50 text-slate-800 overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 shrink-0">
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Tag className="text-violet-500" />
+            <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-800">
+              <Tag className="text-indigo-650" />
               Base des Ingrédients
             </h2>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-550 text-sm mt-1">
               Gérez les ingrédients et leurs catégories de rayons de course ({ingredients.length} ingrédients)
             </p>
           </div>
         </div>
 
         {/* Info Alert */}
-        <div className="bg-violet-950/20 border border-violet-500/20 rounded-2xl p-4 mb-6 flex gap-3 text-xs text-violet-300 shrink-0">
-          <Info className="w-5 h-5 shrink-0 text-violet-400" />
+        <div className="bg-indigo-50 border border-indigo-150 rounded-2xl p-4 mb-6 flex gap-3 text-xs text-indigo-750 shrink-0">
+          <Info className="w-5 h-5 shrink-0 text-indigo-550" />
           <div>
-            <span className="font-bold">Comment ça marche ?</span> Vous pouvez créer, modifier ou supprimer des ingrédients directement. <span className="font-bold text-violet-400">Cliquez sur une catégorie à gauche pour filtrer la liste</span>. Pour catégoriser un ingrédient, vous pouvez soit le glisser-déposer sur l'ingrédient, soit utiliser son menu déroulant.
+            <span className="font-bold">Comment ça marche ?</span> Vous pouvez créer, modifier ou supprimer des ingrédients directement. <span className="font-bold text-indigo-650">Cliquez sur une catégorie à gauche pour filtrer la liste</span>. Pour catégoriser un ingrédient, vous pouvez soit le glisser-déposer sur l'ingrédient, soit utiliser son menu déroulant.
           </div>
         </div>
 
@@ -373,9 +373,9 @@ export const IngredientsView: React.FC = () => {
         <div className="flex-grow flex flex-col md:flex-row gap-6 min-h-0 overflow-hidden">
           
           {/* LEFT COLUMN: Category management */}
-          <div className="w-full md:w-80 lg:w-96 shrink-0 flex flex-col gap-4 bg-slate-900/35 border border-slate-900 p-4 rounded-2xl h-fit max-h-full overflow-y-auto">
+          <div className="w-full md:w-80 lg:w-96 shrink-0 flex flex-col gap-4 bg-white border border-slate-200 p-4 rounded-2xl h-fit max-h-full overflow-y-auto shadow-sm">
             <div>
-              <h3 className="text-sm font-bold text-white mb-3">
+              <h3 className="text-sm font-bold text-slate-800 mb-3">
                 Gestion des Catégories
               </h3>
               
@@ -385,11 +385,11 @@ export const IngredientsView: React.FC = () => {
                   placeholder="Créer une catégorie (ex: Boissons)..."
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="flex-grow bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 placeholder-slate-500 text-white focus:outline-none focus:border-violet-500 transition-colors text-xs"
+                  className="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 placeholder-slate-400 text-slate-855 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all text-xs"
                 />
                 <button
                   type="submit"
-                  className="bg-violet-655 hover:bg-violet-600 active:bg-violet-700 text-white font-semibold px-4 py-3 rounded-xl transition-all text-xs shrink-0 flex items-center gap-1 shadow-md shadow-violet-750/15"
+                  className="bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 font-bold px-4 py-3 rounded-xl transition-all text-xs shrink-0 flex items-center gap-1 shadow-xs cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Créer
@@ -399,8 +399,8 @@ export const IngredientsView: React.FC = () => {
             </div>
 
             {/* List of All Categories (Unified & Click to filter) */}
-            <div className="border-t border-slate-900 pt-3">
-              <h4 className="text-3xs font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+            <div className="border-t border-slate-100 pt-3">
+              <h4 className="text-3xs font-bold text-slate-500 uppercase tracking-widest mb-2.5">
                 Toutes les Catégories ({listRayons.length})
               </h4>
               <div className="flex flex-wrap gap-2 max-h-[350px] md:max-h-[500px] overflow-y-auto pr-1">
@@ -409,8 +409,8 @@ export const IngredientsView: React.FC = () => {
                   onClick={() => setSelectedCategory(null)}
                   className={`px-3 py-1.5 rounded-lg text-xs transition-all border font-semibold cursor-pointer ${
                     selectedCategory === null
-                      ? "bg-violet-600 border-violet-500 text-white shadow-md shadow-violet-600/20"
-                      : "bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-350"
+                      ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-black shadow-xs"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:text-slate-850 text-slate-600"
                   }`}
                 >
                   Toutes
@@ -424,8 +424,8 @@ export const IngredientsView: React.FC = () => {
                         onClick={() => setSelectedCategory(isSelected ? null : cat)}
                         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all border cursor-pointer ${
                           isSelected
-                            ? "bg-violet-650 border-violet-500 text-white shadow-md shadow-violet-500/20"
-                            : "bg-slate-800/90 border-slate-700/60 hover:border-violet-500/40 text-slate-200"
+                            ? "bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/20 font-black"
+                            : "bg-white border-slate-200 hover:border-indigo-350 hover:bg-indigo-50/30 text-slate-700"
                         }`}
                       >
                         {editingCategory === cat ? (
@@ -440,7 +440,7 @@ export const IngredientsView: React.FC = () => {
                             }}
                             autoFocus
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-slate-900 text-white border border-violet-500 rounded px-1.5 py-0.5 text-xs focus:outline-none w-28"
+                            className="bg-slate-50 text-slate-850 border border-indigo-400 rounded px-1.5 py-0.5 text-xs focus:outline-none w-28 focus:bg-white"
                           />
                         ) : (
                           <span className={`${isSelected ? "text-white font-bold" : "font-semibold"}`}>
@@ -474,7 +474,7 @@ export const IngredientsView: React.FC = () => {
                               <button
                                 onClick={() => handleDeleteCategory(cat)}
                                 title="Supprimer"
-                                className={`p-0.5 transition-colors ${isSelected ? "text-rose-200 hover:text-rose-100" : "hover:text-rose-455 text-slate-455"}`}
+                                className={`p-0.5 transition-colors ${isSelected ? "text-rose-200 hover:text-rose-100" : "hover:text-rose-550 text-slate-450"}`}
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -497,14 +497,14 @@ export const IngredientsView: React.FC = () => {
 
             {/* Ingredient search input */}
             <div className="relative w-full shrink-0">
-              <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
+              <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Rechercher un ingrédient..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onFocus={(e) => e.target.select()}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-11 pr-4 py-3 placeholder-slate-500 text-white focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 placeholder-slate-400 text-slate-855 focus:outline-none focus:border-indigo-400 transition-colors shadow-sm"
               />
             </div>
 
@@ -513,11 +513,11 @@ export const IngredientsView: React.FC = () => {
               <div className="flex flex-col gap-2 max-w-4xl mx-auto">
                 {/* Header Row for Desktop */}
                 {ingredientsFiltres.length > 0 && (
-                  <div className="hidden sm:flex items-center px-4 py-2 text-2xs uppercase font-extrabold tracking-widest text-slate-500 border-b border-slate-900/60 mb-1">
+                  <div className="hidden sm:flex items-center px-4 py-2 text-2xs uppercase font-extrabold tracking-widest text-slate-500 border-b border-slate-100 mb-1">
                     <div className="w-[55%] flex items-center gap-2">
                       <span>Nom de l'ingrédient</span>
                       {selectedCategory && (
-                        <span className="text-3xs font-extrabold uppercase px-1.5 py-0.5 rounded bg-violet-600/10 border border-violet-500/25 text-violet-400 normal-case tracking-normal">
+                        <span className="text-3xs font-extrabold uppercase px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-150 text-indigo-750 normal-case tracking-normal">
                           Filtre : {selectedCategory}
                         </span>
                       )}
@@ -548,25 +548,25 @@ export const IngredientsView: React.FC = () => {
                                 type="text"
                                 value={editIngName}
                                 onChange={(e) => setEditIngName(e.target.value)}
-                                className="flex-grow bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none"
+                                className="flex-grow bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-400"
                               />
                               <input
                                 type="text"
                                 placeholder="Unité"
                                 value={editIngUnit}
                                 onChange={(e) => setEditIngUnit(e.target.value)}
-                                className="w-20 bg-slate-955 border border-slate-800 rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                                className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-400"
                               />
                               <button
                                 onClick={() => handleSaveIngredient(ing.id!, ing.category)}
-                                className="p-1 hover:text-emerald-400 text-slate-400 transition-colors"
+                                className="p-1 hover:text-emerald-500 text-slate-400 transition-colors"
                                 title="Sauvegarder"
                               >
                                 <Check className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => setEditingIngredientId(null)}
-                                className="p-1 hover:text-rose-455 text-slate-400 transition-colors text-xs"
+                                className="p-1 hover:text-rose-500 text-slate-400 transition-colors text-xs"
                                 title="Annuler"
                               >
                                 ✕
@@ -574,16 +574,16 @@ export const IngredientsView: React.FC = () => {
                             </div>
                           ) : (
                             <div className="flex items-center justify-between w-full pr-4 group/row">
-                              <h3 className="text-sm font-semibold text-white capitalize truncate" title={ing.name}>
+                              <h3 className="text-sm font-semibold text-slate-800 capitalize truncate" title={ing.name}>
                                 {ing.name}
                                 {ing.unit && (
-                                  <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider bg-violet-500/10 border border-violet-500/20 text-violet-300">
+                                  <span className="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider bg-indigo-50 border border-indigo-150 text-indigo-750">
                                     {ing.unit}
                                   </span>
                                 )}
                               </h3>
                               
-                              {/* Actions modifier/supprimer l'ingrédient (Visibles en permanence) */}
+                              {/* Actions modifier/supprimer l'ingrédient */}
                               <div className="flex items-center gap-1.5 ml-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => {
@@ -592,14 +592,14 @@ export const IngredientsView: React.FC = () => {
                                     setEditIngUnit(ing.unit || "");
                                   }}
                                   title="Modifier le nom/l'unité"
-                                  className="p-1.5 bg-slate-800/80 hover:bg-slate-800 hover:text-violet-400 text-slate-350 rounded-lg transition-all border border-slate-700/50"
+                                  className="p-1.5 bg-indigo-50 hover:bg-indigo-100 hover:text-indigo-750 text-indigo-650 rounded-lg transition-all border border-indigo-150/80 cursor-pointer"
                                 >
                                   <Edit2 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteIngredient(ing.id!, ing.name)}
                                   title="Supprimer l'ingrédient"
-                                  className="p-1.5 bg-slate-800/80 hover:bg-slate-800 hover:text-rose-455 text-slate-350 rounded-lg transition-all border border-slate-700/50"
+                                  className="p-1.5 bg-rose-50 hover:bg-rose-100 hover:text-rose-600 text-rose-550 rounded-lg transition-all border border-rose-150/80 cursor-pointer"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -615,7 +615,7 @@ export const IngredientsView: React.FC = () => {
                             <select
                               value={ing.category}
                               onChange={(e) => handleUpdateRayon(ing, e.target.value)}
-                              className="bg-slate-900 border border-slate-855 hover:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500 transition-colors w-full sm:w-72 md:w-80 lg:w-96"
+                              className="bg-white border border-slate-200 hover:border-slate-350 rounded-lg px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-400 transition-colors w-full sm:w-72 md:w-80 lg:w-96 cursor-pointer shadow-2xs hover:bg-slate-50/50"
                             >
                               {listRayons.map((rayon) => (
                                 <option key={rayon} value={rayon}>
@@ -631,15 +631,15 @@ export const IngredientsView: React.FC = () => {
                 })}
 
                 {ingredientsFiltres.length === 0 && (
-                  <div className="py-12 flex flex-col items-center justify-center text-slate-500">
-                    <HelpCircle className="w-12 h-12 text-slate-650 mb-3" />
-                    <p className="text-center font-medium">Aucun ingrédient trouvé</p>
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400">
+                    <HelpCircle className="w-12 h-12 text-slate-300 mb-3" />
+                    <p className="text-center font-bold text-slate-650 text-sm">Aucun ingrédient trouvé</p>
                     {ingredients.length === 0 ? (
-                      <p className="text-center text-xs text-slate-600 mt-1">
+                      <p className="text-center text-xs text-slate-450 mt-1">
                         Créez un ingrédient à l'aide du formulaire ci-dessus pour commencer.
                       </p>
                     ) : (
-                      <p className="text-center text-xs text-slate-600 mt-1">
+                      <p className="text-center text-xs text-slate-450 mt-1">
                         Modifiez votre recherche ou réinitialisez le filtre de catégorie pour trouver d'autres articles.
                       </p>
                     )}
@@ -651,6 +651,7 @@ export const IngredientsView: React.FC = () => {
           </div>
         </div>
       </div>
+
 
       {/* Rendu du DragOverlay pour sortir du conteneur de scroll de gauche */}
       <DragOverlay dropAnimation={null}>

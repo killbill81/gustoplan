@@ -102,18 +102,17 @@ export const AuthScreen: React.FC = () => {
     }
   };
 
-  // 1. Écran de Connexion / Inscription
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl">
+      <div className="min-h-screen bg-slate-55 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-md">
           {/* Logo & Header */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-tr from-violet-600 to-fuchsia-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/20 mb-4">
-              <ChefHat className="w-9 h-9 text-white" />
+            <div className="w-16 h-16 bg-orange-50 border border-orange-100 rounded-2xl flex items-center justify-center shadow-sm mb-4">
+              <ChefHat className="w-9 h-9 text-orange-600" />
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">GustoPlan</h1>
-            <p className="text-slate-400 text-sm mt-2 text-center">
+            <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">GustoPlan</h1>
+            <p className="text-slate-500 text-sm mt-2 text-center">
               Planifiez vos menus et générez vos courses en un clin d'œil.
             </p>
           </div>
@@ -132,7 +131,7 @@ export const AuthScreen: React.FC = () => {
 
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+              <label className="block text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
                 Adresse Email
               </label>
               <input
@@ -141,20 +140,20 @@ export const AuthScreen: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nom@exemple.com"
-                className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 placeholder-slate-400 focus:outline-none focus:border-orange-400 focus:bg-white transition-all"
               />
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider">
+                <label className="block text-slate-500 text-xs font-bold uppercase tracking-wider">
                   Mot de passe
                 </label>
                 {!isSignUp && (
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-2xs text-violet-400 hover:text-violet-300 transition-colors"
+                    className="text-2xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors cursor-pointer"
                   >
                     Mot de passe oublié ?
                   </button>
@@ -166,18 +165,18 @@ export const AuthScreen: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 placeholder-slate-400 focus:outline-none focus:border-orange-400 focus:bg-white transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-violet-600/20 flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-50"
+              className="w-full bg-orange-100 text-orange-850 hover:bg-orange-200 font-bold py-3 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-50 cursor-pointer"
             >
 
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-orange-800/30 border-t-orange-800 rounded-full animate-spin" />
               ) : isSignUp ? (
                 <>
                   <UserPlus className="w-5 h-5" /> S'inscrire
@@ -191,13 +190,13 @@ export const AuthScreen: React.FC = () => {
           </form>
 
           {/* Toggle Sign Up / Sign In */}
-          <div className="mt-8 pt-6 border-t border-slate-800 text-center">
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <button
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError("");
               }}
-              className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
+              className="text-slate-500 hover:text-slate-800 text-sm font-semibold transition-colors cursor-pointer"
             >
               {isSignUp
                 ? "Déjà inscrit ? Connectez-vous"
@@ -212,14 +211,14 @@ export const AuthScreen: React.FC = () => {
   // 2. Écran d'attribution du Foyer
   if (user && (!userProfile?.foyerId)) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl">
+      <div className="min-h-screen bg-slate-55 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-md">
           <div className="flex flex-col items-center mb-6">
-            <div className="w-16 h-16 bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center mb-4">
-              <Home className="w-8 h-8 text-violet-500" />
+            <div className="w-16 h-16 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center mb-4">
+              <Home className="w-8 h-8 text-orange-500" />
             </div>
-            <h2 className="text-2xl font-bold text-white text-center">Rejoindre un Foyer</h2>
-            <p className="text-slate-400 text-xs mt-2 text-center">
+            <h2 className="text-2xl font-bold text-slate-800 text-center">Rejoindre un Foyer</h2>
+            <p className="text-slate-500 text-xs mt-2 text-center">
               Pour commencer à planifier, vous devez appartenir à un foyer partagé.
             </p>
           </div>
@@ -234,30 +233,30 @@ export const AuthScreen: React.FC = () => {
             <div className="space-y-4">
               <button
                 onClick={() => setFoyerAction("create")}
-                className="w-full bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 p-5 rounded-2xl flex items-center gap-4 text-left transition-all active:scale-98"
+                className="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 text-left transition-all active:scale-98 cursor-pointer"
               >
-                <div className="w-12 h-12 bg-violet-600/10 border border-violet-500/20 rounded-xl flex items-center justify-center shrink-0">
-                  <Home className="w-6 h-6 text-violet-400" />
+                <div className="w-12 h-12 bg-orange-50 border border-orange-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Home className="w-6 h-6 text-orange-500" />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-base">Créer un nouveau Foyer</h3>
-                  <p className="text-slate-400 text-xs mt-1">Idéal pour démarrer votre propre planning.</p>
+                  <h3 className="text-slate-850 font-bold text-base">Créer un nouveau Foyer</h3>
+                  <p className="text-slate-500 text-xs mt-1">Idéal pour démarrer votre propre planning.</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-slate-500 ml-auto shrink-0" />
+                <ArrowRight className="w-5 h-5 text-slate-400 ml-auto shrink-0" />
               </button>
 
               <button
                 onClick={() => setFoyerAction("join")}
-                className="w-full bg-slate-800/40 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 p-5 rounded-2xl flex items-center gap-4 text-left transition-all active:scale-98"
+                className="w-full bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 text-left transition-all active:scale-98 cursor-pointer"
               >
-                <div className="w-12 h-12 bg-fuchsia-600/10 border border-fuchsia-500/20 rounded-xl flex items-center justify-center shrink-0">
-                  <Users className="w-6 h-6 text-fuchsia-400" />
+                <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Users className="w-6 h-6 text-indigo-650" />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-base">Rejoindre un Foyer existant</h3>
-                  <p className="text-slate-400 text-xs mt-1">Saisissez le code fourni par votre partenaire ou colocataire.</p>
+                  <h3 className="text-slate-850 font-bold text-base">Rejoindre un Foyer existant</h3>
+                  <p className="text-slate-500 text-xs mt-1">Saisissez le code fourni par votre partenaire ou colocataire.</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-slate-500 ml-auto shrink-0" />
+                <ArrowRight className="w-5 h-5 text-slate-400 ml-auto shrink-0" />
               </button>
             </div>
           )}
@@ -265,7 +264,7 @@ export const AuthScreen: React.FC = () => {
           {foyerAction === "create" && (
             <form onSubmit={handleCreateFoyer} className="space-y-4">
               <div>
-                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+                <label className="block text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
                   Nom du Foyer
                 </label>
                 <input
@@ -274,14 +273,14 @@ export const AuthScreen: React.FC = () => {
                   value={foyerName}
                   onChange={(e) => setFoyerName(e.target.value)}
                   placeholder="Ex: Famille Martin, Coloc Aventure..."
-                  className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 placeholder-slate-400 focus:outline-none focus:border-orange-400 focus:bg-white transition-all"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition-all active:scale-98 disabled:opacity-50"
+                className="w-full bg-orange-100 text-orange-850 hover:bg-orange-200 font-bold py-3 px-4 rounded-xl shadow-sm transition-colors active:scale-98 disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Création..." : "Confirmer la création"}
               </button>
@@ -289,7 +288,7 @@ export const AuthScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFoyerAction("choose")}
-                className="w-full text-slate-400 hover:text-white text-sm font-medium py-2 transition-colors"
+                className="w-full text-slate-500 hover:text-slate-800 text-sm font-semibold py-2 transition-colors cursor-pointer"
               >
                 Retour
               </button>
@@ -299,7 +298,7 @@ export const AuthScreen: React.FC = () => {
           {foyerAction === "join" && (
             <form onSubmit={handleJoinFoyer} className="space-y-4">
               <div>
-                <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">
+                <label className="block text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
                   Code d'invitation Foyer
                 </label>
                 <input
@@ -308,14 +307,14 @@ export const AuthScreen: React.FC = () => {
                   value={foyerCode}
                   onChange={(e) => setFoyerCode(e.target.value)}
                   placeholder="Ex: GUSTO-9821"
-                  className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500 transition-colors uppercase"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 placeholder-slate-400 focus:outline-none focus:border-orange-400 focus:bg-white transition-all uppercase"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition-all active:scale-98 disabled:opacity-50"
+                className="w-full bg-orange-100 text-orange-850 hover:bg-orange-200 font-bold py-3 px-4 rounded-xl shadow-sm transition-colors active:scale-98 disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Connexion..." : "Rejoindre le Foyer"}
               </button>
@@ -323,7 +322,7 @@ export const AuthScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFoyerAction("choose")}
-                className="w-full text-slate-400 hover:text-white text-sm font-medium py-2 transition-colors"
+                className="w-full text-slate-500 hover:text-slate-800 text-sm font-semibold py-2 transition-colors cursor-pointer"
               >
                 Retour
               </button>
