@@ -191,8 +191,8 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
       {/* Formulaire d'ajout manuel d'ingrédients (Planning uniquement, style identique fiche recette) */}
       {context === "planning" && (
-        <form onSubmit={handleAddManuel} className="flex gap-2 mb-6 shrink-0 items-start">
-          <div className="flex-grow relative">
+        <form onSubmit={handleAddManuel} className="flex flex-col gap-2 mb-6 shrink-0">
+          <div className="w-full relative">
             <input
               type="text"
               required
@@ -237,54 +237,56 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
             )}
           </div>
 
-          <input
-            type="text"
-            placeholder="Qté"
-            value={quantite}
-            onChange={(e) => setQuantite(e.target.value)}
-            className="w-20 bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none"
-          />
-
-          <div className="relative w-28 flex-shrink-0">
+          <div className="flex gap-2 w-full">
             <input
               type="text"
-              placeholder="Unité"
-              value={unite}
-              onChange={(e) => {
-                setUnite(e.target.value);
-                setShowUnitSuggestions(true);
-              }}
-              onFocus={() => setShowUnitSuggestions(true)}
-              onBlur={() => {
-                setTimeout(() => setShowUnitSuggestions(false), 200);
-              }}
-              className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+              placeholder="Qté"
+              value={quantite}
+              onChange={(e) => setQuantite(e.target.value)}
+              className="flex-1 min-w-0 bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
             />
-            {showUnitSuggestions && unitesSuggerees.length > 0 && (
-              <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
-                {unitesSuggerees.map((u) => (
-                  <button
-                    key={u}
-                    type="button"
-                    onClick={() => {
-                      setUnite(u);
-                      setShowUnitSuggestions(false);
-                    }}
-                    className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-355 transition-all cursor-pointer font-semibold"
-                  >
-                    {u}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
 
-          <button
-            type="submit"
-            className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl flex items-center justify-center flex-shrink-0 w-[38px] h-[38px] transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+            <div className="relative flex-1 min-w-0">
+              <input
+                type="text"
+                placeholder="Unité"
+                value={unite}
+                onChange={(e) => {
+                  setUnite(e.target.value);
+                  setShowUnitSuggestions(true);
+                }}
+                onFocus={() => setShowUnitSuggestions(true)}
+                onBlur={() => {
+                  setTimeout(() => setShowUnitSuggestions(false), 200);
+                }}
+                className="w-full bg-slate-800 border border-slate-700/50 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500/50"
+              />
+              {showUnitSuggestions && unitesSuggerees.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-slate-800 border border-slate-700/80 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto p-1.5 backdrop-blur-md">
+                  {unitesSuggerees.map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onClick={() => {
+                        setUnite(u);
+                        setShowUnitSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-violet-600/20 hover:text-violet-400 text-slate-355 transition-all cursor-pointer font-semibold"
+                    >
+                      {u}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl flex items-center justify-center flex-shrink-0 w-[38px] h-[38px] transition-colors cursor-pointer"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
         </form>
       )}
 
@@ -313,15 +315,15 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                         className="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-violet-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0"
                       />
                     )}
-                    <div>
-                      <span className="text-sm font-medium capitalize text-white">
-                        {item.nom}
-                      </span>
+                    <div className="flex flex-col items-start leading-tight">
                       {item.manuel && (
-                        <span className="ml-2 text-2xs px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-500">
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-500 mb-0.5">
                           Manuel
                         </span>
                       )}
+                      <span className="text-sm font-medium capitalize text-white">
+                        {item.nom}
+                      </span>
                     </div>
                   </div>
 
@@ -395,15 +397,15 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                         className="w-5 h-5 rounded-lg border-slate-700 bg-slate-800 text-violet-500 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0"
                       />
                     )}
-                    <div>
-                      <span className="text-sm font-medium capitalize text-slate-500 line-through">
-                        {item.nom}
-                      </span>
+                    <div className="flex flex-col items-start leading-tight">
                       {item.manuel && (
-                        <span className="ml-2 text-2xs px-1.5 py-0.5 rounded bg-slate-900/40 border border-slate-800 text-slate-600">
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-500 mb-0.5 opacity-70">
                           Manuel
                         </span>
                       )}
+                      <span className="text-sm font-medium capitalize text-slate-500 line-through">
+                        {item.nom}
+                      </span>
                     </div>
                   </div>
 
