@@ -128,22 +128,42 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     setRayon("Autre / Divers");
   };
 
-  // Traiter les suggestions
-  const cartesIngredientsUnites = recettes.reduce<{ [key: string]: string[] }>((acc, r) => {
-    (r.ingredients || []).forEach((ing) => {
-      const n = ing.nom.trim().toLowerCase();
-      const u = ing.unite.trim();
-      if (n && u) {
+  // Traiter les suggestions en fusionnant la base globale d'ingrédients et les ingrédients des recettes
+  const cartesIngredientsUnites = (() => {
+    const acc: { [key: string]: string[] } = {};
+
+    // 1. Ajouter les ingrédients de la base globale (sans doublon de casse)
+    globalIngredients.forEach((ing) => {
+      const n = ing.name.trim().toLowerCase();
+      const u = ing.unit ? ing.unit.trim() : "";
+      if (n) {
         if (!acc[n]) {
           acc[n] = [];
         }
-        if (!acc[n].includes(u)) {
+        if (u && !acc[n].includes(u)) {
           acc[n].push(u);
         }
       }
     });
+
+    // 2. Compléter/enrichir avec les ingrédients des recettes existantes
+    recettes.forEach((r) => {
+      (r.ingredients || []).forEach((ing) => {
+        const n = ing.nom.trim().toLowerCase();
+        const u = ing.unite.trim();
+        if (n) {
+          if (!acc[n]) {
+            acc[n] = [];
+          }
+          if (u && !acc[n].includes(u)) {
+            acc[n].push(u);
+          }
+        }
+      });
+    });
+
     return acc;
-  }, {});
+  })();
 
   const tousIngredientsExistants = Object.keys(cartesIngredientsUnites).sort();
 
@@ -228,12 +248,9 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 bg-transparent text-slate-800">
-      {/* Header */}
-      <div className="flex flex-col gap-4 mb-6">
-        {/* Top Control Bar */}
-        <div className="flex items-center justify-between">
-          {/* Collapse button on the top left */}
-          {onCollapse ? (
+      <div className="flex flex-col mb-6">
+        <div className="flex items-center gap-2">
+          {onCollapse && (
             <button
               onClick={onCollapse}
               className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-indigo-300 rounded-lg text-slate-550 hover:text-indigo-650 transition-all cursor-pointer"
@@ -241,23 +258,15 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-          ) : (
-            <div />
           )}
-
-          <div />
-        </div>
-
-        {/* Title and Subtitle */}
-        <div>
           <h2 className="text-xl font-extrabold flex items-center gap-2 text-slate-800">
             <ShoppingCart className="text-orange-500 shrink-0 w-5 h-5" />
             <span>Ma Liste de Courses</span>
           </h2>
-          <p className="text-slate-500 text-xs mt-1">
-            Gérez vos achats ({articlesRestantsCount} articles restants)
-          </p>
         </div>
+        <p className={`text-slate-500 text-xs mt-1 ${onCollapse ? "pl-[38px]" : ""}`}>
+          Gérez vos achats ({articlesRestantsCount} {articlesRestantsCount > 1 ? "articles" : "article"})
+        </p>
       </div>
 
       {/* Formulaire d'ajout manuel d'ingrédients (Planning uniquement) */}

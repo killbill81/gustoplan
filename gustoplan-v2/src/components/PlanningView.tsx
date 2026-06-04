@@ -854,8 +854,8 @@ export const PlanningView: React.FC = () => {
           ) : (
             <>
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-base font-bold flex items-center gap-2 text-indigo-750">
-                  <BookOpen className="w-4 h-4" /> Recettes
+                <h3 className="text-xl font-extrabold flex items-center gap-2 text-slate-800">
+                  <BookOpen className="text-orange-500 w-5 h-5" /> Recettes
                 </h3>
                 <button
                   onClick={() => setIsLeftCollapsed(true)}
@@ -922,14 +922,16 @@ export const PlanningView: React.FC = () => {
                   onClick={() => setFavsFirst(!favsFirst)}
                   className={`flex-grow min-h-[38px] py-1 px-2 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                     favsFirst
-                      ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-bold"
+                      ? "bg-amber-100 border-amber-200 text-amber-800 font-bold"
                       : "bg-slate-50 border-slate-150 text-slate-500 hover:bg-slate-100 hover:text-slate-750"
                   }`}
                   title="Afficher les recettes favorites en premier dans la liste"
                 >
-                  <svg className={`w-3.5 h-3.5 ${favsFirst ? "text-indigo-650" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-                  </svg>
+                  {favsFirst ? (
+                    <img src="/icon_podium_heart.png" className="w-7 h-7 object-contain" alt="" />
+                  ) : (
+                    <img src="/icon_podium_heart.png" className="w-7 h-7 object-contain opacity-40 grayscale" alt="" />
+                  )}
                   <span className="leading-tight text-left">
                     Favoris <br />
                     en premier
