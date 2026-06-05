@@ -486,7 +486,12 @@ export const PlanningView: React.FC = () => {
     const hash = (list: ElementListeCourses[]) => 
       [...list]
         .sort((a, b) => a.id.localeCompare(b.id))
-        .map(i => `${i.id}_${i.nom}_${i.quantite}_${i.unite}_${i.dejaAcquis}_${i.achete}`)
+        .map(i => {
+          const sourcesStr = i.sources 
+            ? i.sources.map(s => `${s.recetteId}_${s.jour}_${s.repas}_${s.quantite}_${s.unite}`).join(",")
+            : "";
+          return `${i.id}_${i.nom}_${i.quantite}_${i.unite}_${i.dejaAcquis}_${i.achete}_${sourcesStr}`;
+        })
         .join("|");
 
     if (hash(nouvelleListe) !== hash(listeCourses)) {
