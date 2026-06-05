@@ -130,8 +130,17 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
       </div>
 
       <div className="flex-grow min-w-0">
+        {/* Première ligne : Catégorie à gauche, Favori à droite */}
         <div className="flex justify-between items-center gap-1">
-          <span className="text-sm font-semibold truncate text-slate-800 capitalize">{recette.titre}</span>
+          <span className={`text-[9.5px] uppercase tracking-wider font-semibold ${
+            recette.categorie === "entree" 
+              ? "text-emerald-600" 
+              : recette.categorie === "plat" 
+              ? "text-indigo-600" 
+              : "text-amber-600"
+          }`}>
+            {recette.categorie}
+          </span>
           <button
             type="button"
             onMouseDown={(e) => e.stopPropagation()}
@@ -155,9 +164,14 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
             />
           </button>
         </div>
-        <div className="flex items-center justify-between mt-1 text-3xs uppercase tracking-wider font-extrabold text-slate-450">
-          <span>{recette.categorie}</span>
-          <span>{recette.portionsDefaut} pers.</span>
+        {/* Deuxième ligne : Titre de la recette à gauche (plus grand et en gras), Portions à droite */}
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-sm font-bold truncate text-slate-800 capitalize leading-tight" title={recette.titre}>
+            {recette.titre}
+          </span>
+          <span className="text-3xs uppercase tracking-wider font-extrabold text-slate-450 shrink-0 ml-2">
+            {recette.portionsDefaut} pers.
+          </span>
         </div>
       </div>
     </div>
@@ -365,10 +379,6 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
           >
             <Info className="w-3.5 h-3.5" />
           </button>
-        ) : repas.type === "texte" ? (
-          <span className="text-4xs text-amber-900 font-extrabold uppercase tracking-wider bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 inline-block">
-            Repas rapide
-          </span>
         ) : (
           <span />
         )}
@@ -386,10 +396,16 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-      <div className="w-full min-w-0">
-        <span className="text-xs font-bold text-slate-800 leading-snug block break-words">
-          {hyphenateText(repas.texte || "")}
-        </span>
+      <div className="w-full min-w-0 mt-1">
+        {repas.type === "texte" ? (
+          <span className="text-[10px] text-amber-900 font-extrabold uppercase tracking-wider bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 inline-block break-words">
+            {repas.texte}
+          </span>
+        ) : (
+          <span className="text-xs font-bold text-slate-800 leading-snug block break-words">
+            {hyphenateText(repas.texte || "")}
+          </span>
+        )}
       </div>
 
       <div 
