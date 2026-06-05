@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses, Recette } from "../types";
-import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { devinerRayon } from "../services/courseEngine";
 
 interface ListeViewProps {
@@ -15,6 +15,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
   const [elements, setElements] = useState<ElementListeCourses[]>([]);
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   // Formulaire ajout manuel
   const [nom, setNom] = useState("");
@@ -384,72 +385,111 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                 {rayonsGroupes[rayonName].map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white border border-slate-100 hover:border-slate-200 flex items-center justify-between p-2.5 rounded-xl transition-all shadow-2xs"
+                    className="bg-white border border-slate-100 hover:border-slate-200 flex flex-col p-2.5 rounded-xl transition-all shadow-2xs"
                   >
-                    <div className="flex items-center gap-2.5">
-                      {context === "liste" && (
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          onChange={() => handleToggleAchete(item.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 bg-slate-50"
-                        />
-                      )}
-                      <div className="flex flex-col items-start leading-tight">
-                        {item.manuel && (
-                          <span className="text-[8px] uppercase tracking-wider font-extrabold text-orange-500 mb-0.5">
-                            Manuel
-                          </span>
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2.5">
+                        {context === "liste" && (
+                          <input
+                            type="checkbox"
+                            checked={false}
+                            onChange={() => handleToggleAchete(item.id)}
+                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 bg-slate-50"
+                          />
                         )}
-                        <span className="text-sm font-medium capitalize text-slate-800">
-                          {item.nom}
-                        </span>
+                        <div className="flex flex-col items-start leading-tight">
+                          {item.manuel && (
+                            <span className="text-[8px] uppercase tracking-wider font-extrabold text-orange-500 mb-0.5">
+                              Manuel
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium capitalize text-slate-800">
+                              {item.nom}
+                            </span>
+                            {context === "planning" && item.sources && item.sources.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
+                                className="text-slate-400 hover:text-indigo-600 transition-colors p-0.5 rounded-full hover:bg-slate-105 cursor-pointer"
+                                title="Voir la provenance"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2.5">
-                      {/* Contrôle de la quantité */}
-                      {context === "planning" ? (
-                        <div className="flex items-center gap-1 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-lg text-slate-500">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateQuantite(item.id, -1)}
-                            className="p-0.5 hover:bg-slate-200 hover:text-indigo-650 rounded transition-colors text-slate-400"
-                            title="Diminuer la quantité"
-                          >
-                            <ChevronDown className="w-3 h-3" />
-                          </button>
-                          
-                          <span className="text-xs font-bold text-indigo-650 min-w-[65px] text-center truncate">
+                      <div className="flex items-center gap-2.5">
+                        {/* Contrôle de la quantité */}
+                        {context === "planning" ? (
+                          <div className="flex items-center gap-1 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded-lg text-slate-500">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQuantite(item.id, -1)}
+                              className="p-0.5 hover:bg-slate-200 hover:text-indigo-650 rounded transition-colors text-slate-400"
+                              title="Diminuer la quantité"
+                            >
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                            
+                            <span className="text-xs font-bold text-indigo-650 min-w-[65px] text-center truncate">
+                              {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQuantite(item.id, 1)}
+                              className="p-0.5 hover:bg-slate-200 hover:text-indigo-650 rounded transition-colors text-slate-400"
+                              title="Augmenter la quantité"
+                            >
+                              <ChevronUp className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sm font-bold text-indigo-650 mr-1.5">
                             {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
                           </span>
+                        )}
 
+                        {item.manuel && (
                           <button
                             type="button"
-                            onClick={() => handleUpdateQuantite(item.id, 1)}
-                            className="p-0.5 hover:bg-slate-200 hover:text-indigo-650 rounded transition-colors text-slate-400"
-                            title="Augmenter la quantité"
+                            onClick={() => handleDeleteElement(item.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer shrink-0"
+                            title="Supprimer cet ingrédient manuel"
                           >
-                            <ChevronUp className="w-3 h-3" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-bold text-indigo-650 mr-1.5">
-                          {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
-                        </span>
-                      )}
-
-                      {item.manuel && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteElement(item.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer shrink-0"
-                          title="Supprimer cet ingrédient manuel"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
+                    
+                    {/* Source details for page "Liste des courses" (context === "liste") */}
+                    {context === "liste" && item.sources && item.sources.length > 0 && (
+                      <div className="mt-1.5 pl-6.5 text-[10px] text-slate-500 flex flex-col gap-0.5 border-t border-slate-50 pt-1.5 w-full">
+                        {item.sources.map((src, idx) => (
+                          <div key={idx} className="capitalize flex items-center justify-between">
+                            <span>• {src.jour} {src.repas} - <span className="font-semibold text-slate-650">{src.recetteTitre}</span></span>
+                            <span className="text-indigo-650 font-bold ml-1">({src.quantite} {src.unite})</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Collapsible details for page "Planning" (context === "planning") */}
+                    {context === "planning" && expandedItemId === item.id && item.sources && item.sources.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-slate-100 text-[10px] text-slate-550 flex flex-col gap-1 w-full bg-slate-50/50 p-2 rounded-lg">
+                        {item.sources.map((src, idx) => (
+                          <div key={idx} className="flex justify-between items-center capitalize">
+                            <span>• {src.jour} {src.repas}</span>
+                            <span className="font-semibold text-slate-700 truncate max-w-[120px]" title={src.recetteTitre}>{src.recetteTitre}</span>
+                            <span className="text-indigo-600 font-bold">({src.quantite} {src.unite})</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -467,72 +507,111 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
               {elementsCoches.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-slate-50 border border-slate-100 flex items-center justify-between p-2.5 rounded-xl opacity-60"
+                  className="bg-slate-50 border border-slate-100 flex flex-col p-2.5 rounded-xl opacity-60"
                 >
-                  <div className="flex items-center gap-2.5">
-                    {context === "liste" && (
-                      <input
-                        type="checkbox"
-                        checked={true}
-                        onChange={() => handleToggleAchete(item.id)}
-                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 bg-slate-50"
-                      />
-                    )}
-                    <div className="flex flex-col items-start leading-tight">
-                      {item.manuel && (
-                        <span className="text-[8px] uppercase tracking-wider font-semibold text-slate-400 mb-0.5">
-                          Manuel
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2.5">
+                      {context === "liste" && (
+                        <input
+                          type="checkbox"
+                          checked={true}
+                          onChange={() => handleToggleAchete(item.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 bg-slate-50"
+                        />
+                      )}
+                      <div className="flex flex-col items-start leading-tight">
+                        {item.manuel && (
+                          <span className="text-[8px] uppercase tracking-wider font-semibold text-slate-400 mb-0.5">
+                            Manuel
+                          </span>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium capitalize text-slate-400 line-through">
+                            {item.nom}
+                          </span>
+                          {context === "planning" && item.sources && item.sources.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
+                              className="text-slate-400 hover:text-indigo-600 transition-colors p-0.5 rounded-full hover:bg-slate-150 cursor-pointer"
+                              title="Voir la provenance"
+                            >
+                              <Info className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+                      {/* Contrôle de la quantité */}
+                      {context === "planning" ? (
+                        <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-slate-400">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQuantite(item.id, -1)}
+                            className="p-0.5 hover:bg-slate-200 hover:text-indigo-600 rounded transition-colors text-slate-400"
+                            title="Diminuer la quantité"
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                          
+                          <span className="text-xs font-bold text-slate-450 min-w-[65px] text-center truncate">
+                            {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQuantite(item.id, 1)}
+                            className="p-0.5 hover:bg-slate-200 hover:text-indigo-600 rounded transition-colors text-slate-400"
+                            title="Augmenter la quantité"
+                          >
+                            <ChevronUp className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-bold text-slate-400 mr-1.5 line-through">
+                          {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
                         </span>
                       )}
-                      <span className="text-sm font-medium capitalize text-slate-400 line-through">
-                        {item.nom}
-                      </span>
+
+                      {item.manuel && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteElement(item.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer shrink-0"
+                          title="Supprimer cet ingrédient manuel"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2.5">
-                    {/* Contrôle de la quantité */}
-                    {context === "planning" ? (
-                      <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-slate-400">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantite(item.id, -1)}
-                          className="p-0.5 hover:bg-slate-200 hover:text-indigo-600 rounded transition-colors text-slate-400"
-                          title="Diminuer la quantité"
-                        >
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                        
-                        <span className="text-xs font-bold text-slate-450 min-w-[65px] text-center truncate">
-                          {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
-                        </span>
+                  {/* Source details for page "Liste des courses" (context === "liste") */}
+                  {context === "liste" && item.sources && item.sources.length > 0 && (
+                    <div className="mt-1.5 pl-6.5 text-[10px] text-slate-400 flex flex-col gap-0.5 border-t border-slate-200/50 pt-1.5 w-full line-through">
+                      {item.sources.map((src, idx) => (
+                        <div key={idx} className="capitalize flex items-center justify-between">
+                          <span>• {src.jour} {src.repas} - <span className="font-semibold">{src.recetteTitre}</span></span>
+                          <span className="ml-1">({src.quantite} {src.unite})</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantite(item.id, 1)}
-                          className="p-0.5 hover:bg-slate-200 hover:text-indigo-600 rounded transition-colors text-slate-400"
-                          title="Augmenter la quantité"
-                        >
-                          <ChevronUp className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-sm font-semibold text-slate-400 line-through mr-1.5">
-                        {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
-                      </span>
-                    )}
-
-                    {item.manuel && (
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteElement(item.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer shrink-0"
-                        title="Supprimer cet ingrédient manuel"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                  {/* Collapsible details for page "Planning" (context === "planning") */}
+                  {context === "planning" && expandedItemId === item.id && item.sources && item.sources.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200 text-[10px] text-slate-400 flex flex-col gap-1 w-full bg-slate-100/50 p-2 rounded-lg">
+                      {item.sources.map((src, idx) => (
+                        <div key={idx} className="flex justify-between items-center capitalize">
+                          <span>• {src.jour} {src.repas}</span>
+                          <span className="font-semibold truncate max-w-[120px]" title={src.recetteTitre}>{src.recetteTitre}</span>
+                          <span>({src.quantite} {src.unite})</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

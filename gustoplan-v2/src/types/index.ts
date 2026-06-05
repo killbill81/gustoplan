@@ -50,6 +50,15 @@ export interface PlanningSemaine {
   };
 }
 
+export interface ElementSourceRecette {
+  recetteId: string;
+  recetteTitre: string;
+  jour: string; // ex: "lundi", "mardi"
+  repas: 'midi' | 'soir';
+  quantite: number;
+  unite: string;
+}
+
 export interface ElementListeCourses {
   id: string;
   nom: string;
@@ -59,4 +68,6 @@ export interface ElementListeCourses {
   dejaAcquis: boolean; // Coché lors de la préparation (placard)
   achete: boolean;     // Coché en magasin
   manuel?: boolean;    // Indique si ajouté manuellement
+  sources?: ElementSourceRecette[]; // Provenance des ingrédients
 }
+

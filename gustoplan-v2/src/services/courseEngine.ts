@@ -1,4 +1,4 @@
-import { PlanningSemaine, Recette, ElementListeCourses, Ingredient } from "../types";
+import { PlanningSemaine, Recette, ElementListeCourses, Ingredient, ElementSourceRecette } from "../types";
 
 // Dictionnaire simple pour deviner les rayons des ingrédients
 const DICT_RAYONS: { [key: string]: string } = {
@@ -15,6 +15,7 @@ const DICT_RAYONS: { [key: string]: string } = {
   salade: "Fruits & Légumes",
   avocat: "Fruits & Légumes",
   avocats: "Fruits & Légumes",
+  nomade: "Fruits & Légumes",
   pomme: "Fruits & Légumes",
   pommes: "Fruits & Légumes",
   banane: "Fruits & Légumes",
@@ -95,7 +96,13 @@ export function genererListeCourses(
   if (!planning) return [];
 
   // 1. Extraire tous les ingrédients nécessaires du planning
-  const ingredientsMap: { [key: string]: { quantite: number; unite: string } } = {};
+  const ingredientsMap: { 
+    [key: string]: { 
+      quantite: number; 
+      unite: string; 
+      sources: ElementSourceRecette[] 
+    } 
+  } = {};
 
   const joursCles = Object.keys(planning.jours);
   joursCles.forEach((jour) => {
@@ -112,13 +119,24 @@ export function genererListeCourses(
             recette.ingredients.forEach((ing) => {
               const cle = `${ing.nom.trim().toLowerCase()}_${ing.unite.trim().toLowerCase()}`;
               const quantiteAjustee = ing.quantite * facteur;
+              
+              const sourceInfo: ElementSourceRecette = {
+                recetteId: recette.id,
+                recetteTitre: recette.titre,
+                jour: jour,
+                repas: repasKey as "midi" | "soir",
+                quantite: Math.round(quantiteAjustee * 100) / 100,
+                unite: ing.unite
+              };
 
               if (ingredientsMap[cle]) {
                 ingredientsMap[cle].quantite += quantiteAjustee;
+                ingredientsMap[cle].sources.push(sourceInfo);
               } else {
                 ingredientsMap[cle] = {
                   quantite: quantiteAjustee,
-                  unite: ing.unite
+                  unite: ing.unite,
+                  sources: [sourceInfo]
                 };
               }
             });
@@ -146,7 +164,8 @@ export function genererListeCourses(
       unite: info.unite,
       rayon: devinerRayon(nom, customRayons),
       dejaAcquis: elementExistant ? elementExistant.dejaAcquis : false,
-      achete: elementExistant ? elementExistant.achete : false
+      achete: elementExistant ? elementExistant.achete : false,
+      sources: info.sources
     };
   });
 
