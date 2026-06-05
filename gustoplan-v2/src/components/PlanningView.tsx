@@ -165,11 +165,11 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
           </button>
         </div>
         {/* Deuxième ligne : Titre de la recette à gauche (plus grand et en gras), Portions à droite */}
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-sm font-bold truncate text-slate-800 capitalize leading-tight" title={recette.titre}>
+        <div className="flex items-start justify-between mt-1 gap-2">
+          <span className="text-sm font-bold text-slate-800 capitalize leading-tight break-words" title={recette.titre}>
             {recette.titre}
           </span>
-          <span className="text-3xs uppercase tracking-wider font-extrabold text-slate-450 shrink-0 ml-2">
+          <span className="text-3xs uppercase tracking-wider font-extrabold text-slate-450 shrink-0 mt-0.5">
             {recette.portionsDefaut} pers.
           </span>
         </div>
