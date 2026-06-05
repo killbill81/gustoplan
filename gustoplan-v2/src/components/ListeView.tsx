@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses, Recette } from "../types";
-import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info, Copy } from "lucide-react";
 import { devinerRayon } from "../services/courseEngine";
 
 interface ListeViewProps {
@@ -16,6 +16,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   // Formulaire ajout manuel
   const [nom, setNom] = useState("");
@@ -245,25 +246,83 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     };
   };
 
+  const handleExportText = () => {
+    const nonCoches = elements.filter((el) => !el.achete);
+    const coches = elements.filter((el) => el.achete);
+
+    let text = "📋 GUSTOPLAN - MA LISTE DE COURSES\n\n";
+
+    // Regrouper par rayon
+    const rayonsGroupesExport: { [key: string]: ElementListeCourses[] } = {};
+    nonCoches.forEach((item) => {
+      const itemRayon = resolveCategoryForIngredient(item.nom) !== "Autre / Divers" 
+        ? resolveCategoryForIngredient(item.nom) 
+        : (item.rayon || "Autre / Divers");
+      if (!rayonsGroupesExport[itemRayon]) {
+        rayonsGroupesExport[itemRayon] = [];
+      }
+      rayonsGroupesExport[itemRayon].push(item);
+    });
+
+    Object.keys(rayonsGroupesExport).forEach((rayonName) => {
+      text += `🛒 ${rayonName.toUpperCase()}\n`;
+      rayonsGroupesExport[rayonName].forEach((item) => {
+        const qtyText = item.quantite > 0 ? ` : ${item.quantite} ${item.unite}` : "";
+        let sourcesText = "";
+        if (item.sources && item.sources.length > 0) {
+          const srcDetails = item.sources.map(src => `${src.jour} ${src.repas} - ${src.recetteTitre}`).join(" | ");
+          sourcesText = ` (${srcDetails})`;
+        }
+        text += `- ${item.nom}${qtyText}${sourcesText}\n`;
+      });
+      text += "\n";
+    });
+
+    if (coches.length > 0) {
+      text += "✅ INGRÉDIENTS COCHÉS\n";
+      coches.forEach((item) => {
+        const qtyText = item.quantite > 0 ? ` : ${item.quantite} ${item.unite}` : "";
+        text += `- ${item.nom}${qtyText}\n`;
+      });
+      text += "\n";
+    }
+
+    navigator.clipboard.writeText(text.trim()).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    });
+  };
+
   const articlesRestantsCount = elementsNonCoches.length;
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 bg-transparent text-slate-800">
       <div className="flex flex-col mb-6">
-        <div className="flex items-center gap-2">
-          {onCollapse && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {onCollapse && (
+              <button
+                onClick={onCollapse}
+                className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-indigo-300 rounded-lg text-slate-550 hover:text-indigo-650 transition-all cursor-pointer"
+                title="Réduire la liste de courses"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            )}
+            <h2 className="text-xl font-extrabold flex items-center gap-2 text-slate-800">
+              <ShoppingCart className="text-orange-500 shrink-0 w-5 h-5" />
+              <span>Ma Liste de Courses</span>
+            </h2>
+          </div>
+          {context === "liste" && elements.length > 0 && (
             <button
-              onClick={onCollapse}
-              className="p-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-indigo-300 rounded-lg text-slate-550 hover:text-indigo-650 transition-all cursor-pointer"
-              title="Réduire la liste de courses"
+              onClick={handleExportText}
+              className="text-xs font-bold py-1.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-750 border border-indigo-200/40 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
             >
-              <ChevronRight className="w-4 h-4" />
+              <Copy className="w-3.5 h-3.5" />
+              {isCopied ? "Copié !" : "Copier en texte"}
             </button>
           )}
-          <h2 className="text-xl font-extrabold flex items-center gap-2 text-slate-800">
-            <ShoppingCart className="text-orange-500 shrink-0 w-5 h-5" />
-            <span>Ma Liste de Courses</span>
-          </h2>
         </div>
         <p className={`text-slate-500 text-xs mt-1 ${onCollapse ? "pl-[38px]" : ""}`}>
           Gérez vos achats ({articlesRestantsCount} {articlesRestantsCount > 1 ? "articles" : "article"})
