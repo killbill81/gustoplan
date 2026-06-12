@@ -29,6 +29,12 @@ Ce document assure le suivi des 10 points d'amélioration identifiés dans l'enr
     *   Synchronisation automatique de l'ingrédient avec le titre, et possibilité de le dissocier (ex: accompagnement *Frites* -> ingrédient *Pomme de terre*).
     *   Alerte intelligente au format `onBlur` demandant confirmation de création si l'ingrédient saisi n'existe pas dans la base.
 
+### [x] **Point 8 : Processus d'ajout d'ingrédients manuels dans la base**
+*   *Demande* : Créer un ingrédient inconnu est fastidieux. L'absence de suggestion pour les ingrédients saisis directement dans la liste de courses compliquait la réutilisation ultérieure.
+*   *Solution implémentée* : 
+    *   Validation intelligente lors de la saisie d'un accompagnement.
+    *   **Enregistrement automatique en base globale** : Chaque fois qu'un ingrédient saisi manuellement dans la liste de courses n'existe pas, il est instantanément créé et indexé dans la base d'ingrédients du foyer, le rendant immédiatement disponible pour l'autocomplétion.
+
 ---
 
 ## ⏳ Points Restants à Traiter
@@ -44,10 +50,6 @@ Ce document assure le suivi des 10 points d'amélioration identifiés dans l'enr
 ### [ ] **Point 7 : Confirmation visuelle de sauvegarde automatique**
 *   *Problème* : L'utilisateur n'est pas sûr que ses actions sont bien enregistrées en l'absence de bouton "Enregistrer".
 *   *Proposition* : Ajouter un petit indicateur visuel discret dans le header (ex: un nuage avec une coche verte "Enregistré" ou un voyant lumineux vert).
-
-### [ ] **Point 8 : Processus d'ajout d'ingrédients manuels dans la base**
-*   *Problème* : Créer un ingrédient inconnu est fastidieux. (Déjà partiellement résolu pour les accompagnements avec la validation à la sortie du champ).
-*   *Proposition* : Faciliter l'ajout d'un nouvel ingrédient en spécifiant son rayon directement depuis le formulaire de création de recettes classiques.
 
 ### [ ] **Point 9 : Écran de connexion qui redirige trop rapidement / Gestion du Foyer**
 *   *Problème* : Il est difficile de changer de foyer lors de la connexion car on est redirigé immédiatement si on a déjà un foyer lié.
