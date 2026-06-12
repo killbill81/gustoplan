@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal } from "../services/db";
+import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses, Recette } from "../types";
 import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info, Copy } from "lucide-react";
@@ -103,15 +103,18 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
   const handleAddManuel = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!foyer?.id || !nom.trim()) return;
+    if (!foyer?.id || !nom.trim() || !user?.uid) return;
 
+    const cleanNom = nom.trim();
+    const cleanNomLower = cleanNom.toLowerCase();
     const qty = parseFloat(quantite) || 0;
-    const resolvedRayon = resolveCategoryForIngredient(nom);
+    const resolvedRayon = resolveCategoryForIngredient(cleanNom);
     const finalRayon = resolvedRayon !== "Autre / Divers" ? resolvedRayon : rayon;
 
+    // Ajouter l'élément à la liste de courses
     const newElement: ElementListeCourses = {
       id: "manuel_" + Date.now(),
-      nom: nom.trim(),
+      nom: cleanNom,
       quantite: qty,
       unite: unite.trim(),
       rayon: finalRayon,
@@ -122,6 +125,19 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
     const updated = [...elements, newElement];
     await saveListeCourses(foyer.id, updated);
+
+    // Si l'ingrédient n'existe pas dans la base globale (indépendamment de la casse), le sauvegarder
+    const existeDeja = globalIngredients.some(
+      (ing) => ing.name.toLowerCase() === cleanNomLower
+    );
+    if (!existeDeja) {
+      await saveIngredientGlobal({
+        name: cleanNom,
+        unit: unite.trim(),
+        category: finalRayon,
+        userId: user.uid
+      });
+    }
 
     // Reset
     setNom("");

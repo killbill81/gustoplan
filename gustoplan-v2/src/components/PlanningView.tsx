@@ -191,6 +191,7 @@ interface DroppableRepasCellProps {
   onAddTexte: (texte: string) => void;
   colors: ColorConfig;
   onShowDetails?: (repas: RepasPlanifie) => void;
+  recettes: Recette[];
 }
 
 const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
@@ -203,6 +204,7 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
   onAddTexte,
   colors,
   onShowDetails,
+  recettes,
 }) => {
   const { isOver, setNodeRef } = useDroppable({
     id: `cell_${prefix}_${jour}_${moment}`,
@@ -265,6 +267,7 @@ const DroppableRepasCell: React.FC<DroppableRepasCellProps> = ({
               onUpdatePortions={onUpdatePortions}
               colors={colors}
               onShowDetails={onShowDetails}
+              recettes={recettes}
             />
           ))}
         </SortableContext>
@@ -332,6 +335,7 @@ interface DraggablePlannedMealProps {
   onUpdatePortions: (planifiedId: string, portions: number) => void;
   colors: ColorConfig;
   onShowDetails?: (repas: RepasPlanifie) => void;
+  recettes: Recette[];
 }
 
 const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
@@ -343,6 +347,7 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
   onUpdatePortions,
   colors,
   onShowDetails,
+  recettes,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `${prefix}_planned_${repas.planifiedId}`,
@@ -353,6 +358,11 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
     transform: CSS.Transform.toString(transform),
     transition
   };
+
+  const recetteAssociee = recettes.find(
+    (r) => r.id === repas.id || (repas.texte && r.titre.toLowerCase() === repas.texte.toLowerCase())
+  );
+  const hasIngredients = recetteAssociee && recetteAssociee.ingredients && recetteAssociee.ingredients.length > 0;
 
   return (
     <div
@@ -367,20 +377,28 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
       {/* Ligne supérieure avec le badge ou espaceur, et la corbeille tout à droite */}
       <div className="flex justify-between items-center w-full min-w-0" onClick={(e) => e.stopPropagation()}>
         {repas.type === "recette" ? (
-          <button
-            type="button"
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onShowDetails) onShowDetails(repas);
-            }}
-            className="text-slate-400 hover:text-indigo-600 p-0.5 rounded transition-colors shrink-0 cursor-pointer"
-            title="Voir la fiche recette"
-          >
-            <Info className="w-3.5 h-3.5" />
-          </button>
+          <div className="relative group/info">
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onShowDetails) onShowDetails(repas);
+              }}
+              className={`p-0.5 rounded transition-colors shrink-0 cursor-pointer ${
+                hasIngredients
+                  ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                  : "text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+              }`}
+            >
+              <Info className="w-3.5 h-3.5" />
+            </button>
+            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-slate-900/90 text-white text-[10px] rounded font-bold whitespace-nowrap opacity-0 group-hover/info:opacity-100 transition-opacity duration-150 shadow-md z-50">
+              {hasIngredients ? "Ingrédients présents" : "Pas d'ingrédients"}
+            </span>
+          </div>
         ) : (
           <span />
         )}
@@ -1049,6 +1067,7 @@ export const PlanningView: React.FC = () => {
                     onAddTexte={(txt) => handleAddTexteRepas(jour, "midi", txt)}
                     colors={dayColors}
                     onShowDetails={handleShowRecipeDetails}
+                    recettes={recettes}
                   />
                   
                   <DroppableRepasCell
@@ -1061,6 +1080,7 @@ export const PlanningView: React.FC = () => {
                     onAddTexte={(txt) => handleAddTexteRepas(jour, "soir", txt)}
                     colors={dayColors}
                     onShowDetails={handleShowRecipeDetails}
+                    recettes={recettes}
                   />
                 </div>
               );
@@ -1109,6 +1129,7 @@ export const PlanningView: React.FC = () => {
                         onAddTexte={(txt) => handleAddTexteRepas(currentDay, "midi", txt)}
                         colors={dayColors}
                         onShowDetails={handleShowRecipeDetails}
+                        recettes={recettes}
                       />
                     </div>
 
@@ -1124,6 +1145,7 @@ export const PlanningView: React.FC = () => {
                         onAddTexte={(txt) => handleAddTexteRepas(currentDay, "soir", txt)}
                         colors={dayColors}
                         onShowDetails={handleShowRecipeDetails}
+                        recettes={recettes}
                       />
                     </div>
                   </div>

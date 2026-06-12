@@ -16,7 +16,7 @@ export const RecettesView: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [titre, setTitre] = useState("");
   const [portions, setPortions] = useState(4);
-  const [categorie, setCategorie] = useState<'entree' | 'plat' | 'dessert'>('plat');
+  const [categorie, setCategorie] = useState<'entree' | 'plat' | 'dessert' | 'accompagnement'>('plat');
   const [imageUrl, setImageUrl] = useState("");
   
   // Ingrédients du formulaire
@@ -67,12 +67,20 @@ export const RecettesView: React.FC = () => {
     const existingRecette = recettes.find(r => r.id === editingId);
     const wasFavori = existingRecette ? existingRecette.favori : false;
 
+    const savedIngredients = categorie === 'accompagnement'
+      ? [{
+          nom: (ingNom.trim() || titre.trim()).toLowerCase(),
+          quantite: parseFloat(ingQuantite) || 0,
+          unite: ingUnite.trim()
+        }]
+      : ingredients;
+
     const data: Omit<Recette, 'id'> & { id?: string, imageUrl?: string } = {
       titre: titre.trim(),
       portionsDefaut: portions,
       categorie,
       favori: wasFavori,
-      ingredients
+      ingredients: savedIngredients
     };
 
     if (imageUrl.trim()) {
@@ -99,11 +107,18 @@ export const RecettesView: React.FC = () => {
     setTitre(recette.titre);
     setPortions(recette.portionsDefaut);
     setCategorie(recette.categorie);
-    setIngredients(recette.ingredients);
+    setIngredients(recette.ingredients || []);
     setImageUrl(recette.imageUrl || "");
-    setIngNom("");
-    setIngQuantite("");
-    setIngUnite("g");
+    if (recette.categorie === 'accompagnement' && recette.ingredients && recette.ingredients.length > 0) {
+      const firstIng = recette.ingredients[0];
+      setIngNom(firstIng.nom);
+      setIngQuantite(firstIng.quantite ? firstIng.quantite.toString() : "");
+      setIngUnite(firstIng.unite || "g");
+    } else {
+      setIngNom("");
+      setIngQuantite("");
+      setIngUnite("g");
+    }
     setIsModalOpen(true);
   };
 
@@ -169,6 +184,19 @@ export const RecettesView: React.FC = () => {
 
   const tousIngredientsExistants = Object.keys(cartesIngredientsUnites).sort();
 
+  const handleIngredientBlur = () => {
+    const currentIng = ingNom.trim().toLowerCase();
+    if (!currentIng) return;
+
+    const exists = tousIngredientsExistants.some(nom => nom.toLowerCase() === currentIng);
+    if (!exists) {
+      const confirmCreate = window.confirm(`L'ingrédient "${ingNom}" n'existe pas dans la base. Voulez-vous le créer ?`);
+      if (!confirmCreate) {
+        setIngNom("");
+      }
+    }
+  };
+
   const suggestionsFiltrees = ingNom.trim()
     ? tousIngredientsExistants.filter((nom) =>
         nom.includes(ingNom.toLowerCase().trim())
@@ -190,15 +218,29 @@ export const RecettesView: React.FC = () => {
             Gérez vos plats pour le planning ({recettes.length} recettes)
           </p>
         </div>
-        <button
-          onClick={() => {
-            resetForm();
-            setIsModalOpen(true);
-          }}
-          className="bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-sm"
-        >
-          <Plus className="w-5 h-5" /> Nouvelle recette
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => {
+              resetForm();
+              setCategorie("accompagnement");
+              setIsModalOpen(true);
+            }}
+            className="bg-purple-100 hover:bg-purple-200 border border-purple-200 text-purple-850 font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-sm text-xs"
+          >
+            <Plus className="w-5 h-5" /> Nouvel accompagnement
+          </button>
+          
+          <button
+            onClick={() => {
+              resetForm();
+              setCategorie("plat");
+              setIsModalOpen(true);
+            }}
+            className="bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer shadow-sm text-xs"
+          >
+            <Plus className="w-5 h-5" /> Nouvelle recette
+          </button>
+        </div>
       </div>
 
       {/* Barre de recherche et filtres */}
@@ -225,18 +267,18 @@ export const RecettesView: React.FC = () => {
           )}
         </div>
 
-        <div className="flex gap-2">
-          {["all", "entree", "plat", "dessert"].map((cat) => (
+        <div className="flex gap-1.5 flex-wrap">
+          {["all", "entree", "plat", "dessert", "accompagnement"].map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`flex-1 py-3 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+              className={`flex-grow py-2.5 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                 categoryFilter === cat
                   ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-black shadow-xs"
                   : "bg-white border-slate-200 text-slate-550 hover:bg-slate-50 hover:text-slate-850"
               }`}
             >
-              {cat === "all" ? "Toutes" : cat}
+              {cat === "all" ? "Toutes" : cat === "accompagnement" ? "Accomp" : cat}
             </button>
           ))}
         </div>
@@ -285,6 +327,8 @@ export const RecettesView: React.FC = () => {
                   ? "text-emerald-700 border-emerald-350 bg-emerald-50/90"
                   : recette.categorie === "plat"
                   ? "text-indigo-700 border-indigo-350 bg-indigo-50/90"
+                  : recette.categorie === "accompagnement"
+                  ? "text-purple-700 border-purple-355 bg-purple-50/90"
                   : "text-amber-700 border-amber-355 bg-amber-50/90"
               }`}>
                 {recette.categorie}
@@ -343,7 +387,9 @@ export const RecettesView: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg max-h-[90vh] flex flex-col p-6 shadow-2xl text-slate-800">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
               <h3 className="text-xl font-bold text-slate-800">
-                {editingId ? "Modifier la recette" : "Ajouter une recette"}
+                {categorie === 'accompagnement'
+                  ? (editingId ? "Modifier l'accompagnement" : "Ajouter un accompagnement")
+                  : (editingId ? "Modifier la recette" : "Ajouter une recette")}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -356,14 +402,22 @@ export const RecettesView: React.FC = () => {
             <form onSubmit={handleSave} className="flex-grow overflow-y-auto space-y-4 pr-1">
               <div>
                 <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
-                  Titre de la recette
+                  {categorie === 'accompagnement' ? "Titre de l'accompagnement" : "Titre de la recette"}
                 </label>
                 <input
                   type="text"
                   required
                   value={titre}
-                  onChange={(e) => setTitre(e.target.value)}
-                  placeholder="Ex: Pâtes Carbonara, Salade César..."
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setTitre(val);
+                    if (categorie === 'accompagnement') {
+                      if (!ingNom || ingNom.toLowerCase() === titre.toLowerCase()) {
+                        setIngNom(val);
+                      }
+                    }
+                  }}
+                  placeholder={categorie === 'accompagnement' ? "Ex: Frites maison, Riz pilaf, Haricots verts..." : "Ex: Pâtes Carbonara, Salade César..."}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
                 />
               </div>
@@ -381,22 +435,7 @@ export const RecettesView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
-                    Catégorie
-                  </label>
-                  <select
-                    value={categorie}
-                    onChange={(e: any) => setCategorie(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer"
-                  >
-                    <option value="entree">Entrée</option>
-                    <option value="plat">Plat</option>
-                    <option value="dessert">Dessert</option>
-                  </select>
-                </div>
-
+              {categorie === 'accompagnement' ? (
                 <div>
                   <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
                     Portions par défaut
@@ -410,7 +449,39 @@ export const RecettesView: React.FC = () => {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
                   />
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
+                      Catégorie
+                    </label>
+                    <select
+                      value={categorie}
+                      onChange={(e: any) => setCategorie(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer"
+                    >
+                      <option value="entree">Entrée</option>
+                      <option value="plat">Plat</option>
+                      <option value="dessert">Dessert</option>
+                      <option value="accompagnement">Accompagnement</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-500 text-xs font-black uppercase tracking-wider mb-2">
+                      Portions par défaut
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={portions}
+                      onChange={(e) => setPortions(parseInt(e.target.value) || 1)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-850 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Bloc ingrédients */}
               <div className="border-t border-slate-100 pt-4">
@@ -418,124 +489,234 @@ export const RecettesView: React.FC = () => {
                   Ingrédients
                 </label>
                 
-                <div className="flex gap-2 mb-3">
-                  <div className="flex-grow relative">
-                    <input
-                      type="text"
-                      placeholder="Nom (ex: tomate)"
-                      value={ingNom}
-                      onChange={(e) => {
-                        setIngNom(e.target.value);
-                        setShowSuggestions(true);
-                      }}
-                      onFocus={() => setShowSuggestions(true)}
-                      onBlur={() => {
-                        setTimeout(() => setShowSuggestions(false), 200);
-                      }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
-                    />
-                    
-                    {showSuggestions && suggestionsFiltrees.length > 0 && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
-                        {suggestionsFiltrees.map((nom) => (
-                          <button
-                            key={nom}
-                            type="button"
-                            onClick={() => {
-                              setIngNom(nom);
-                              setShowSuggestions(false);
-                              const units = cartesIngredientsUnites[nom] || [];
-                              if (units.length > 0) {
-                                setIngUnite(units[0]);
-                              }
-                            }}
-                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer capitalize font-semibold flex justify-between items-center"
-                          >
-                            <span>{nom}</span>
-                            {cartesIngredientsUnites[nom] && cartesIngredientsUnites[nom].length > 0 && (
-                              <span className="text-[10px] text-slate-400 font-normal normal-case ml-2">
-                                ({cartesIngredientsUnites[nom].join(", ")})
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Qté (ex: 200)"
-                    value={ingQuantite}
-                    onChange={(e) => setIngQuantite(e.target.value)}
-                    className="w-20 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
-                  />
-                  <div className="relative w-28 flex-shrink-0">
-                    <input
-                      type="text"
-                      placeholder="Unité"
-                      value={ingUnite}
-                      onChange={(e) => {
-                        setIngUnite(e.target.value);
-                        setShowUnitSuggestions(true);
-                      }}
-                      onFocus={() => setShowUnitSuggestions(true)}
-                      onBlur={() => {
-                        setTimeout(() => setShowUnitSuggestions(false), 200);
-                      }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
-                    />
-                    {showUnitSuggestions && unitesSuggerees.length > 0 && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
-                        {unitesSuggerees.map((u) => (
-                          <button
-                            key={u}
-                            type="button"
-                            onClick={() => {
-                              setIngUnite(u);
-                              setShowUnitSuggestions(false);
-                            }}
-                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer font-semibold"
-                          >
-                            {u}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAddIngredient}
-                    className="bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 p-2 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                </div>
+                {categorie === 'accompagnement' ? (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                        Ingrédient associé dans la liste de courses
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Nom de l'ingrédient (ex: Pomme de terre)"
+                        value={ingNom}
+                        onChange={(e) => {
+                          setIngNom(e.target.value);
+                          setShowSuggestions(true);
+                        }}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            setShowSuggestions(false);
+                            handleIngredientBlur();
+                          }, 250);
+                        }}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
+                      />
+                      
+                      {showSuggestions && suggestionsFiltrees.length > 0 && (
+                        <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
+                          {suggestionsFiltrees.map((nom) => (
+                            <button
+                              key={nom}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setIngNom(nom);
+                                setShowSuggestions(false);
+                                const units = cartesIngredientsUnites[nom] || [];
+                                if (units.length > 0) {
+                                  setIngUnite(units[0]);
+                                }
+                              }}
+                              className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer capitalize font-semibold flex justify-between items-center"
+                            >
+                              <span>{nom}</span>
+                              {cartesIngredientsUnites[nom] && cartesIngredientsUnites[nom].length > 0 && (
+                                <span className="text-[10px] text-slate-400 font-normal normal-case ml-2">
+                                  ({cartesIngredientsUnites[nom].join(", ")})
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-                {/* Liste des ingrédients ajoutés */}
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-40 overflow-y-auto space-y-1">
-                  {ingredients.map((ing, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-slate-100 last:border-b-0 text-slate-700">
-                      <span className="capitalize text-slate-700 font-medium">{ing.nom}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-indigo-650 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-150 text-xs">
-                          {ing.quantite > 0 ? `${ing.quantite} ${ing.unite}` : ing.unite}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveIngredient(idx)}
-                          className="text-rose-500 hover:text-rose-700 p-0.5 rounded cursor-pointer"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                    <div className="flex gap-2">
+                      <div className="w-1/2">
+                        <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                          Quantité
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Qté (ex: 200)"
+                          value={ingQuantite}
+                          onChange={(e) => setIngQuantite(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
+                        />
+                      </div>
+                      
+                      <div className="w-1/2 relative">
+                        <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                          Unité
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Unité"
+                          value={ingUnite}
+                          onChange={(e) => {
+                            setIngUnite(e.target.value);
+                            setShowUnitSuggestions(true);
+                          }}
+                          onFocus={() => setShowUnitSuggestions(true)}
+                          onBlur={() => {
+                            setTimeout(() => setShowUnitSuggestions(false), 200);
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
+                        />
+                        {showUnitSuggestions && unitesSuggerees.length > 0 && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
+                            {unitesSuggerees.map((u) => (
+                              <button
+                                key={u}
+                                type="button"
+                                onClick={() => {
+                                  setIngUnite(u);
+                                  setShowUnitSuggestions(false);
+                                }}
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer font-semibold"
+                              >
+                                {u}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))}
-                  {ingredients.length === 0 && (
-                    <div className="text-xs text-slate-400 text-center py-4">
-                      Aucun ingrédient ajouté pour l'instant.
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2 mb-3">
+                      <div className="flex-grow relative">
+                        <input
+                          type="text"
+                          placeholder="Nom (ex: tomate)"
+                          value={ingNom}
+                          onChange={(e) => {
+                            setIngNom(e.target.value);
+                            setShowSuggestions(true);
+                          }}
+                          onFocus={() => setShowSuggestions(true)}
+                          onBlur={() => {
+                            setTimeout(() => setShowSuggestions(false), 200);
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
+                        />
+                        
+                        {showSuggestions && suggestionsFiltrees.length > 0 && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
+                            {suggestionsFiltrees.map((nom) => (
+                              <button
+                                key={nom}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setIngNom(nom);
+                                  setShowSuggestions(false);
+                                  const units = cartesIngredientsUnites[nom] || [];
+                                  if (units.length > 0) {
+                                    setIngUnite(units[0]);
+                                  }
+                                }}
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer capitalize font-semibold flex justify-between items-center"
+                              >
+                                <span>{nom}</span>
+                                {cartesIngredientsUnites[nom] && cartesIngredientsUnites[nom].length > 0 && (
+                                  <span className="text-[10px] text-slate-400 font-normal normal-case ml-2">
+                                    ({cartesIngredientsUnites[nom].join(", ")})
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Qté (ex: 200)"
+                        value={ingQuantite}
+                        onChange={(e) => setIngQuantite(e.target.value)}
+                        className="w-20 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
+                      />
+                      <div className="relative w-28 flex-shrink-0">
+                        <input
+                          type="text"
+                          placeholder="Unité"
+                          value={ingUnite}
+                          onChange={(e) => {
+                            setIngUnite(e.target.value);
+                            setShowUnitSuggestions(true);
+                          }}
+                          onFocus={() => setShowUnitSuggestions(true)}
+                          onBlur={() => {
+                            setTimeout(() => setShowUnitSuggestions(false), 200);
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
+                        />
+                        {showUnitSuggestions && unitesSuggerees.length > 0 && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
+                            {unitesSuggerees.map((u) => (
+                              <button
+                                key={u}
+                                type="button"
+                                onClick={() => {
+                                  setIngUnite(u);
+                                  setShowUnitSuggestions(false);
+                                }}
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer font-semibold"
+                              >
+                                {u}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddIngredient}
+                        className="bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 p-2 rounded-xl flex items-center justify-center flex-shrink-0 cursor-pointer"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
                     </div>
-                  )}
-                </div>
+
+                    {/* Liste des ingrédients ajoutés */}
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 max-h-40 overflow-y-auto space-y-1">
+                      {ingredients.map((ing, idx) => (
+                        <div key={idx} className="flex justify-between items-center text-sm py-1 border-b border-slate-100 last:border-b-0 text-slate-700">
+                          <span className="capitalize text-slate-700 font-medium">{ing.nom}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-indigo-650 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-150 text-xs">
+                              {ing.quantite > 0 ? `${ing.quantite} ${ing.unite}` : ing.unite}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveIngredient(idx)}
+                              className="text-rose-500 hover:text-rose-700 p-0.5 rounded cursor-pointer"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {ingredients.length === 0 && (
+                        <div className="text-xs text-slate-400 text-center py-4">
+                          Aucun ingrédient ajouté pour l'instant.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="border-t border-slate-100 pt-4 flex gap-3">

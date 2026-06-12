@@ -22,7 +22,7 @@ export interface Recette {
   id: string;
   titre: string;
   portionsDefaut: number;
-  categorie: 'entree' | 'plat' | 'dessert';
+  categorie: 'entree' | 'plat' | 'dessert' | 'accompagnement';
   favori: boolean;
   ingredients: Ingredient[];
   imageUrl?: string;
