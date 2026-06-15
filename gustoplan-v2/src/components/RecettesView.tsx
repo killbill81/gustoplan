@@ -166,6 +166,17 @@ export const RecettesView: React.FC = () => {
     return a.titre.localeCompare(b.titre, "fr", { sensitivity: "base" });
   });
 
+  // Liste de toutes les unités enregistrées dans toutes les recettes
+  const toutesUnitesExistantes = Array.from(
+    recettes.reduce<Set<string>>((acc, r) => {
+      (r.ingredients || []).forEach((ing) => {
+        const u = ing.unite.trim();
+        if (u) acc.add(u);
+      });
+      return acc;
+    }, new Set<string>())
+  ).sort();
+
   const cartesIngredientsUnites = recettes.reduce<{ [key: string]: string[] }>((acc, r) => {
     (r.ingredients || []).forEach((ing) => {
       const nom = ing.nom.trim().toLowerCase();
@@ -203,7 +214,21 @@ export const RecettesView: React.FC = () => {
       )
     : [];
 
-  const unitesSuggerees = cartesIngredientsUnites[ingNom.trim().toLowerCase()] || [];
+  // Suggestions d'unités :
+  // Si l'ingrédient est connu et a des unités enregistrées, on les propose.
+  // Sinon (nouvel ingrédient), on propose toutes les unités existantes de la base, filtrées par la saisie de l'utilisateur.
+  const unitesSuggerees = (() => {
+    const nomClean = ingNom.trim().toLowerCase();
+    const unitesSpecifiques = cartesIngredientsUnites[nomClean];
+    if (unitesSpecifiques && unitesSpecifiques.length > 0) {
+      return unitesSpecifiques;
+    }
+    const saisieUnite = ingUnite.trim().toLowerCase();
+    if (saisieUnite) {
+      return toutesUnitesExistantes.filter(u => u.toLowerCase().includes(saisieUnite));
+    }
+    return toutesUnitesExistantes;
+  })();
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50 text-slate-800">

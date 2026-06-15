@@ -30,7 +30,7 @@ Ce document assure le suivi des 10 points d'amélioration identifiés dans l'enr
     *   Alerte intelligente au format `onBlur` demandant confirmation de création si l'ingrédient saisi n'existe pas dans la base.
 
 ### [x] **Point 8 : Processus d'ajout d'ingrédients manuels dans la base**
-*   *Demande* : Créer un ingrédient inconnu est fastidieux. L'absence de suggestion pour les ingrédients saisis directement dans la liste de courses compliquait la réutilisation ultérieure.
+*   *Demande* : Créer un ingrédient inconnu est fastidieux. L'absence de suggestion pour les ingrédients saisis directement dans la liste de courses compliquait la réutilisation ultérieure. De plus, lors de l'ajout d'un nouvel ingrédient à une recette/accompagnement, il faut proposer une liste des unités existantes déjà enregistrées dans la base pour éviter les fautes de frappe et doublons, tout en permettant de saisir une unité personnalisée si elle n'est pas présente.
 *   *Solution implémentée* : 
     *   Validation intelligente lors de la saisie d'un accompagnement.
     *   **Enregistrement automatique en base globale** : Chaque fois qu'un ingrédient saisi manuellement dans la liste de courses n'existe pas, il est instantanément créé et indexé dans la base d'ingrédients du foyer, le rendant immédiatement disponible pour l'autocomplétion.
