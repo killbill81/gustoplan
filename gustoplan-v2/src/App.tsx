@@ -20,6 +20,7 @@ const AppContent: React.FC = () => {
   const [showFoyerModal, setShowFoyerModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showConfirmLeave, setShowConfirmLeave] = useState(false);
+  const [foyerConfirmed, setFoyerConfirmed] = useState(false);
 
   const handleCopyCode = () => {
     if (foyer?.codeFoyer) {
@@ -39,6 +40,12 @@ const AppContent: React.FC = () => {
       console.error("Erreur lors de la sortie du foyer:", error);
     }
   };
+
+  useEffect(() => {
+    if (!user || !foyer) {
+      setFoyerConfirmed(false);
+    }
+  }, [user, foyer]);
 
   useEffect(() => {
     const unsubscribe = subscribeDbState((state) => {
@@ -67,9 +74,9 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Si pas authentifié ou pas encore de Foyer configuré
-  if (!user || !foyer) {
-    return <AuthScreen />;
+  // Si pas authentifié ou pas encore de Foyer configuré ou non confirmé
+  if (!user || !foyer || !foyerConfirmed) {
+    return <AuthScreen onConfirmFoyer={() => setFoyerConfirmed(true)} />;
   }
 
   return (
