@@ -13,7 +13,7 @@ import {
 } from "../services/db";
 import { genererListeCourses } from "../services/courseEngine";
 import { Recette, PlanningSemaine, JourPlanning, RepasPlanifie, ElementListeCourses } from "../types";
-import { DndContext, useDraggable, useDroppable, DragEndEvent, pointerWithin, DragOverlay } from "@dnd-kit/core";
+import { DndContext, useDraggable, useDroppable, DragEndEvent, pointerWithin, DragOverlay, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { 
@@ -381,7 +381,7 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
       style={style}
       {...listeners}
       {...attributes}
-      className={`relative bg-white p-2.5 rounded-xl border border-slate-200 flex flex-col gap-1.5 cursor-grab active:cursor-grabbing transition-all shadow-sm ${
+      className={`relative bg-white p-1.5 sm:p-2 xl:p-2.5 rounded-xl border border-slate-200 flex flex-col gap-1 sm:gap-1.5 cursor-grab active:cursor-grabbing transition-all shadow-sm overflow-hidden w-full ${
         isDragging ? "opacity-20 border-dashed border-orange-350 bg-slate-50 shadow-none" : "hover:border-slate-350"
       }`}
     >
@@ -427,13 +427,13 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-      <div className="w-full min-w-0 mt-1">
+      <div className="w-full min-w-0 mt-0.5 sm:mt-1 overflow-hidden">
         {repas.type === "texte" ? (
-          <span className="text-[10px] text-amber-900 font-extrabold uppercase tracking-wider bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 inline-block break-words">
+          <span className="text-[9px] xs:text-[10px] text-amber-900 font-extrabold uppercase tracking-wider bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 block w-full text-center break-words">
             {repas.texte}
           </span>
         ) : (
-          <span className="text-xs font-bold text-slate-800 leading-snug block break-words">
+          <span className="text-[11px] lg:text-xs font-bold text-slate-800 leading-tight block break-words select-none">
             {hyphenateText(repas.texte || "")}
           </span>
         )}
@@ -503,6 +503,15 @@ export const PlanningView: React.FC = () => {
 
   const [dbState, setDbState] = useState<"idle" | "saving">("idle");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Configure les capteurs DND pour séparer le Clic du Drag
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   useEffect(() => {
     const unsubscribe = subscribeDbState((state) => {
@@ -902,7 +911,7 @@ export const PlanningView: React.FC = () => {
   });
 
   return (
-    <DndContext collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
       <div className="h-[calc(100vh-73px)] flex flex-col md:flex-row bg-slate-50 text-slate-800 overflow-hidden">
         
         {/* ================= PANNEAU GAUCHE : RECETTES (PC UNIQUEMENT) ================= */}
@@ -1122,7 +1131,7 @@ export const PlanningView: React.FC = () => {
               return (
                 <div key={jour} className="flex flex-col gap-3">
                   <div className={`text-center py-2 border rounded-xl transition-all shadow-2xs ${dayColors?.bgHeader || "bg-white border-slate-200"}`}>
-                    <span className={`text-xs font-black capitalize tracking-wide ${dayColors?.text || "text-slate-700"}`}>{jour}</span>
+                    <span className={`text-[11px] lg:text-xs font-black capitalize tracking-wide ${dayColors?.text || "text-slate-700"}`}>{jour}</span>
                   </div>
                   
                   <DroppableRepasCell
