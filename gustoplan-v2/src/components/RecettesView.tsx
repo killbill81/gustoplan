@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { subscribeRecettes, saveRecette, deleteRecette, toggleFavoriRecette } from "../services/db";
+import { subscribeRecettes, saveRecette, deleteRecette, toggleFavoriRecette, subscribeIngredientsGlobal, IngredientGlobal } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { Recette, Ingredient } from "../types";
 import { Plus, Trash2, Heart, Search, BookOpen, UserMinus, PlusCircle, X, Edit3 } from "lucide-react";
 
 export const RecettesView: React.FC = () => {
-  const { foyer } = useAuth();
+  const { user, foyer } = useAuth();
   const [recettes, setRecettes] = useState<Recette[]>([]);
+  const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [onlyFavorites, setOnlyFavorites] = useState(false);
@@ -36,6 +37,12 @@ export const RecettesView: React.FC = () => {
     return unsubscribe;
   }, [foyer?.id]);
 
+  useEffect(() => {
+    if (!user?.uid) return;
+    const unsubscribe = subscribeIngredientsGlobal(user.uid, setGlobalIngredients);
+    return unsubscribe;
+  }, [user?.uid]);
+
   // Réinitialiser automatiquement tous les champs de la fiche quand la modal se ferme
   useEffect(() => {
     if (!isModalOpen) {
@@ -63,6 +70,20 @@ export const RecettesView: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!foyer?.id || !titre.trim()) return;
+
+    // Pour un accompagnement, on vérifie si l'ingrédient existe avant de sauvegarder
+    if (categorie === 'accompagnement') {
+      const finalIngNom = (ingNom.trim() || titre.trim()).toLowerCase();
+      if (finalIngNom) {
+        const exists = tousIngredientsExistants.some(nom => nom.toLowerCase() === finalIngNom);
+        if (!exists) {
+          const confirmCreate = window.confirm(`L'ingrédient "${ingNom || titre}" n'existe pas dans la base. Voulez-vous le créer ?`);
+          if (!confirmCreate) {
+            return; // Annule la sauvegarde
+          }
+        }
+      }
+    }
 
     const existingRecette = recettes.find(r => r.id === editingId);
     const wasFavori = existingRecette ? existingRecette.favori : false;
@@ -177,21 +198,42 @@ export const RecettesView: React.FC = () => {
     }, new Set<string>())
   ).sort();
 
-  const cartesIngredientsUnites = recettes.reduce<{ [key: string]: string[] }>((acc, r) => {
-    (r.ingredients || []).forEach((ing) => {
-      const nom = ing.nom.trim().toLowerCase();
-      const unite = ing.unite.trim();
-      if (nom && unite) {
-        if (!acc[nom]) {
-          acc[nom] = [];
+  // Fusionner les ingrédients des recettes et ceux de la base globale
+  const cartesIngredientsUnites = (() => {
+    const acc: { [key: string]: string[] } = {};
+
+    // 1. Ajouter les unités de la base globale d'ingrédients
+    globalIngredients.forEach((ing) => {
+      const n = ing.name.trim().toLowerCase();
+      const u = ing.unit ? ing.unit.trim() : "";
+      if (n) {
+        if (!acc[n]) {
+          acc[n] = [];
         }
-        if (!acc[nom].includes(unite)) {
-          acc[nom].push(unite);
+        if (u && !acc[n].includes(u)) {
+          acc[n].push(u);
         }
       }
     });
+
+    // 2. Compléter/Enrichir avec les unités présentes dans les recettes existantes
+    recettes.forEach((r) => {
+      (r.ingredients || []).forEach((ing) => {
+        const n = ing.nom.trim().toLowerCase();
+        const u = ing.unite.trim();
+        if (n) {
+          if (!acc[n]) {
+            acc[n] = [];
+          }
+          if (u && !acc[n].includes(u)) {
+            acc[n].push(u);
+          }
+        }
+      });
+    });
+
     return acc;
-  }, {});
+  })();
 
   const tousIngredientsExistants = Object.keys(cartesIngredientsUnites).sort();
 
@@ -532,7 +574,6 @@ export const RecettesView: React.FC = () => {
                         onBlur={() => {
                           setTimeout(() => {
                             setShowSuggestions(false);
-                            handleIngredientBlur();
                           }, 250);
                         }}
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
