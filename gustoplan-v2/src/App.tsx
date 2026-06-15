@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AuthScreen } from "./components/AuthScreen";
 import { PlanningView } from "./components/PlanningView";
@@ -6,13 +6,35 @@ import { ListeView } from "./components/ListeView";
 import { RecettesView } from "./components/RecettesView";
 import { IngredientsView } from "./components/IngredientsView";
 import { 
-  Calendar, ShoppingCart, BookOpen, LogOut, User, ChefHat, Info, Tag
+  Calendar, ShoppingCart, BookOpen, LogOut, User, ChefHat, Info, Tag,
+  Cloud, CloudOff, Loader2
 } from "lucide-react";
+import { subscribeDbState } from "./services/db";
 import "./App.css";
 
 const AppContent: React.FC = () => {
   const { user, foyer, loading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<"planning" | "liste" | "recettes" | "ingredients">("planning");
+  const [dbState, setDbState] = useState<"idle" | "saving">("idle");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const unsubscribe = subscribeDbState((state) => {
+      setDbState(state);
+    });
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -105,7 +127,7 @@ const AppContent: React.FC = () => {
         </nav>
 
         {/* Profil & Logout */}
-        <div className="flex items-center gap-4 relative z-10">
+        <div className="flex items-center gap-3 md:gap-4 relative z-10">
           <div className="hidden sm:flex items-center gap-2 bg-white/80 border border-slate-200 px-3 py-1.5 rounded-xl">
             <User className="w-4 h-4 text-orange-500" />
             <span className="text-xs font-semibold text-slate-700 max-w-[120px] truncate">

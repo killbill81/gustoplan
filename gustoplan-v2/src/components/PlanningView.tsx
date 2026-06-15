@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { subscribeRecettes, subscribePlanning, savePlanning, saveListeCourses, subscribeListeCourses, updateFoyerStartDay, subscribeRayonsIngredients, toggleFavoriRecette } from "../services/db";
+import { 
+  subscribeRecettes, 
+  subscribePlanning, 
+  savePlanning, 
+  saveListeCourses, 
+  subscribeListeCourses, 
+  updateFoyerStartDay, 
+  subscribeRayonsIngredients, 
+  toggleFavoriRecette,
+  subscribeDbState
+} from "../services/db";
 import { genererListeCourses } from "../services/courseEngine";
 import { Recette, PlanningSemaine, JourPlanning, RepasPlanifie, ElementListeCourses } from "../types";
 import { DndContext, useDraggable, useDroppable, DragEndEvent, pointerWithin, DragOverlay } from "@dnd-kit/core";
@@ -8,7 +18,8 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { 
   Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Users, Trash2, Edit, Plus, Heart, 
-  Settings, RefreshCw, Smartphone, Monitor, BookOpen, ShoppingCart, Info, X, FilePenLine
+  Settings, RefreshCw, Smartphone, Monitor, BookOpen, ShoppingCart, Info, X, FilePenLine,
+  Cloud, CloudOff, Loader2
 } from "lucide-react";
 import { ListeView } from "./ListeView";
 
@@ -489,6 +500,27 @@ export const PlanningView: React.FC = () => {
 
   // Mobile Swipe Jours
   const [activeDayIdxMobile, setActiveDayIdxMobile] = useState(0);
+
+  const [dbState, setDbState] = useState<"idle" | "saving">("idle");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const unsubscribe = subscribeDbState((state) => {
+      setDbState(state);
+    });
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const handleShowRecipeDetails = (repas: RepasPlanifie) => {
     const recetteAssociee = recettes.find(r => r.id === repas.id || (repas.texte && r.titre.toLowerCase() === repas.texte.toLowerCase()));
@@ -1008,10 +1040,46 @@ export const PlanningView: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-extrabold flex items-center gap-2 text-slate-800">
-                <Calendar className="text-orange-500" />
-                Mon Planning
-              </h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-extrabold flex items-center gap-2 text-slate-800">
+                  <Calendar className="text-orange-500" />
+                  Mon Planning
+                </h2>
+                
+                {/* Indicateur de sauvegarde automatique */}
+                <div className="flex items-center">
+                  {!isOnline ? (
+                    <div 
+                      title="Hors ligne - Les modifications seront enregistrées localement et synchronisées une fois reconnecté."
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-rose-50 border border-rose-200/50 rounded-xl text-rose-700 shadow-sm"
+                    >
+                      <CloudOff className="w-3.5 h-3.5 shrink-0 text-rose-500" />
+                      <span className="text-4xs font-extrabold uppercase tracking-widest">Hors ligne</span>
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
+                      </span>
+                    </div>
+                  ) : dbState === "saving" ? (
+                    <div 
+                      title="Enregistrement en cours..."
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200/50 rounded-xl text-amber-700 shadow-sm"
+                    >
+                      <Loader2 className="w-3.5 h-3.5 shrink-0 text-amber-500 animate-spin" />
+                      <span className="text-4xs font-extrabold uppercase tracking-widest">Enregistrement...</span>
+                    </div>
+                  ) : (
+                    <div 
+                      title="Toutes les modifications sont enregistrées."
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50/70 border border-emerald-200/50 rounded-xl text-emerald-700 shadow-sm"
+                    >
+                      <Cloud className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+                      <span className="text-4xs font-extrabold uppercase tracking-widest text-emerald-700">Enregistré</span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
                 <span>Foyer : <span className="font-semibold text-slate-850">{foyer?.nom}</span> ({foyer?.codeFoyer})</span>
                 <span className="hidden sm:inline text-slate-300">•</span>

@@ -15,6 +15,39 @@ import {
 import { db } from "./firebase";
 import { UserProfile, Foyer, Recette, PlanningSemaine, ElementListeCourses } from "../types";
 
+// --- SYSTEME DE SUIVI DE SAUVEGARDE EN TEMPS RÉEL (AUTO-SAVE INDICATOR) ---
+type DbStateListener = (state: "idle" | "saving") => void;
+const listeners = new Set<DbStateListener>();
+let activeOperations = 0;
+
+function notifyListeners() {
+  const state = activeOperations > 0 ? "saving" : "idle";
+  listeners.forEach((l) => l(state));
+}
+
+export function subscribeDbState(listener: DbStateListener) {
+  listeners.add(listener);
+  listener(activeOperations > 0 ? "saving" : "idle");
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+async function wrapWrite<T>(promise: Promise<T>): Promise<T> {
+  activeOperations++;
+  notifyListeners();
+  try {
+    const result = await promise;
+    return result;
+  } finally {
+    activeOperations--;
+    // Légère temporisation pour éviter les clignotements et rendre la transition visible
+    setTimeout(() => {
+      notifyListeners();
+    }, 800);
+  }
+}
+
 // --- GESTION DES UTILISATEURS ET FOYERS ---
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
@@ -28,7 +61,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 
 export async function createUserProfile(uid: string, email: string): Promise<UserProfile> {
   const profile: UserProfile = { uid, email };
-  await setDoc(doc(db, "users", uid), profile);
+  await wrapWrite(setDoc(doc(db, "users", uid), profile));
   return profile;
 }
 
@@ -37,16 +70,16 @@ export async function createFoyer(userId: string, nomFoyer: string): Promise<str
   const code = "GUSTO-" + Math.floor(1000 + Math.random() * 9000);
   
   const foyerRef = collection(db, "foyers");
-  const docRef = await addDoc(foyerRef, {
+  const docRef = await wrapWrite(addDoc(foyerRef, {
     nom: nomFoyer,
     codeFoyer: code,
     jourDebutSemaine: 1 // Lundi par défaut
-  });
+  }));
 
   const foyerId = docRef.id;
 
   // Mettre à jour l'utilisateur avec son nouveau foyerId
-  await updateDoc(doc(db, "users", userId), { foyerId });
+  await wrapWrite(updateDoc(doc(db, "users", userId), { foyerId }));
 
   return foyerId;
 }
@@ -64,7 +97,7 @@ export async function joinFoyerByCode(userId: string, codeFoyer: string): Promis
   const foyerId = foyerDoc.id;
 
   // Assigner l'utilisateur à ce foyer
-  await updateDoc(doc(db, "users", userId), { foyerId });
+  await wrapWrite(updateDoc(doc(db, "users", userId), { foyerId }));
 
   return foyerId;
 }
@@ -79,7 +112,7 @@ export async function getFoyer(foyerId: string): Promise<Foyer | null> {
 }
 
 export async function updateFoyerStartDay(foyerId: string, dayIndex: number): Promise<void> {
-  await updateDoc(doc(db, "foyers", foyerId), { jourDebutSemaine: dayIndex });
+  await wrapWrite(updateDoc(doc(db, "foyers", foyerId), { jourDebutSemaine: dayIndex }));
 }
 
 // --- GESTION DES RECETTES (TEMPS RÉEL) ---
@@ -100,21 +133,21 @@ export function subscribeRecettes(foyerId: string, callback: (recettes: Recette[
 export async function saveRecette(foyerId: string, recette: Omit<Recette, 'id'> & { id?: string }): Promise<void> {
   if (recette.id) {
     const docRef = doc(db, "foyers", foyerId, "recettes", recette.id);
-    await setDoc(docRef, recette);
+    await wrapWrite(setDoc(docRef, recette));
   } else {
     const colRef = collection(db, "foyers", foyerId, "recettes");
-    await addDoc(colRef, recette);
+    await wrapWrite(addDoc(colRef, recette));
   }
 }
 
 export async function toggleFavoriRecette(foyerId: string, recetteId: string, favori: boolean): Promise<void> {
   const docRef = doc(db, "foyers", foyerId, "recettes", recetteId);
-  await updateDoc(docRef, { favori });
+  await wrapWrite(updateDoc(docRef, { favori }));
 }
 
 export async function deleteRecette(foyerId: string, recetteId: string): Promise<void> {
   const docRef = doc(db, "foyers", foyerId, "recettes", recetteId);
-  await deleteDoc(docRef);
+  await wrapWrite(deleteDoc(docRef));
 }
 
 // --- GESTION DU PLANNING (TEMPS RÉEL) ---
@@ -132,7 +165,7 @@ export function subscribePlanning(foyerId: string, callback: (planning: Planning
 
 export async function savePlanning(foyerId: string, planning: PlanningSemaine): Promise<void> {
   const docRef = doc(db, "foyers", foyerId, "planning", "semaine");
-  await setDoc(docRef, planning);
+  await wrapWrite(setDoc(docRef, planning));
 }
 
 // --- GESTION DE LA LISTE DE COURSES (TEMPS RÉEL) ---
@@ -151,7 +184,7 @@ export function subscribeListeCourses(foyerId: string, callback: (elements: Elem
 
 export async function saveListeCourses(foyerId: string, elements: ElementListeCourses[]): Promise<void> {
   const docRef = doc(db, "foyers", foyerId, "liste_courses", "actuelle");
-  await setDoc(docRef, { ingredients: elements });
+  await wrapWrite(setDoc(docRef, { ingredients: elements }));
 }
 
 // --- GESTION DES RAYONS DES INGRÉDIENTS (TEMPS RÉEL) ---
@@ -169,7 +202,7 @@ export function subscribeRayonsIngredients(foyerId: string, callback: (rayons: {
 
 export async function saveRayonsIngredients(foyerId: string, rayons: { [key: string]: string }): Promise<void> {
   const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "actuel");
-  await setDoc(docRef, rayons);
+  await wrapWrite(setDoc(docRef, rayons));
 }
 
 export function subscribeCustomCategories(foyerId: string, callback: (categories: string[]) => void) {
@@ -185,7 +218,7 @@ export function subscribeCustomCategories(foyerId: string, callback: (categories
 
 export async function saveCustomCategories(foyerId: string, categories: string[]): Promise<void> {
   const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "categories");
-  await setDoc(docRef, { list: categories });
+  await wrapWrite(setDoc(docRef, { list: categories }));
 }
 
 export interface IngredientGlobal {
@@ -214,14 +247,14 @@ export function subscribeIngredientsGlobal(userId: string, callback: (ingredient
 export async function saveIngredientGlobal(ingredient: IngredientGlobal): Promise<void> {
   if (ingredient.id) {
     const docRef = doc(db, "ingredients", ingredient.id);
-    await setDoc(docRef, ingredient);
+    await wrapWrite(setDoc(docRef, ingredient));
   } else {
     const colRef = collection(db, "ingredients");
-    await addDoc(colRef, ingredient);
+    await wrapWrite(addDoc(colRef, ingredient));
   }
 }
 
 export async function deleteIngredientGlobal(id: string): Promise<void> {
   const docRef = doc(db, "ingredients", id);
-  await deleteDoc(docRef);
+  await wrapWrite(deleteDoc(docRef));
 }
