@@ -115,6 +115,10 @@ export async function updateFoyerStartDay(foyerId: string, dayIndex: number): Pr
   await wrapWrite(updateDoc(doc(db, "foyers", foyerId), { jourDebutSemaine: dayIndex }));
 }
 
+export async function quitFoyer(userId: string): Promise<void> {
+  await wrapWrite(updateDoc(doc(db, "users", userId), { foyerId: null }));
+}
+
 // --- GESTION DES RECETTES (TEMPS RÉEL) ---
 
 export function subscribeRecettes(foyerId: string, callback: (recettes: Recette[]) => void) {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { auth } from "../services/firebase";
+import { auth, db } from "../services/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import { getUserProfile, createUserProfile, getFoyer } from "../services/db";
 import { UserProfile, Foyer } from "../types";
 
@@ -35,8 +36,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let unsubscribeProfile: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       if (firebaseUser) {
         try {
           let profile = await getUserProfile(firebaseUser.uid);
@@ -44,24 +53,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             profile = await createUserProfile(firebaseUser.uid, firebaseUser.email || "");
           }
           setUserProfile(profile);
-          
-          if (profile.foyerId) {
-            const f = await getFoyer(profile.foyerId);
-            setFoyer(f);
-          } else {
-            setFoyer(null);
-          }
+
+          unsubscribeProfile = onSnapshot(doc(db, "users", firebaseUser.uid), (docSnap) => {
+            if (docSnap.exists()) {
+              setUserProfile(docSnap.data() as UserProfile);
+            } else {
+              setUserProfile(null);
+            }
+            setLoading(false);
+          }, (error) => {
+            console.error("Erreur onSnapshot user profile:", error);
+            setLoading(false);
+          });
         } catch (err) {
           console.error("Erreur de profil utilisateur:", err);
+          setLoading(false);
         }
       } else {
         setUserProfile(null);
         setFoyer(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+    };
   }, []);
 
   // Récupérer le foyer à chaque fois que l'ID du foyer change dans le profil

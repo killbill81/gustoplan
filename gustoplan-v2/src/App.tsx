@@ -7,9 +7,9 @@ import { RecettesView } from "./components/RecettesView";
 import { IngredientsView } from "./components/IngredientsView";
 import { 
   Calendar, ShoppingCart, BookOpen, LogOut, User, ChefHat, Info, Tag,
-  Cloud, CloudOff, Loader2
+  Cloud, CloudOff, Loader2, Copy, Check, X
 } from "lucide-react";
-import { subscribeDbState } from "./services/db";
+import { subscribeDbState, quitFoyer } from "./services/db";
 import "./App.css";
 
 const AppContent: React.FC = () => {
@@ -17,6 +17,28 @@ const AppContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"planning" | "liste" | "recettes" | "ingredients">("planning");
   const [dbState, setDbState] = useState<"idle" | "saving">("idle");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showFoyerModal, setShowFoyerModal] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showConfirmLeave, setShowConfirmLeave] = useState(false);
+
+  const handleCopyCode = () => {
+    if (foyer?.codeFoyer) {
+      navigator.clipboard.writeText(foyer.codeFoyer);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleLeaveFoyer = async () => {
+    if (!user) return;
+    try {
+      await quitFoyer(user.uid);
+      setShowFoyerModal(false);
+      setShowConfirmLeave(false);
+    } catch (error) {
+      console.error("Erreur lors de la sortie du foyer:", error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = subscribeDbState((state) => {
@@ -128,12 +150,16 @@ const AppContent: React.FC = () => {
 
         {/* Profil & Logout */}
         <div className="flex items-center gap-3 md:gap-4 relative z-10">
-          <div className="hidden sm:flex items-center gap-2 bg-white/80 border border-slate-200 px-3 py-1.5 rounded-xl">
-            <User className="w-4 h-4 text-orange-500" />
-            <span className="text-xs font-semibold text-slate-700 max-w-[120px] truncate">
+          <button
+            onClick={() => setShowFoyerModal(true)}
+            title="Gérer mon foyer"
+            className="flex items-center gap-2 bg-white/80 border border-slate-200 p-2 sm:px-3 sm:py-1.5 rounded-xl hover:bg-orange-50/50 hover:border-orange-200 transition-colors cursor-pointer group"
+          >
+            <User className="w-4.5 h-4.5 sm:w-4 sm:h-4 text-orange-500 group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline text-xs font-semibold text-slate-700 max-w-[120px] truncate">
               {user.email}
             </span>
-          </div>
+          </button>
           <button
             onClick={logout}
             title="Se déconnecter"
@@ -198,6 +224,119 @@ const AppContent: React.FC = () => {
           <span className="text-4xs font-bold uppercase tracking-wider">Courses</span>
         </button>
       </footer>
+
+      {/* Modal de gestion du Foyer */}
+      {showFoyerModal && foyer && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-orange-100 rounded-lg text-orange-600">
+                  <ChefHat className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">Mon Foyer</h3>
+                  <p className="text-3xs text-slate-500 font-semibold uppercase tracking-wider">Gestion de la maisonnée</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowFoyerModal(false);
+                  setShowConfirmLeave(false);
+                }}
+                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Foyer Info */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-3xs font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Nom du foyer</label>
+                  <div className="text-lg font-extrabold text-slate-800 bg-slate-50 border border-slate-200/60 px-3.5 py-2.5 rounded-xl flex items-center gap-2">
+                    <span className="text-xl">🏠</span>
+                    <span>{foyer.nom}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-3xs font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Code d'invitation</label>
+                  <div className="relative flex items-center">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={foyer.codeFoyer || ""} 
+                      className="w-full font-mono text-center tracking-widest text-lg font-black bg-orange-50/30 text-orange-800 border border-orange-200/50 rounded-xl py-3 pl-4 pr-12 select-all focus:outline-none"
+                    />
+                    <button
+                      onClick={handleCopyCode}
+                      title="Copier le code"
+                      className="absolute right-2 p-2 bg-white hover:bg-orange-50 border border-slate-200 hover:border-orange-200 rounded-lg text-slate-500 hover:text-orange-600 transition-colors shadow-sm cursor-pointer"
+                    >
+                      {copied ? (
+                        <Check className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="mt-1.5 flex justify-between items-center px-1">
+                    <span className="text-3xs text-slate-400 font-medium">Partagez ce code pour inviter des membres</span>
+                    {copied && (
+                      <span className="text-3xs text-emerald-600 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+                        Copié !
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Confirm / Leave Section */}
+              <div className="border-t border-slate-100 pt-5">
+                {!showConfirmLeave ? (
+                  <button
+                    onClick={() => setShowConfirmLeave(true)}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-50 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-xl text-slate-600 hover:text-rose-700 font-semibold text-xs transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Quitter le Foyer
+                  </button>
+                ) : (
+                  <div className="bg-rose-50/50 border border-rose-100 rounded-2xl p-4 space-y-3.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex gap-2">
+                      <span className="text-lg">⚠️</span>
+                      <div>
+                        <h4 className="text-xs font-bold text-rose-900">Êtes-vous sûr de vouloir quitter ?</h4>
+                        <p className="text-3xs text-rose-700/80 mt-0.5 leading-relaxed">
+                          Vous n'aurez plus accès aux recettes, planning et liste de courses partagés de ce foyer.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowConfirmLeave(false)}
+                        className="flex-1 py-2 px-3 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-800 text-3xs font-bold transition-colors cursor-pointer"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={handleLeaveFoyer}
+                        className="flex-1 py-2 px-3 bg-rose-600 hover:bg-rose-700 rounded-lg text-white text-3xs font-bold transition-colors shadow-sm cursor-pointer"
+                      >
+                        Oui, quitter le foyer
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
