@@ -94,6 +94,7 @@ export const IngredientsView: React.FC = () => {
   const [editingIngredientId, setEditingIngredientId] = useState<string | null>(null);
   const [editIngName, setEditIngName] = useState("");
   const [editIngUnit, setEditIngUnit] = useState("");
+  const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
 
   // Création d'un nouvel ingrédient
   const [isAddingIngredient, setIsAddingIngredient] = useState(false);
@@ -124,6 +125,24 @@ export const IngredientsView: React.FC = () => {
       unsubCategories();
     };
   }, [user?.uid, foyer?.id]);
+
+  // Récupérer toutes les unités uniques existantes dans la base d'ingrédients
+  const toutesUnitesExistantes = Array.from(
+    ingredients.reduce<Set<string>>((acc, ing) => {
+      const u = (ing.unit || "").trim();
+      if (u) acc.add(u);
+      return acc;
+    }, new Set<string>())
+  ).sort();
+
+  // Suggestions d'unités pour l'édition de l'ingrédient actif
+  const unitesSuggerees = (() => {
+    const query = editIngUnit.trim().toLowerCase();
+    if (query) {
+      return toutesUnitesExistantes.filter(u => u.toLowerCase().includes(query));
+    }
+    return toutesUnitesExistantes;
+  })();
 
   // Liste active des rayons (catégories du foyer ou par défaut), triée
   const activeCategories = customCategories.length > 0 ? customCategories : DEFAULT_RAYONS;
@@ -576,13 +595,40 @@ export const IngredientsView: React.FC = () => {
                                 onChange={(e) => setEditIngName(e.target.value)}
                                 className="flex-grow bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-400"
                               />
-                              <input
-                                type="text"
-                                placeholder="Unité"
-                                value={editIngUnit}
-                                onChange={(e) => setEditIngUnit(e.target.value)}
-                                className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-400"
-                              />
+                              <div className="relative w-24 flex-shrink-0">
+                                <input
+                                  type="text"
+                                  placeholder="Unité"
+                                  value={editIngUnit}
+                                  onChange={(e) => {
+                                    setEditIngUnit(e.target.value);
+                                    setShowUnitSuggestions(true);
+                                  }}
+                                  onFocus={() => setShowUnitSuggestions(true)}
+                                  onBlur={() => {
+                                    setTimeout(() => setShowUnitSuggestions(false), 200);
+                                  }}
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-400"
+                                />
+                                {showUnitSuggestions && unitesSuggerees.length > 0 && (
+                                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-36 overflow-y-auto p-1 text-left">
+                                    {unitesSuggerees.map((u) => (
+                                      <button
+                                        key={u}
+                                        type="button"
+                                        onMouseDown={(e) => {
+                                          e.preventDefault();
+                                          setEditIngUnit(u);
+                                          setShowUnitSuggestions(false);
+                                        }}
+                                        className="w-full text-left px-2 py-1 rounded text-[10px] hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 font-semibold cursor-pointer"
+                                      >
+                                        {u}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                               <button
                                 onClick={() => handleSaveIngredient(ing.id!, getResolvedCategory(ing.name, ing.category))}
                                 className="p-1 hover:text-emerald-500 text-slate-400 transition-colors"

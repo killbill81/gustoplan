@@ -605,7 +605,8 @@ export const RecettesView: React.FC = () => {
                               <button
                                 key={u}
                                 type="button"
-                                onClick={() => {
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
                                   setIngUnite(u);
                                   setShowUnitSuggestions(false);
                                 }}
@@ -694,7 +695,8 @@ export const RecettesView: React.FC = () => {
                               <button
                                 key={u}
                                 type="button"
-                                onClick={() => {
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
                                   setIngUnite(u);
                                   setShowUnitSuggestions(false);
                                 }}
