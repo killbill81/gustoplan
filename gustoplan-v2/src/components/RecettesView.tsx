@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { subscribeRecettes, saveRecette, deleteRecette, toggleFavoriRecette, subscribeIngredientsGlobal, IngredientGlobal } from "../services/db";
+import { subscribeRecettes, saveRecette, deleteRecette, toggleFavoriRecette, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { Recette, Ingredient } from "../types";
 import { Plus, Trash2, Heart, Search, BookOpen, UserMinus, PlusCircle, X, Edit3 } from "lucide-react";
+
+const validerNouvelleUnite = (uniteSaisie: string, toutesUnites: string[]): boolean => {
+  const clean = uniteSaisie.trim();
+  if (!clean) return true;
+  
+  const existe = toutesUnites.some(u => u.trim().toLowerCase() === clean.toLowerCase());
+  if (existe) return true;
+
+  if (clean.length > 12 || /\d/.test(clean)) {
+    alert("L'unité saisie semble invalide ou trop longue (12 caractères max, sans chiffres).");
+    return false;
+  }
+
+  return window.confirm(`L'unité "${clean}" n'existe pas. Êtes-vous sûr de vouloir créer cette nouvelle unité ?`);
+};
 
 export const RecettesView: React.FC = () => {
   const { user, foyer } = useAuth();
@@ -11,6 +26,7 @@ export const RecettesView: React.FC = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   // Formulaire d'ajout/édition
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,11 +68,15 @@ export const RecettesView: React.FC = () => {
 
   const handleAddIngredient = () => {
     if (!ingNom.trim()) return;
+    const u = ingUnite.trim();
+    if (u && !validerNouvelleUnite(u, toutesUnitesExistantes)) {
+      return;
+    }
     const qty = parseFloat(ingQuantite) || 0;
     const newIng: Ingredient = {
       nom: ingNom.trim().toLowerCase(),
       quantite: qty,
-      unite: ingUnite
+      unite: u
     };
     setIngredients([...ingredients, newIng]);
     setIngNom("");
@@ -73,6 +93,10 @@ export const RecettesView: React.FC = () => {
 
     // Pour un accompagnement, on vérifie si l'ingrédient existe avant de sauvegarder
     if (categorie === 'accompagnement') {
+      const u = ingUnite.trim();
+      if (u && !validerNouvelleUnite(u, toutesUnitesExistantes)) {
+        return;
+      }
       const finalIngNom = (ingNom.trim() || titre.trim()).toLowerCase();
       if (finalIngNom) {
         const exists = tousIngredientsExistants.some(nom => nom.toLowerCase() === finalIngNom);
@@ -116,6 +140,39 @@ export const RecettesView: React.FC = () => {
 
     try {
       await saveRecette(foyer.id, data);
+      
+      // Auto-register new ingredients to the global base
+      const newAddedIngredients: string[] = [];
+      if (user?.uid) {
+        for (const ing of savedIngredients) {
+          const nomClean = ing.nom.trim();
+          if (!nomClean) continue;
+          const exists = globalIngredients.some(
+            (gi) => gi.name.trim().toLowerCase() === nomClean.toLowerCase()
+          );
+          if (!exists) {
+            const capitalizedName = nomClean.charAt(0).toUpperCase() + nomClean.slice(1);
+            await saveIngredientGlobal({
+              name: capitalizedName,
+              unit: ing.unite.trim(),
+              category: "Autre / Divers",
+              userId: user.uid
+            });
+            newAddedIngredients.push(capitalizedName);
+          }
+        }
+      }
+
+      if (newAddedIngredients.length > 0) {
+        const msg = newAddedIngredients.length === 1
+          ? `Nouvel ingrédient "${newAddedIngredients[0]}" enregistré dans votre base !`
+          : `Nouveaux ingrédients "${newAddedIngredients.join(', ')}" enregistrés dans votre base !`;
+        setToast(msg);
+        setTimeout(() => {
+          setToast((prev) => prev === msg ? null : prev);
+        }, 4000);
+      }
+
       setIsModalOpen(false);
       resetForm();
     } catch (err) {
@@ -187,15 +244,22 @@ export const RecettesView: React.FC = () => {
     return a.titre.localeCompare(b.titre, "fr", { sensitivity: "base" });
   });
 
-  // Liste de toutes les unités enregistrées dans toutes les recettes
+  // Liste de toutes les unités existantes (recettes + globalIngredients)
   const toutesUnitesExistantes = Array.from(
-    recettes.reduce<Set<string>>((acc, r) => {
-      (r.ingredients || []).forEach((ing) => {
-        const u = ing.unite.trim();
-        if (u) acc.add(u);
+    (() => {
+      const set = new Set<string>();
+      globalIngredients.forEach((ing) => {
+        const u = (ing.unit || "").trim();
+        if (u) set.add(u);
       });
-      return acc;
-    }, new Set<string>())
+      recettes.forEach((r) => {
+        (r.ingredients || []).forEach((ing) => {
+          const u = ing.unite.trim();
+          if (u) set.add(u);
+        });
+      });
+      return set;
+    })()
   ).sort();
 
   // Fusionner les ingrédients des recettes et ceux de la base globale
@@ -273,7 +337,17 @@ export const RecettesView: React.FC = () => {
   })();
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50 text-slate-800">
+    <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50 text-slate-800 relative">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 bg-emerald-500 text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-2 border border-emerald-400 animate-in fade-in slide-in-from-top-4 duration-300">
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <span className="font-semibold text-sm">{toast}</span>
+          <button onClick={() => setToast(null)} className="ml-2 hover:text-emerald-100 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>

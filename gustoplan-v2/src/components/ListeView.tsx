@@ -5,6 +5,21 @@ import { ElementListeCourses, Recette } from "../types";
 import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info, Copy } from "lucide-react";
 import { devinerRayon } from "../services/courseEngine";
 
+const validerNouvelleUnite = (uniteSaisie: string, toutesUnites: string[]): boolean => {
+  const clean = uniteSaisie.trim();
+  if (!clean) return true;
+  
+  const existe = toutesUnites.some(u => u.trim().toLowerCase() === clean.toLowerCase());
+  if (existe) return true;
+
+  if (clean.length > 12 || /\d/.test(clean)) {
+    alert("L'unité saisie semble invalide ou trop longue (12 caractères max, sans chiffres).");
+    return false;
+  }
+
+  return window.confirm(`L'unité "${clean}" n'existe pas. Êtes-vous sûr de vouloir créer cette nouvelle unité ?`);
+};
+
 interface ListeViewProps {
   onCollapse?: () => void;
   context?: "planning" | "liste";
@@ -105,6 +120,11 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     e.preventDefault();
     if (!foyer?.id || !nom.trim() || !user?.uid) return;
 
+    const u = unite.trim();
+    if (u && !validerNouvelleUnite(u, toutesUnitesExistantes)) {
+      return;
+    }
+
     const cleanNom = nom.trim();
     const cleanNomLower = cleanNom.toLowerCase();
     const qty = parseFloat(quantite) || 0;
@@ -116,7 +136,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
       id: "manuel_" + Date.now(),
       nom: cleanNom,
       quantite: qty,
-      unite: unite.trim(),
+      unite: u,
       rayon: finalRayon,
       dejaAcquis: false,
       achete: false,
@@ -133,7 +153,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     if (!existeDeja) {
       await saveIngredientGlobal({
         name: cleanNom,
-        unit: unite.trim(),
+        unit: u,
         category: finalRayon,
         userId: user.uid
       });
@@ -145,6 +165,24 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     setUnite("");
     setRayon("Autre / Divers");
   };
+
+  // Liste de toutes les unités existantes (recettes + globalIngredients)
+  const toutesUnitesExistantes = Array.from(
+    (() => {
+      const set = new Set<string>();
+      globalIngredients.forEach((ing) => {
+        const u = (ing.unit || "").trim();
+        if (u) set.add(u);
+      });
+      recettes.forEach((r) => {
+        (r.ingredients || []).forEach((ing) => {
+          const u = ing.unite.trim();
+          if (u) set.add(u);
+        });
+      });
+      return set;
+    })()
+  ).sort();
 
   // Traiter les suggestions en fusionnant la base globale d'ingrédients et les ingrédients des recettes
   const cartesIngredientsUnites = (() => {
@@ -191,7 +229,18 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
       )
     : [];
 
-  const unitesSuggerees = cartesIngredientsUnites[nom.trim().toLowerCase()] || [];
+  const unitesSuggerees = (() => {
+    const nomClean = nom.trim().toLowerCase();
+    const unitesSpecifiques = cartesIngredientsUnites[nomClean];
+    if (unitesSpecifiques && unitesSpecifiques.length > 0) {
+      return unitesSpecifiques;
+    }
+    const saisieUnite = unite.trim().toLowerCase();
+    if (saisieUnite) {
+      return toutesUnitesExistantes.filter(u => u.toLowerCase().includes(saisieUnite));
+    }
+    return toutesUnitesExistantes;
+  })();
 
   const handleDeleteElement = async (id: string) => {
     if (!foyer?.id) return;
