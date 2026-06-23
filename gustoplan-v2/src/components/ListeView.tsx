@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal } from "../services/db";
+import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal, subscribeCustomUnits } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses, Recette } from "../types";
 import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info, Copy, PlusCircle } from "lucide-react";
@@ -16,6 +16,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
   const [elements, setElements] = useState<ElementListeCourses[]>([]);
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
+  const [customUnits, setCustomUnits] = useState<string[]>([]);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -42,11 +43,13 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     const unsubRecettes = subscribeRecettes(foyer.id, setRecettes);
     const unsubRayons = subscribeRayonsIngredients(foyer.id, setCustomRayons);
     const unsubIngredients = subscribeIngredientsGlobal(user.uid, setGlobalIngredients);
+    const unsubCustomUnits = subscribeCustomUnits(foyer.id, setCustomUnits);
     return () => {
       unsubscribe();
       unsubRecettes();
       unsubRayons();
       unsubIngredients();
+      unsubCustomUnits();
     };
   }, [foyer?.id, user?.uid]);
 
@@ -170,10 +173,10 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     await proceedAdd();
   };
 
-  // Liste de toutes les unités existantes (recettes + globalIngredients)
+  // Liste de toutes les unités existantes (recettes + globalIngredients + customUnits)
   const toutesUnitesExistantes = Array.from(
     (() => {
-      const set = new Set<string>();
+      const set = new Set<string>(customUnits);
       globalIngredients.forEach((ing) => {
         const u = (ing.unit || "").trim();
         if (u) set.add(u);

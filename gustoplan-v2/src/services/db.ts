@@ -229,6 +229,7 @@ export interface IngredientGlobal {
   id?: string;
   name: string;
   unit: string;
+  units?: string[];
   category: string;
   userId?: string;
 }
@@ -262,3 +263,20 @@ export async function deleteIngredientGlobal(id: string): Promise<void> {
   const docRef = doc(db, "ingredients", id);
   await wrapWrite(deleteDoc(docRef));
 }
+
+export function subscribeCustomUnits(foyerId: string, callback: (unites: string[]) => void) {
+  const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "unites");
+  return onSnapshot(docRef, (snapshot) => {
+    if (snapshot.exists()) {
+      callback(snapshot.data().list || []);
+    } else {
+      callback([]);
+    }
+  });
+}
+
+export async function saveCustomUnits(foyerId: string, unites: string[]): Promise<void> {
+  const docRef = doc(db, "foyers", foyerId, "rayons_ingredients", "unites");
+  await wrapWrite(setDoc(docRef, { list: unites }));
+}
+

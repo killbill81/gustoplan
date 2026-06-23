@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { subscribeRecettes, saveRecette, deleteRecette, toggleFavoriRecette, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal } from "../services/db";
+import { subscribeRecettes, saveRecette, deleteRecette, toggleFavoriRecette, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal, subscribeCustomUnits } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { Recette, Ingredient } from "../types";
 import { Plus, Trash2, Heart, Search, BookOpen, UserMinus, PlusCircle, X, Edit3 } from "lucide-react";
@@ -9,6 +9,7 @@ export const RecettesView: React.FC = () => {
   const { user, foyer } = useAuth();
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
+  const [customUnits, setCustomUnits] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [onlyFavorites, setOnlyFavorites] = useState(false);
@@ -40,7 +41,11 @@ export const RecettesView: React.FC = () => {
     const unsubscribe = subscribeRecettes(foyer.id, (loadedRecettes) => {
       setRecettes(loadedRecettes);
     });
-    return unsubscribe;
+    const unsubCustomUnits = subscribeCustomUnits(foyer.id, setCustomUnits);
+    return () => {
+      unsubscribe();
+      unsubCustomUnits();
+    };
   }, [foyer?.id]);
 
   useEffect(() => {
@@ -277,10 +282,10 @@ export const RecettesView: React.FC = () => {
     return a.titre.localeCompare(b.titre, "fr", { sensitivity: "base" });
   });
 
-  // Liste de toutes les unités existantes (recettes + globalIngredients)
+  // Liste de toutes les unités existantes (recettes + globalIngredients + customUnits)
   const toutesUnitesExistantes = Array.from(
     (() => {
-      const set = new Set<string>();
+      const set = new Set<string>(customUnits);
       globalIngredients.forEach((ing) => {
         const u = (ing.unit || "").trim();
         if (u) set.add(u);
