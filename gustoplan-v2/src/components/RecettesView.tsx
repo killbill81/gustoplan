@@ -4,20 +4,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { Recette, Ingredient } from "../types";
 import { Plus, Trash2, Heart, Search, BookOpen, UserMinus, PlusCircle, X, Edit3 } from "lucide-react";
 
-const validerNouvelleUnite = (uniteSaisie: string, toutesUnites: string[]): boolean => {
-  const clean = uniteSaisie.trim();
-  if (!clean) return true;
-  
-  const existe = toutesUnites.some(u => u.trim().toLowerCase() === clean.toLowerCase());
-  if (existe) return true;
-
-  if (clean.length > 12 || /\d/.test(clean)) {
-    alert("L'unité saisie semble invalide ou trop longue (12 caractères max, sans chiffres).");
-    return false;
-  }
-
-  return window.confirm(`L'unité "${clean}" n'existe pas. Êtes-vous sûr de vouloir créer cette nouvelle unité ?`);
-};
 
 export const RecettesView: React.FC = () => {
   const { user, foyer } = useAuth();
@@ -43,6 +29,10 @@ export const RecettesView: React.FC = () => {
   const [ingUnite, setIngUnite] = useState("g");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
+  const [pendingUnitConfirm, setPendingUnitConfirm] = useState<{
+    unite: string;
+    action: () => void;
+  } | null>(null);
 
   // Récupération en temps réel
   useEffect(() => {
@@ -69,18 +59,34 @@ export const RecettesView: React.FC = () => {
   const handleAddIngredient = () => {
     if (!ingNom.trim()) return;
     const u = ingUnite.trim();
-    if (u && !validerNouvelleUnite(u, toutesUnitesExistantes)) {
-      return;
-    }
-    const qty = parseFloat(ingQuantite) || 0;
-    const newIng: Ingredient = {
-      nom: ingNom.trim().toLowerCase(),
-      quantite: qty,
-      unite: u
+
+    const proceed = () => {
+      const qty = parseFloat(ingQuantite) || 0;
+      const newIng: Ingredient = {
+        nom: ingNom.trim().toLowerCase(),
+        quantite: qty,
+        unite: u
+      };
+      setIngredients([...ingredients, newIng]);
+      setIngNom("");
+      setIngQuantite("");
     };
-    setIngredients([...ingredients, newIng]);
-    setIngNom("");
-    setIngQuantite("");
+
+    if (u) {
+      const exists = toutesUnitesExistantes.some(existU => existU.trim().toLowerCase() === u.toLowerCase());
+      if (!exists) {
+        if (u.length > 12 || /\d/.test(u)) {
+          alert("L'unité saisie semble invalide ou trop longue (12 caractères max, sans chiffres).");
+          return;
+        }
+        setPendingUnitConfirm({
+          unite: u,
+          action: proceed
+        });
+        return;
+      }
+    }
+    proceed();
   };
 
   const handleRemoveIngredient = (index: number) => {
@@ -91,93 +97,120 @@ export const RecettesView: React.FC = () => {
     e.preventDefault();
     if (!foyer?.id || !titre.trim()) return;
 
-    // Pour un accompagnement, on vérifie si l'ingrédient existe avant de sauvegarder
+    const proceedSave = async () => {
+      const existingRecette = recettes.find(r => r.id === editingId);
+      const wasFavori = existingRecette ? existingRecette.favori : false;
+
+      const savedIngredients = categorie === 'accompagnement'
+        ? [{
+            nom: (ingNom.trim() || titre.trim()).toLowerCase(),
+            quantite: parseFloat(ingQuantite) || 0,
+            unite: ingUnite.trim()
+          }]
+        : ingredients;
+
+      const data: Omit<Recette, 'id'> & { id?: string, imageUrl?: string } = {
+        titre: titre.trim(),
+        portionsDefaut: portions,
+        categorie,
+        favori: wasFavori,
+        ingredients: savedIngredients
+      };
+
+      if (imageUrl.trim()) {
+        data.imageUrl = imageUrl.trim();
+      } else {
+        data.imageUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(titre.trim())}%20recette&w=400&h=300&c=7&rs=1&p=0`;
+      }
+
+      if (editingId) {
+        data.id = editingId;
+      }
+
+      try {
+        await saveRecette(foyer.id, data);
+        
+        // Auto-register new ingredients to the global base
+        const newAddedIngredients: string[] = [];
+        if (user?.uid) {
+          for (const ing of savedIngredients) {
+            const nomClean = ing.nom.trim();
+            if (!nomClean) continue;
+            const exists = globalIngredients.some(
+              (gi) => gi.name.trim().toLowerCase() === nomClean.toLowerCase()
+            );
+            if (!exists) {
+              const capitalizedName = nomClean.charAt(0).toUpperCase() + nomClean.slice(1);
+              await saveIngredientGlobal({
+                name: capitalizedName,
+                unit: ing.unite.trim(),
+                category: "Autre / Divers",
+                userId: user.uid
+              });
+              newAddedIngredients.push(capitalizedName);
+            }
+          }
+        }
+
+        if (newAddedIngredients.length > 0) {
+          const msg = newAddedIngredients.length === 1
+            ? `Nouvel ingrédient "${newAddedIngredients[0]}" enregistré dans votre base !`
+            : `Nouveaux ingrédients "${newAddedIngredients.join(', ')}" enregistrés dans votre base !`;
+          setToast(msg);
+          setTimeout(() => {
+            setToast((prev) => prev === msg ? null : prev);
+          }, 4000);
+        }
+
+        setIsModalOpen(false);
+        resetForm();
+      } catch (err) {
+        console.error("Impossible de sauvegarder la recette:", err);
+      }
+    };
+
     if (categorie === 'accompagnement') {
       const u = ingUnite.trim();
-      if (u && !validerNouvelleUnite(u, toutesUnitesExistantes)) {
-        return;
+      if (u) {
+        const exists = toutesUnitesExistantes.some(existU => existU.trim().toLowerCase() === u.toLowerCase());
+        if (!exists) {
+          if (u.length > 12 || /\d/.test(u)) {
+            alert("L'unité saisie semble invalide ou trop longue (12 caractères max, sans chiffres).");
+            return;
+          }
+          setPendingUnitConfirm({
+            unite: u,
+            action: async () => {
+              const finalIngNom = (ingNom.trim() || titre.trim()).toLowerCase();
+              if (finalIngNom) {
+                const exists = tousIngredientsExistants.some(nom => nom.toLowerCase() === finalIngNom);
+                if (!exists) {
+                  const confirmCreate = window.confirm(`L'ingrédient "${ingNom || titre}" n'existe pas dans la base. Voulez-vous le créer ?`);
+                  if (!confirmCreate) {
+                    return;
+                  }
+                }
+              }
+              await proceedSave();
+            }
+          });
+          return;
+        }
       }
+
       const finalIngNom = (ingNom.trim() || titre.trim()).toLowerCase();
       if (finalIngNom) {
         const exists = tousIngredientsExistants.some(nom => nom.toLowerCase() === finalIngNom);
         if (!exists) {
           const confirmCreate = window.confirm(`L'ingrédient "${ingNom || titre}" n'existe pas dans la base. Voulez-vous le créer ?`);
           if (!confirmCreate) {
-            return; // Annule la sauvegarde
+            return;
           }
         }
       }
     }
 
-    const existingRecette = recettes.find(r => r.id === editingId);
-    const wasFavori = existingRecette ? existingRecette.favori : false;
-
-    const savedIngredients = categorie === 'accompagnement'
-      ? [{
-          nom: (ingNom.trim() || titre.trim()).toLowerCase(),
-          quantite: parseFloat(ingQuantite) || 0,
-          unite: ingUnite.trim()
-        }]
-      : ingredients;
-
-    const data: Omit<Recette, 'id'> & { id?: string, imageUrl?: string } = {
-      titre: titre.trim(),
-      portionsDefaut: portions,
-      categorie,
-      favori: wasFavori,
-      ingredients: savedIngredients
-    };
-
-    if (imageUrl.trim()) {
-      data.imageUrl = imageUrl.trim();
-    } else {
-      data.imageUrl = `https://tse2.mm.bing.net/th?q=${encodeURIComponent(titre.trim())}%20recette&w=400&h=300&c=7&rs=1&p=0`;
-    }
-
-    if (editingId) {
-      data.id = editingId;
-    }
-
-    try {
-      await saveRecette(foyer.id, data);
-      
-      // Auto-register new ingredients to the global base
-      const newAddedIngredients: string[] = [];
-      if (user?.uid) {
-        for (const ing of savedIngredients) {
-          const nomClean = ing.nom.trim();
-          if (!nomClean) continue;
-          const exists = globalIngredients.some(
-            (gi) => gi.name.trim().toLowerCase() === nomClean.toLowerCase()
-          );
-          if (!exists) {
-            const capitalizedName = nomClean.charAt(0).toUpperCase() + nomClean.slice(1);
-            await saveIngredientGlobal({
-              name: capitalizedName,
-              unit: ing.unite.trim(),
-              category: "Autre / Divers",
-              userId: user.uid
-            });
-            newAddedIngredients.push(capitalizedName);
-          }
-        }
-      }
-
-      if (newAddedIngredients.length > 0) {
-        const msg = newAddedIngredients.length === 1
-          ? `Nouvel ingrédient "${newAddedIngredients[0]}" enregistré dans votre base !`
-          : `Nouveaux ingrédients "${newAddedIngredients.join(', ')}" enregistrés dans votre base !`;
-        setToast(msg);
-        setTimeout(() => {
-          setToast((prev) => prev === msg ? null : prev);
-        }, 4000);
-      }
-
-      setIsModalOpen(false);
-      resetForm();
-    } catch (err) {
-      console.error("Impossible de sauvegarder la recette:", err);
-    }
+    await proceedSave();
   };
 
   const handleEdit = (recette: Recette) => {
@@ -321,19 +354,22 @@ export const RecettesView: React.FC = () => {
     : [];
 
   // Suggestions d'unités :
-  // Si l'ingrédient est connu et a des unités enregistrées, on les propose.
-  // Sinon (nouvel ingrédient), on propose toutes les unités existantes de la base, filtrées par la saisie de l'utilisateur.
+  // Si l'ingrédient est connu et a des unités enregistrées, on les propose en premier (specifiques).
+  // Les autres unités de la base sont proposées en second (autres).
   const unitesSuggerees = (() => {
     const nomClean = ingNom.trim().toLowerCase();
-    const unitesSpecifiques = cartesIngredientsUnites[nomClean];
-    if (unitesSpecifiques && unitesSpecifiques.length > 0) {
-      return unitesSpecifiques;
-    }
+    const unitesSpecifiques = cartesIngredientsUnites[nomClean] || [];
     const saisieUnite = ingUnite.trim().toLowerCase();
+
+    const toutesAutres = toutesUnitesExistantes.filter(u => !unitesSpecifiques.includes(u));
+
     if (saisieUnite) {
-      return toutesUnitesExistantes.filter(u => u.toLowerCase().includes(saisieUnite));
+      const specifiquesFiltrees = unitesSpecifiques.filter(u => u.toLowerCase().includes(saisieUnite));
+      const autresFiltrees = toutesAutres.filter(u => u.toLowerCase().includes(saisieUnite));
+      return { specifiques: specifiquesFiltrees, autres: autresFiltrees };
     }
-    return toutesUnitesExistantes;
+
+    return { specifiques: unitesSpecifiques, ...({ autres: toutesAutres }) };
   })();
 
   return (
@@ -714,9 +750,9 @@ export const RecettesView: React.FC = () => {
                           }}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
                         />
-                        {showUnitSuggestions && unitesSuggerees.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
-                            {unitesSuggerees.map((u) => (
+                        {showUnitSuggestions && (unitesSuggerees.specifiques.length > 0 || unitesSuggerees.autres.length > 0) && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5 flex flex-col gap-0.5">
+                            {unitesSuggerees.specifiques.map((u) => (
                               <button
                                 key={u}
                                 type="button"
@@ -725,9 +761,24 @@ export const RecettesView: React.FC = () => {
                                   setIngUnite(u);
                                   setShowUnitSuggestions(false);
                                 }}
-                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer font-semibold"
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-indigo-750 font-bold transition-all cursor-pointer flex justify-between items-center"
                               >
-                                {u}
+                                <span>{u}</span>
+                              </button>
+                            ))}
+                            {unitesSuggerees.autres.map((u) => (
+                              <button
+                                key={u}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setIngUnite(u);
+                                  setShowUnitSuggestions(false);
+                                }}
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-slate-50 text-slate-500 hover:text-slate-700 font-normal transition-all cursor-pointer flex justify-between items-center bg-slate-50/40"
+                              >
+                                <span>{u}</span>
+                                <span className="text-[9px] bg-slate-200/75 text-slate-550 px-1 py-0.5 rounded font-medium">Autre</span>
                               </button>
                             ))}
                           </div>
@@ -804,9 +855,9 @@ export const RecettesView: React.FC = () => {
                           }}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
                         />
-                        {showUnitSuggestions && unitesSuggerees.length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
-                            {unitesSuggerees.map((u) => (
+                         {showUnitSuggestions && (unitesSuggerees.specifiques.length > 0 || unitesSuggerees.autres.length > 0) && (
+                          <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5 flex flex-col gap-0.5">
+                            {unitesSuggerees.specifiques.map((u) => (
                               <button
                                 key={u}
                                 type="button"
@@ -815,9 +866,24 @@ export const RecettesView: React.FC = () => {
                                   setIngUnite(u);
                                   setShowUnitSuggestions(false);
                                 }}
-                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-slate-700 transition-all cursor-pointer font-semibold"
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-indigo-750 font-bold transition-all cursor-pointer flex justify-between items-center"
                               >
-                                {u}
+                                <span>{u}</span>
+                              </button>
+                            ))}
+                            {unitesSuggerees.autres.map((u) => (
+                              <button
+                                key={u}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setIngUnite(u);
+                                  setShowUnitSuggestions(false);
+                                }}
+                                className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-slate-50 text-slate-500 hover:text-slate-700 font-normal transition-all cursor-pointer flex justify-between items-center bg-slate-50/40"
+                              >
+                                <span>{u}</span>
+                                <span className="text-[9px] bg-slate-200/75 text-slate-550 px-1 py-0.5 rounded font-medium">Autre</span>
                               </button>
                             ))}
                           </div>
@@ -877,6 +943,42 @@ export const RecettesView: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal de confirmation d'unité premium */}
+      {pendingUnitConfirm && (
+        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-orange-500 mb-4">
+              <div className="bg-orange-55 shadow-xs p-2 rounded-xl border border-orange-100">
+                <PlusCircle className="w-6 h-6" />
+              </div>
+              <h4 className="text-lg font-bold">Nouvelle unité ?</h4>
+            </div>
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              L'unité <span className="font-extrabold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">"{pendingUnitConfirm.unite}"</span> n'existe pas encore dans votre base. Voulez-vous vraiment la créer ?
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingUnitConfirm(null)}
+                className="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-semibold transition-all cursor-pointer text-sm"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = pendingUnitConfirm.action;
+                  setPendingUnitConfirm(null);
+                  action();
+                }}
+                className="flex-grow bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 py-2.5 rounded-xl font-bold transition-all cursor-pointer shadow-sm text-sm"
+              >
+                Confirmer
+              </button>
+            </div>
           </div>
         </div>
       )}

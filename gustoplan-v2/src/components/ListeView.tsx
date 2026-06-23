@@ -2,23 +2,9 @@ import React, { useState, useEffect } from "react";
 import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses, Recette } from "../types";
-import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info, Copy } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info, Copy, PlusCircle } from "lucide-react";
 import { devinerRayon } from "../services/courseEngine";
 
-const validerNouvelleUnite = (uniteSaisie: string, toutesUnites: string[]): boolean => {
-  const clean = uniteSaisie.trim();
-  if (!clean) return true;
-  
-  const existe = toutesUnites.some(u => u.trim().toLowerCase() === clean.toLowerCase());
-  if (existe) return true;
-
-  if (clean.length > 12 || /\d/.test(clean)) {
-    alert("L'unité saisie semble invalide ou trop longue (12 caractères max, sans chiffres).");
-    return false;
-  }
-
-  return window.confirm(`L'unité "${clean}" n'existe pas. Êtes-vous sûr de vouloir créer cette nouvelle unité ?`);
-};
 
 interface ListeViewProps {
   onCollapse?: () => void;
@@ -43,6 +29,10 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
   // Suggestions autocomplétion
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
+  const [pendingUnitConfirm, setPendingUnitConfirm] = useState<{
+    unite: string;
+    action: () => void;
+  } | null>(null);
 
   useEffect(() => {
     if (!foyer?.id || !user?.uid) return;
@@ -121,49 +111,63 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     if (!foyer?.id || !nom.trim() || !user?.uid) return;
 
     const u = unite.trim();
-    if (u && !validerNouvelleUnite(u, toutesUnitesExistantes)) {
-      return;
-    }
+    const proceedAdd = async () => {
+      const cleanNom = nom.trim();
+      const cleanNomLower = cleanNom.toLowerCase();
+      const qty = parseFloat(quantite) || 0;
+      const resolvedRayon = resolveCategoryForIngredient(cleanNom);
+      const finalRayon = resolvedRayon !== "Autre / Divers" ? resolvedRayon : rayon;
 
-    const cleanNom = nom.trim();
-    const cleanNomLower = cleanNom.toLowerCase();
-    const qty = parseFloat(quantite) || 0;
-    const resolvedRayon = resolveCategoryForIngredient(cleanNom);
-    const finalRayon = resolvedRayon !== "Autre / Divers" ? resolvedRayon : rayon;
+      // Ajouter l'élément à la liste de courses
+      const newElement: ElementListeCourses = {
+        id: "manuel_" + Date.now(),
+        nom: cleanNom,
+        quantite: qty,
+        unite: u,
+        rayon: finalRayon,
+        dejaAcquis: false,
+        achete: false,
+        manuel: true
+      };
 
-    // Ajouter l'élément à la liste de courses
-    const newElement: ElementListeCourses = {
-      id: "manuel_" + Date.now(),
-      nom: cleanNom,
-      quantite: qty,
-      unite: u,
-      rayon: finalRayon,
-      dejaAcquis: false,
-      achete: false,
-      manuel: true
+      const updated = [...elements, newElement];
+      await saveListeCourses(foyer.id, updated);
+
+      // Si l'ingrédient n'existe pas dans la base globale (indépendamment de la casse), le sauvegarder
+      const existeDeja = globalIngredients.some(
+        (ing) => ing.name.toLowerCase() === cleanNomLower
+      );
+      if (!existeDeja) {
+        await saveIngredientGlobal({
+          name: cleanNom,
+          unit: u,
+          category: finalRayon,
+          userId: user.uid
+        });
+      }
+
+      // Reset
+      setNom("");
+      setQuantite("");
+      setUnite("");
+      setRayon("Autre / Divers");
     };
 
-    const updated = [...elements, newElement];
-    await saveListeCourses(foyer.id, updated);
-
-    // Si l'ingrédient n'existe pas dans la base globale (indépendamment de la casse), le sauvegarder
-    const existeDeja = globalIngredients.some(
-      (ing) => ing.name.toLowerCase() === cleanNomLower
-    );
-    if (!existeDeja) {
-      await saveIngredientGlobal({
-        name: cleanNom,
-        unit: u,
-        category: finalRayon,
-        userId: user.uid
-      });
+    if (u) {
+      const exists = toutesUnitesExistantes.some(existU => existU.trim().toLowerCase() === u.toLowerCase());
+      if (!exists) {
+        if (u.length > 12 || /\d/.test(u)) {
+          alert("L'unité saisie semble invalide ou trop longue (12 caractères max, sans chiffres).");
+          return;
+        }
+        setPendingUnitConfirm({
+          unite: u,
+          action: proceedAdd
+        });
+        return;
+      }
     }
-
-    // Reset
-    setNom("");
-    setQuantite("");
-    setUnite("");
-    setRayon("Autre / Divers");
+    await proceedAdd();
   };
 
   // Liste de toutes les unités existantes (recettes + globalIngredients)
@@ -231,15 +235,18 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
   const unitesSuggerees = (() => {
     const nomClean = nom.trim().toLowerCase();
-    const unitesSpecifiques = cartesIngredientsUnites[nomClean];
-    if (unitesSpecifiques && unitesSpecifiques.length > 0) {
-      return unitesSpecifiques;
-    }
+    const unitesSpecifiques = cartesIngredientsUnites[nomClean] || [];
     const saisieUnite = unite.trim().toLowerCase();
+
+    const toutesAutres = toutesUnitesExistantes.filter(u => !unitesSpecifiques.includes(u));
+
     if (saisieUnite) {
-      return toutesUnitesExistantes.filter(u => u.toLowerCase().includes(saisieUnite));
+      const specifiquesFiltrees = unitesSpecifiques.filter(u => u.toLowerCase().includes(saisieUnite));
+      const autresFiltrees = toutesAutres.filter(u => u.toLowerCase().includes(saisieUnite));
+      return { specifiques: specifiquesFiltrees, autres: autresFiltrees };
     }
-    return toutesUnitesExistantes;
+
+    return { specifiques: unitesSpecifiques, ...({ autres: toutesAutres }) };
   })();
 
   const handleDeleteElement = async (id: string) => {
@@ -466,19 +473,35 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                 }}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-850 text-sm focus:outline-none focus:border-indigo-400 focus:bg-white transition-all placeholder-slate-400"
               />
-              {showUnitSuggestions && unitesSuggerees.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5">
-                  {unitesSuggerees.map((u) => (
+              {showUnitSuggestions && (unitesSuggerees.specifiques.length > 0 || unitesSuggerees.autres.length > 0) && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto p-1.5 flex flex-col gap-0.5">
+                  {unitesSuggerees.specifiques.map((u) => (
                     <button
                       key={u}
                       type="button"
-                      onClick={() => {
+                      onMouseDown={(e) => {
+                        e.preventDefault();
                         setUnite(u);
                         setShowUnitSuggestions(false);
                       }}
-                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-655 text-slate-700 transition-all cursor-pointer font-semibold"
+                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-indigo-750 font-bold transition-all cursor-pointer flex justify-between items-center"
                     >
-                      {u}
+                      <span>{u}</span>
+                    </button>
+                  ))}
+                  {unitesSuggerees.autres.map((u) => (
+                    <button
+                      key={u}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setUnite(u);
+                        setShowUnitSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-slate-50 text-slate-500 hover:text-slate-700 font-normal transition-all cursor-pointer flex justify-between items-center bg-slate-50/40"
+                    >
+                      <span>{u}</span>
+                      <span className="text-[9px] bg-slate-200/75 text-slate-550 px-1 py-0.5 rounded font-medium">Autre</span>
                     </button>
                   ))}
                 </div>
@@ -749,6 +772,42 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
             <p className="text-center text-xs text-slate-450 mt-1">Ajoutez des recettes à votre planning pour générer vos courses.</p>
           </div>
         )}
+      {/* Modal de confirmation d'unité premium */}
+      {pendingUnitConfirm && (
+        <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-orange-500 mb-4">
+              <div className="bg-orange-55 shadow-xs p-2 rounded-xl border border-orange-100">
+                <PlusCircle className="w-6 h-6" />
+              </div>
+              <h4 className="text-lg font-bold">Nouvelle unité ?</h4>
+            </div>
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              L'unité <span className="font-extrabold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">"{pendingUnitConfirm.unite}"</span> n'existe pas encore dans votre base. Voulez-vous vraiment la créer ?
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingUnitConfirm(null)}
+                className="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-semibold transition-all cursor-pointer text-sm"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = pendingUnitConfirm.action;
+                  setPendingUnitConfirm(null);
+                  action();
+                }}
+                className="flex-grow bg-orange-100 hover:bg-orange-200 border border-orange-200 text-orange-850 py-2.5 rounded-xl font-bold transition-all cursor-pointer shadow-sm text-sm"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
