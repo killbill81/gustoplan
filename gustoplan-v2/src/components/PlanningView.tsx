@@ -13,7 +13,7 @@ import {
 } from "../services/db";
 import { genererListeCourses } from "../services/courseEngine";
 import { Recette, PlanningSemaine, JourPlanning, RepasPlanifie, ElementListeCourses } from "../types";
-import { DndContext, useDraggable, useDroppable, DragEndEvent, pointerWithin, DragOverlay, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
+import { DndContext, useDraggable, useDroppable, DragEndEvent, pointerWithin, DragOverlay, useSensors, useSensor, PointerSensor, TouchSensor } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { 
@@ -481,7 +481,7 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
 
 // --- MAIN PLANNING VIEW ---
 export const PlanningView: React.FC = () => {
-  const { foyer, refreshFoyer } = useAuth();
+  const { foyer, refreshFoyer, showToast } = useAuth();
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [planning, setPlanning] = useState<PlanningSemaine | null | undefined>(undefined);
   const [listeCourses, setListeCourses] = useState<ElementListeCourses[]>([]);
@@ -489,8 +489,20 @@ export const PlanningView: React.FC = () => {
   const [activeRecipe, setActiveRecipe] = useState<Recette | null>(null);
   const [activePlannedMeal, setActivePlannedMeal] = useState<RepasPlanifie | null>(null);
   const [previewRecipe, setPreviewRecipe] = useState<Recette | null>(null);
-  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
-  const [isRightCollapsed, setIsRightCollapsed] = useState(false);
+  const [isLeftCollapsed, setIsLeftCollapsed] = useState(() => {
+    return localStorage.getItem("gustoplan_left_collapsed") === "true";
+  });
+  const [isRightCollapsed, setIsRightCollapsed] = useState(() => {
+    return localStorage.getItem("gustoplan_right_collapsed") === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("gustoplan_left_collapsed", String(isLeftCollapsed));
+  }, [isLeftCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem("gustoplan_right_collapsed", String(isRightCollapsed));
+  }, [isRightCollapsed]);
   
   // Onglet recettes filtre
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -509,6 +521,12 @@ export const PlanningView: React.FC = () => {
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
       },
     })
   );
@@ -808,9 +826,22 @@ export const PlanningView: React.FC = () => {
       }
     };
 
+    const previousPlanning = { ...planning };
+
     setPlanning(planningModifie);
     await savePlanning(foyer.id, planningModifie);
     await declencherMiseAJourListe(planningModifie);
+
+    showToast("Le repas a été retiré du planning.", {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          setPlanning(previousPlanning);
+          await savePlanning(foyer.id, previousPlanning);
+          await declencherMiseAJourListe(previousPlanning);
+        }
+      }
+    });
   };
 
   const handleUpdatePortions = async (jour: string, moment: "midi" | "soir", planifiedId: string, portions: number) => {
@@ -886,12 +917,25 @@ export const PlanningView: React.FC = () => {
         dimanche: { midi: [], soir: [] },
       }
     };
+    const previousPlanning = { ...planning };
+    const previousListe = [...listeCourses];
+
     setPlanning(planningVide);
     await savePlanning(foyer.id, planningVide);
     
-    // Nettoyer immédiatement la liste de courses en ne gardant que les ajouts manuels
-    const elementsManuels = listeCourses.filter((item) => item.manuel);
-    await saveListeCourses(foyer.id, elementsManuels);
+    // Nettoyer immédiatement et complètement la liste de courses
+    await saveListeCourses(foyer.id, []);
+
+    showToast("Le planning de la semaine a été vidé.", {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          setPlanning(previousPlanning);
+          await savePlanning(foyer.id, previousPlanning);
+          await saveListeCourses(foyer.id, previousListe);
+        }
+      }
+    });
   };
 
   // Filtrer les recettes du panneau latéral
@@ -973,18 +1017,18 @@ export const PlanningView: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex gap-1.5 mb-3">
-                {["all", "entree", "plat", "dessert"].map((cat) => (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {["all", "entree", "plat", "dessert", "accompagnement"].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setCategoryFilter(cat)}
-                    className={`flex-grow py-1 px-1 rounded-lg text-4xs font-extrabold uppercase border tracking-wider transition-all cursor-pointer ${
+                    className={`flex-grow py-1 px-1.5 rounded-lg text-[9px] font-black uppercase border tracking-wide transition-all cursor-pointer text-center min-w-[50px] ${
                       categoryFilter === cat
                         ? "bg-indigo-100 border-indigo-200 text-indigo-750 font-bold"
                         : "bg-slate-50 border-slate-150 text-slate-500 hover:bg-slate-100 hover:text-slate-750"
                     }`}
                   >
-                    {cat === "all" ? "Toutes" : cat.slice(0, 3)}
+                    {cat === "all" ? "Toutes" : cat === "accompagnement" ? "Accomp." : cat === "entree" ? "Entrées" : cat === "plat" ? "Plats" : "Desserts"}
                   </button>
                 ))}
               </div>

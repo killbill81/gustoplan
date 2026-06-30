@@ -306,7 +306,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onConfirmFoyer }) => {
               onClick={onConfirmFoyer}
               className="w-full bg-orange-100 text-orange-850 hover:bg-orange-200 font-bold py-3.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-98 cursor-pointer text-sm animate-pulse"
             >
-              Accéder à l'application <ArrowRight className="w-4 h-4" />
+              Rejoindre le foyer "{foyer.nom}" <ArrowRight className="w-4 h-4" />
             </button>
 
             <div className="grid grid-cols-2 gap-2 pt-2">

@@ -12,7 +12,7 @@ interface ListeViewProps {
 }
 
 export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "liste" }) => {
-  const { user, foyer } = useAuth();
+  const { user, foyer, showToast } = useAuth();
   const [elements, setElements] = useState<ElementListeCourses[]>([]);
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
@@ -85,6 +85,10 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
   const handleToggleAchete = async (id: string) => {
     if (!foyer?.id) return;
+    const targetItem = elements.find(item => item.id === id);
+    if (!targetItem) return;
+    
+    const previousElements = [...elements];
     const updated = elements.map((item) => {
       if (item.id === id) {
         // On bascule l'état achete (déjà acquis est aussi lié pour être compatible)
@@ -93,6 +97,16 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
       return item;
     });
     await saveListeCourses(foyer.id, updated);
+
+    const actionText = targetItem.achete ? "décoché" : "coché";
+    showToast(`"${targetItem.nom}" a été ${actionText}.`, {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          await saveListeCourses(foyer.id, previousElements);
+        }
+      }
+    });
   };
 
   const handleUpdateQuantite = async (id: string, delta: number) => {
@@ -254,18 +268,41 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
 
   const handleDeleteElement = async (id: string) => {
     if (!foyer?.id) return;
+    const itemToDelete = elements.find(item => item.id === id);
+    if (!itemToDelete) return;
+
+    const previousElements = [...elements];
     const updated = elements.filter((item) => item.id !== id);
     await saveListeCourses(foyer.id, updated);
+
+    showToast(`"${itemToDelete.nom}" a été supprimé de la liste.`, {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          await saveListeCourses(foyer.id, previousElements);
+        }
+      }
+    });
   };
 
   const handleResetFiltres = async () => {
     if (!foyer?.id || !window.confirm("Voulez-vous décocher et réinitialiser la liste ?")) return;
+    const previousElements = [...elements];
     const updated = elements.map((item) => ({
       ...item,
       dejaAcquis: false,
       achete: false
     }));
     await saveListeCourses(foyer.id, updated);
+
+    showToast("La liste a été réinitialisée.", {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          await saveListeCourses(foyer.id, previousElements);
+        }
+      }
+    });
   };
 
   // Ségrégation façon Google Keep
@@ -648,7 +685,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
         })}
 
         {/* 🟩 Section "Ingrédients cochés" */}
-        {elementsCoches.length > 0 && (
+        {context !== "planning" && elementsCoches.length > 0 && (
           <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4">
             <h3 className="text-xs font-black text-slate-500 border-b border-slate-200 pb-2 mb-3 tracking-wider uppercase">
               Ingrédients cochés ({elementsCoches.length})
@@ -661,14 +698,12 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                 >
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2.5">
-                      {context === "liste" && (
-                        <input
-                          type="checkbox"
-                          checked={true}
-                          onChange={() => handleToggleAchete(item.id)}
-                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 bg-slate-50"
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        onChange={() => handleToggleAchete(item.id)}
+                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-0 focus:ring-offset-0 cursor-pointer flex-shrink-0 bg-slate-50"
+                      />
                       <div className="flex flex-col items-start leading-tight">
                         {item.manuel && (
                           <span className="text-[8px] uppercase tracking-wider font-semibold text-slate-400 mb-0.5">
@@ -679,51 +714,14 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                           <span className="text-sm font-medium capitalize text-slate-400 line-through">
                             {item.nom}
                           </span>
-                          {context === "planning" && item.sources && item.sources.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
-                              className="text-slate-400 hover:text-indigo-600 transition-colors p-0.5 rounded-full hover:bg-slate-150 cursor-pointer"
-                              title="Voir la provenance"
-                            >
-                              <Info className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2.5">
-                      {/* Contrôle de la quantité */}
-                      {context === "planning" ? (
-                        <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-slate-400">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateQuantite(item.id, -1)}
-                            className="p-0.5 hover:bg-slate-200 hover:text-indigo-600 rounded transition-colors text-slate-400"
-                            title="Diminuer la quantité"
-                          >
-                            <ChevronDown className="w-3 h-3" />
-                          </button>
-                          
-                          <span className="text-xs font-bold text-slate-450 min-w-[65px] text-center truncate">
-                            {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateQuantite(item.id, 1)}
-                            className="p-0.5 hover:bg-slate-200 hover:text-indigo-600 rounded transition-colors text-slate-400"
-                            title="Augmenter la quantité"
-                          >
-                            <ChevronUp className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-bold text-slate-400 mr-1.5 line-through">
-                          {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
-                        </span>
-                      )}
+                      <span className="text-sm font-bold text-slate-400 mr-1.5 line-through">
+                        {item.quantite > 0 ? `${item.quantite} ${item.unite}` : item.unite || "0"}
+                      </span>
 
                       {item.manuel && (
                         <button
@@ -739,25 +737,12 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                   </div>
 
                   {/* Source details for page "Liste des courses" (context === "liste") */}
-                  {context === "liste" && item.sources && item.sources.length > 0 && (
+                  {item.sources && item.sources.length > 0 && (
                     <div className="mt-1.5 pl-6.5 text-[10px] text-slate-400 flex flex-col gap-0.5 border-t border-slate-200/50 pt-1.5 w-full line-through">
                       {item.sources.map((src, idx) => (
                         <div key={idx} className="capitalize flex items-center justify-between">
                           <span>• {src.jour} {src.repas} - <span className="font-semibold">{src.recetteTitre}</span></span>
                           <span className="ml-1">({src.quantite} {src.unite})</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Collapsible details for page "Planning" (context === "planning") */}
-                  {context === "planning" && expandedItemId === item.id && item.sources && item.sources.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-200 text-[10px] text-slate-400 flex flex-col gap-1 w-full bg-slate-100/50 p-2 rounded-lg">
-                      {item.sources.map((src, idx) => (
-                        <div key={idx} className="flex justify-between items-center capitalize">
-                          <span>• {src.jour} {src.repas}</span>
-                          <span className="font-semibold truncate max-w-[120px]" title={src.recetteTitre}>{src.recetteTitre}</span>
-                          <span>({src.quantite} {src.unite})</span>
                         </div>
                       ))}
                     </div>

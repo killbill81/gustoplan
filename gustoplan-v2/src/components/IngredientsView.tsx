@@ -19,7 +19,7 @@ import { devinerRayon } from "../services/courseEngine";
 import { useAuth } from "../contexts/AuthContext";
 import { Recette, ElementListeCourses } from "../types";
 import { Search, Tag, HelpCircle, Check, Info, Plus, Edit2, Trash2, X } from "lucide-react";
-import { DndContext, useDraggable, useDroppable, DragOverlay, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
+import { DndContext, useDraggable, useDroppable, DragOverlay, useSensors, useSensor, PointerSensor, TouchSensor } from "@dnd-kit/core";
 
 const DEFAULT_RAYONS = [
   "Fruits & Légumes",
@@ -80,7 +80,7 @@ const DroppableIngredientRow: React.FC<{
 };
 
 export const IngredientsView: React.FC = () => {
-  const { user, foyer } = useAuth();
+  const { user, foyer, showToast } = useAuth();
   const [ingredients, setIngredients] = useState<IngredientGlobal[]>([]);
   const [customRayons, setCustomRayons] = useState<{ [key: string]: string }>({});
   const [listeCourses, setListeCourses] = useState<ElementListeCourses[]>([]);
@@ -109,6 +109,7 @@ export const IngredientsView: React.FC = () => {
   const [newIngName, setNewIngName] = useState("");
   const [newIngUnit, setNewIngUnit] = useState("");
   const [newIngCategory, setNewIngCategory] = useState("");
+  const [showNewUnitSuggestions, setShowNewUnitSuggestions] = useState(false);
 
   // Confirmation de suppression en cascade pour ingrédient
   const [ingredientToDelete, setIngredientToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -148,6 +149,12 @@ export const IngredientsView: React.FC = () => {
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
       },
     })
   );
@@ -189,6 +196,15 @@ export const IngredientsView: React.FC = () => {
   // Suggestions d'unités pour l'édition de l'ingrédient actif
   const unitesSuggerees = (() => {
     const query = editIngUnit.trim().toLowerCase();
+    if (query) {
+      return toutesUnitesExistantes.filter(u => u.toLowerCase().includes(query));
+    }
+    return toutesUnitesExistantes;
+  })();
+
+  // Suggestions d'unités pour la création d'un ingrédient
+  const newIngUnitesSuggerees = (() => {
+    const query = newIngUnit.trim().toLowerCase();
     if (query) {
       return toutesUnitesExistantes.filter(u => u.toLowerCase().includes(query));
     }
@@ -309,6 +325,10 @@ export const IngredientsView: React.FC = () => {
       return;
     }
 
+    const previousCategories = [...activeCategories];
+    const previousRayons = { ...customRayons };
+    const previousListe = [...listeCourses];
+
     const updatedCategories = activeCategories.filter(c => c !== catToDelete);
     await saveCustomCategories(foyer.id, updatedCategories);
 
@@ -335,6 +355,17 @@ export const IngredientsView: React.FC = () => {
     if (selectedCategory === catToDelete) {
       setSelectedCategory(null);
     }
+
+    showToast(`Catégorie "${catToDelete}" supprimée.`, {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          await saveCustomCategories(foyer.id, previousCategories);
+          await saveRayonsIngredients(foyer.id, previousRayons);
+          await saveListeCourses(foyer.id, previousListe);
+        }
+      }
+    });
   };
 
   // Créer un ingrédient
@@ -345,22 +376,29 @@ export const IngredientsView: React.FC = () => {
     const nameClean = newIngName.trim();
     const category = newIngCategory || listRayons[0] || "Autre / Divers";
 
-    await saveIngredientGlobal({
-      name: nameClean,
-      unit: newIngUnit.trim(),
-      category,
-      userId: user.uid
-    });
+    try {
+      await saveIngredientGlobal({
+        name: nameClean,
+        unit: newIngUnit.trim(),
+        category,
+        userId: user.uid
+      });
 
-    if (foyer?.id) {
-      const updatedRayons = { ...customRayons, [nameClean.toLowerCase()]: category };
-      await saveRayonsIngredients(foyer.id, updatedRayons);
+      if (foyer?.id) {
+        const updatedRayons = { ...customRayons, [nameClean.toLowerCase()]: category };
+        await saveRayonsIngredients(foyer.id, updatedRayons);
+      }
+      
+      showToast(`L'ingrédient "${nameClean}" a été créé.`);
+    } catch (err) {
+      console.error("Erreur lors de la création de l'ingrédient:", err);
+      alert("Erreur lors de l'enregistrement. Vérifiez votre connexion.");
+    } finally {
+      setNewIngName("");
+      setNewIngUnit("");
+      setNewIngCategory("");
+      setIsAddingIngredient(false);
     }
-
-    setNewIngName("");
-    setNewIngUnit("");
-    setNewIngCategory("");
-    setIsAddingIngredient(false);
   };
 
   // Enregistrer les modifications d'un ingrédient
@@ -408,6 +446,13 @@ export const IngredientsView: React.FC = () => {
     
     const { id, name } = ingredientToDelete;
     const cleanName = name.trim().toLowerCase();
+
+    const globalIngToRestore = ingredients.find(i => i.id === id);
+    if (!globalIngToRestore) return;
+
+    const recipesToRestore = recettes.filter(r => r.ingredients.some(i => i.nom.trim().toLowerCase() === cleanName));
+    const previousListe = [...listeCourses];
+    const previousRayons = { ...customRayons };
     
     // 1. Supprimer l'ingrédient global
     await deleteIngredientGlobal(id);
@@ -439,6 +484,20 @@ export const IngredientsView: React.FC = () => {
     setIngredientToDelete(null);
     setImpactedRecettes([]);
     setIsImpactedInListe(false);
+
+    showToast(`L'ingrédient "${globalIngToRestore.name}" a été supprimé.`, {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          await saveIngredientGlobal(globalIngToRestore);
+          for (const r of recipesToRestore) {
+            await saveRecette(foyer.id, r);
+          }
+          await saveListeCourses(foyer.id, previousListe);
+          await saveRayonsIngredients(foyer.id, previousRayons);
+        }
+      }
+    });
   };
 
   // --- GESTION DES UNITÉS (ONGLET 2) ---
@@ -671,6 +730,11 @@ export const IngredientsView: React.FC = () => {
     if (!unitToDelete || !foyer?.id) return;
     const cleanUnit = unitToDelete.trim().toLowerCase();
 
+    const previousCustomUnits = [...customUnits];
+    const impactedIngsToRestore = ingredients.filter(i => (i.unit || "").trim().toLowerCase() === cleanUnit);
+    const impactedRecipesToRestore = recettes.filter(r => r.ingredients.some(i => (i.unite || "").trim().toLowerCase() === cleanUnit));
+    const previousListe = [...listeCourses];
+
     const updatedCustom = customUnits.filter(u => u.toLowerCase() !== cleanUnit);
     await saveCustomUnits(foyer.id, updatedCustom);
 
@@ -712,6 +776,22 @@ export const IngredientsView: React.FC = () => {
     setImpactedRecipesByUnit([]);
     setIsUnitInListe(false);
     setIsUnitDeletionBlocked(false);
+
+    showToast(`L'unité "${unitToDelete}" a été supprimée.`, {
+      action: {
+        label: "Annuler",
+        onClick: async () => {
+          await saveCustomUnits(foyer.id, previousCustomUnits);
+          for (const ing of impactedIngsToRestore) {
+            await saveIngredientGlobal(ing);
+          }
+          for (const r of impactedRecipesToRestore) {
+            await saveRecette(foyer.id, r);
+          }
+          await saveListeCourses(foyer.id, previousListe);
+        }
+      }
+    });
   };
 
   // Gestion du dépôt Drag & Drop
@@ -737,7 +817,7 @@ export const IngredientsView: React.FC = () => {
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50 text-slate-800 overflow-hidden">
+      <div className="h-full flex flex-col p-4 md:p-6 bg-slate-50 text-slate-800 overflow-y-auto md:overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 shrink-0">
           <div>
@@ -798,7 +878,7 @@ export const IngredientsView: React.FC = () => {
             </div>
 
             {/* Principal 2-Column Layout */}
-            <div className="flex-grow flex flex-col md:flex-row gap-6 min-h-0 overflow-hidden">
+            <div className="flex-grow flex flex-col md:flex-row gap-6 min-h-0 overflow-y-visible md:overflow-hidden">
               
               {/* LEFT COLUMN: Category management */}
               <div className="w-full md:w-80 lg:w-96 shrink-0 flex flex-col gap-4 bg-white border border-slate-200 p-4 rounded-2xl h-fit max-h-full overflow-y-auto shadow-sm">
@@ -1135,7 +1215,7 @@ export const IngredientsView: React.FC = () => {
             </div>
 
             {/* Principal 2-Column Layout for Units */}
-            <div className="flex-grow flex flex-col md:flex-row gap-6 min-h-0 overflow-hidden">
+            <div className="flex-grow flex flex-col md:flex-row gap-6 min-h-0 overflow-y-visible md:overflow-hidden">
               
               {/* LEFT COLUMN: Add custom unit form */}
               <div className="w-full md:w-80 lg:w-96 shrink-0 flex flex-col gap-4 bg-white border border-slate-200 p-4 rounded-2xl h-fit max-h-full overflow-y-auto shadow-sm">
@@ -1268,7 +1348,7 @@ export const IngredientsView: React.FC = () => {
       {/* 1. Modal d'ajout d'un ingrédient */}
       {isAddingIngredient && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <form onSubmit={handleCreateIngredient} className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+          <form onSubmit={handleCreateIngredient} className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
             <div className="p-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Ajouter un nouvel ingrédient</h3>
               
@@ -1286,15 +1366,40 @@ export const IngredientsView: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
+                  <div className="relative">
                     <label className="text-xs font-bold text-slate-500 block mb-1">Unité par défaut</label>
                     <input
                       type="text"
                       placeholder="Ex: g, ml, pièce..."
                       value={newIngUnit}
-                      onChange={(e) => setNewIngUnit(e.target.value)}
+                      onChange={(e) => {
+                        setNewIngUnit(e.target.value);
+                        setShowNewUnitSuggestions(true);
+                      }}
+                      onFocus={() => setShowNewUnitSuggestions(true)}
+                      onBlur={() => {
+                        setTimeout(() => setShowNewUnitSuggestions(false), 200);
+                      }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 placeholder-slate-400 text-slate-855 focus:outline-none focus:border-indigo-400 focus:bg-white transition-all text-xs"
                     />
+                    {showNewUnitSuggestions && newIngUnitesSuggerees.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-36 overflow-y-auto p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                        {newIngUnitesSuggerees.map((u) => (
+                          <button
+                            key={u}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setNewIngUnit(u);
+                              setShowNewUnitSuggestions(false);
+                            }}
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-indigo-50 hover:text-indigo-650 text-indigo-750 font-bold transition-all cursor-pointer flex justify-between items-center"
+                          >
+                            <span>{u}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1330,7 +1435,7 @@ export const IngredientsView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
                 >
                   Créer l'ingrédient
                 </button>
@@ -1443,7 +1548,7 @@ export const IngredientsView: React.FC = () => {
                 </button>
                 <button
                   onClick={() => performEditUnit(unitToEdit.oldUnit, unitToEdit.newUnit)}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
                 >
                   Appliquer les modifications
                 </button>
@@ -1513,7 +1618,7 @@ export const IngredientsView: React.FC = () => {
                         setIsUnitInListe(false);
                         setIsUnitDeletionBlocked(false);
                       }}
-                      className="px-5 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
+                      className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
                     >
                       J'ai compris
                     </button>
@@ -1624,7 +1729,7 @@ export const IngredientsView: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleAddUnitToIngredient(selectedIngForNewUnit, newUnitForIngValue)}
-                  className="px-4 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
                 >
                   Associer l'unité
                 </button>
@@ -1663,7 +1768,7 @@ export const IngredientsView: React.FC = () => {
               <div className="flex justify-end">
                 <button
                   onClick={() => setBlockingRecipeModal(null)}
-                  className="px-5 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-200 transition-all cursor-pointer"
                 >
                   J'ai compris
                 </button>

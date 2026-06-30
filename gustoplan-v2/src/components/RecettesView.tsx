@@ -6,7 +6,7 @@ import { Plus, Trash2, Heart, Search, BookOpen, UserMinus, PlusCircle, X, Edit3 
 
 
 export const RecettesView: React.FC = () => {
-  const { user, foyer } = useAuth();
+  const { user, foyer, showToast } = useAuth();
   const [recettes, setRecettes] = useState<Recette[]>([]);
   const [globalIngredients, setGlobalIngredients] = useState<IngredientGlobal[]>([]);
   const [customUnits, setCustomUnits] = useState<string[]>([]);
@@ -95,7 +95,19 @@ export const RecettesView: React.FC = () => {
   };
 
   const handleRemoveIngredient = (index: number) => {
+    const previousIngredients = [...ingredients];
+    const removedIng = ingredients[index];
     setIngredients(ingredients.filter((_, i) => i !== index));
+    if (removedIng) {
+      showToast(`Ingrédient "${removedIng.nom}" retiré de la recette.`, {
+        action: {
+          label: "Annuler",
+          onClick: () => {
+            setIngredients(previousIngredients);
+          }
+        }
+      });
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -240,8 +252,18 @@ export const RecettesView: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (!foyer?.id || !window.confirm("Supprimer cette recette ?")) return;
+    const deletedRecette = recettes.find(r => r.id === id);
+    if (!deletedRecette) return;
     try {
       await deleteRecette(foyer.id, id);
+      showToast(`Recette "${deletedRecette.titre}" supprimée.`, {
+        action: {
+          label: "Annuler",
+          onClick: async () => {
+            await saveRecette(foyer.id, deletedRecette);
+          }
+        }
+      });
     } catch (err) {
       console.error(err);
     }

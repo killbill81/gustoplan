@@ -5,6 +5,18 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { getUserProfile, createUserProfile, getFoyer } from "../services/db";
 import { UserProfile, Foyer } from "../types";
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void | Promise<void>;
+}
+
+export interface ToastMessage {
+  id: string;
+  message: string;
+  action?: ToastAction;
+  duration?: number;
+}
+
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
@@ -12,6 +24,11 @@ interface AuthContextType {
   loading: boolean;
   refreshFoyer: () => Promise<void>;
   logout: () => Promise<void>;
+  toast: ToastMessage | null;
+  showToast: (message: string, options?: { action?: ToastAction; duration?: number }) => void;
+  hideToast: () => void;
+  lastUndoAction: ToastAction | null;
+  setLastUndoAction: React.Dispatch<React.SetStateAction<ToastAction | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +38,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [foyer, setFoyer] = useState<Foyer | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [lastUndoAction, setLastUndoAction] = useState<ToastAction | null>(null);
+
+  const hideToast = () => setToast(null);
+
+  const showToast = (message: string, options?: { action?: ToastAction; duration?: number }) => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToast({
+      id,
+      message,
+      action: options?.action,
+      duration: options?.duration ?? 5000
+    });
+    if (options?.action) {
+      setLastUndoAction(options.action);
+    }
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, toast.duration ?? 5000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const refreshFoyer = async () => {
     if (userProfile?.foyerId) {
@@ -99,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, foyer, loading, refreshFoyer, logout }}>
+    <AuthContext.Provider value={{ user, userProfile, foyer, loading, refreshFoyer, logout, toast, showToast, hideToast, lastUndoAction, setLastUndoAction }}>
       {children}
     </AuthContext.Provider>
   );

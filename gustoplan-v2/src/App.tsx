@@ -7,13 +7,13 @@ import { RecettesView } from "./components/RecettesView";
 import { IngredientsView } from "./components/IngredientsView";
 import { 
   Calendar, ShoppingCart, BookOpen, LogOut, User, ChefHat, Info, Tag,
-  Cloud, CloudOff, Loader2, Copy, Check, X
+  Cloud, CloudOff, Loader2, Copy, Check, X, RotateCcw
 } from "lucide-react";
 import { subscribeDbState, quitFoyer } from "./services/db";
 import "./App.css";
 
 const AppContent: React.FC = () => {
-  const { user, foyer, loading, logout } = useAuth();
+  const { user, foyer, loading, logout, toast, hideToast, lastUndoAction, setLastUndoAction } = useAuth();
   const [activeTab, setActiveTab] = useState<"planning" | "liste" | "recettes" | "ingredients">("planning");
   const [dbState, setDbState] = useState<"idle" | "saving">("idle");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -343,6 +343,55 @@ const AppContent: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      {/* ================= TOAST / UNDO BANNER ================= */}
+      {toast && (
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[9999] w-full max-w-sm px-4 animate-in slide-in-from-bottom duration-300">
+          <div className="bg-slate-900/95 text-slate-100 backdrop-blur-md border border-slate-800 shadow-2xl rounded-2xl p-4 flex items-center justify-between gap-4">
+            <span className="text-xs font-semibold leading-relaxed flex-grow">
+              {toast.message}
+            </span>
+            <div className="flex items-center gap-2.5 shrink-0">
+              {toast.action && (
+                <button
+                  onClick={async () => {
+                    if (toast.action) {
+                      await toast.action.onClick();
+                    }
+                    setLastUndoAction(null);
+                    hideToast();
+                  }}
+                  className="text-orange-400 hover:text-orange-300 font-black uppercase text-xs tracking-wider transition-all active:scale-95 px-3 py-1.5 bg-white/5 rounded-lg hover:bg-white/10 cursor-pointer"
+                >
+                  {toast.action.label}
+                </button>
+              )}
+              <button
+                onClick={hideToast}
+                className="text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
+                title="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ================= BOUTON D'ANNULATION FLOTTANT (UNDO) ================= */}
+      {lastUndoAction && (
+        <button
+          onClick={async () => {
+            if (lastUndoAction) {
+              await lastUndoAction.onClick();
+            }
+            setLastUndoAction(null);
+            hideToast();
+          }}
+          className="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-[9999] w-14 h-14 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center shadow-xl shadow-orange-500/30 border border-orange-400/20 active:scale-95 hover:scale-110 transition-all cursor-pointer animate-in zoom-in duration-200"
+          title="Annuler la dernière action (Retour en arrière)"
+        >
+          <RotateCcw className="w-6 h-6 animate-pulse" />
+        </button>
       )}
 
     </div>
