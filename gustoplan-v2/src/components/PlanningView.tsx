@@ -22,6 +22,7 @@ import {
   Cloud, CloudOff, Loader2
 } from "lucide-react";
 import { ListeView } from "./ListeView";
+import { RecipeEditModal } from "./RecipeEditModal";
 
 const LISTE_JOURS_REF = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 
@@ -438,6 +439,8 @@ const DraggablePlannedMeal: React.FC<DraggablePlannedMealProps> = ({
           </span>
         )}
       </div>
+
+
 
       <div 
         className="flex items-center justify-center gap-1 border-t border-slate-100 pt-1.5 text-slate-400"
@@ -1350,81 +1353,13 @@ export const PlanningView: React.FC = () => {
         ) : null}
       </DragOverlay>
 
-      {previewRecipe && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer" onClick={() => setPreviewRecipe(null)}>
-          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md max-h-[85vh] flex flex-col p-6 shadow-2xl overflow-hidden cursor-default text-slate-800" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-              <div>
-                <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-50 border border-indigo-150 text-indigo-750">
-                  {previewRecipe.categorie}
-                </span>
-                <h3 className="text-lg font-bold text-slate-800 capitalize mt-1.5 leading-tight">
-                  {previewRecipe.titre}
-                </h3>
-              </div>
-              <button
-                onClick={() => setPreviewRecipe(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Corps */}
-            <div className="flex-grow overflow-y-auto space-y-4 pr-1">
-              {previewRecipe.imageUrl && (
-                <div className="w-full h-44 rounded-2xl overflow-hidden border border-slate-150 shadow-xs">
-                  <img src={previewRecipe.imageUrl} alt={previewRecipe.titre} className="w-full h-full object-cover" />
-                </div>
-              )}
-
-              <div>
-                <h4 className="text-3xs uppercase tracking-widest font-black text-slate-500 mb-2">
-                  Portions par défaut
-                </h4>
-                <div className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold">
-                  <Users className="w-4 h-4 text-indigo-550" />
-                  <span>{previewRecipe.portionsDefaut} personnes</span>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-100 pt-4">
-                <h4 className="text-3xs uppercase tracking-widest font-black text-slate-500 mb-3">
-                  Ingrédients requis
-                </h4>
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 space-y-2">
-                  {previewRecipe.ingredients && previewRecipe.ingredients.length > 0 ? (
-                    previewRecipe.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-xs py-1.5 border-b border-slate-100 last:border-b-0">
-                        <span className="capitalize text-slate-700 font-medium">{ing.nom}</span>
-                        <span className="text-indigo-650 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-150">
-                          {ing.quantite > 0 ? `${ing.quantite} ` : ""}{ing.unite}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-xs text-slate-500 italic text-center py-4">
-                      Aucun ingrédient renseigné pour cette recette.
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-slate-100 pt-4 mt-4 flex">
-              <button
-                onClick={() => setPreviewRecipe(null)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-all text-xs cursor-pointer"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Rendu de la modal d'édition/création réutilisable */}
+      <RecipeEditModal
+        isOpen={previewRecipe !== null}
+        onClose={() => setPreviewRecipe(null)}
+        recipe={previewRecipe}
+        recettes={recettes}
+      />
     </DndContext>
   );
 };
