@@ -115,9 +115,10 @@ export const CONFIG_COULEURS_JOURS: { [key: string]: ColorConfig } = {
 interface DraggableRecipeProps {
   recette: Recette;
   onToggleFavori?: (recette: Recette) => void;
+  onShowDetails?: (recette: Recette) => void;
 }
 
-const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavori }) => {
+const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavori, onShowDetails }) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `recipe_${recette.id}`,
     data: { recette }
@@ -142,7 +143,7 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
       </div>
 
       <div className="flex-grow min-w-0">
-        {/* Première ligne : Catégorie à gauche, Favori à droite */}
+        {/* Première ligne : Catégorie à gauche, Actions (Détails & Favori) à droite */}
         <div className="flex justify-between items-center gap-1">
           <span className={`text-[9.5px] uppercase tracking-wider font-semibold ${
             recette.categorie === "entree" 
@@ -153,28 +154,53 @@ const DraggableRecipe: React.FC<DraggableRecipeProps> = ({ recette, onToggleFavo
           }`}>
             {recette.categorie}
           </span>
-          <button
-            type="button"
-            onMouseDown={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              if (onToggleFavori) {
-                onToggleFavori(recette);
-              }
-            }}
-            className="p-1 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer"
-            title={recette.favori ? "Retirer des favoris" : "Ajouter aux favoris"}
-          >
-            <Heart 
-              className={`w-3.5 h-3.5 transition-all ${
-                recette.favori 
-                  ? "fill-amber-400 text-amber-400 scale-110" 
-                  : "text-slate-350 hover:text-amber-400"
-              }`} 
-            />
-          </button>
+          <div className="flex items-center gap-1">
+            {onShowDetails && (() => {
+              const hasIngredients = recette.ingredients && recette.ingredients.length > 0;
+              return (
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onShowDetails(recette);
+                  }}
+                  className={`p-1 rounded-lg transition-colors shrink-0 cursor-pointer ${
+                    hasIngredients
+                      ? "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                      : "text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                  }`}
+                  title={hasIngredients ? "Ingrédients renseignés - Modifier" : "Aucun ingrédient renseigné - Modifier"}
+                >
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+              );
+            })()}
+            <button
+              type="button"
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (onToggleFavori) {
+                  onToggleFavori(recette);
+                }
+              }}
+              className="p-1 hover:bg-slate-100 rounded-lg transition-colors shrink-0 cursor-pointer"
+              title={recette.favori ? "Retirer des favoris" : "Ajouter aux favoris"}
+            >
+              <Heart 
+                className={`w-3.5 h-3.5 transition-all ${
+                  recette.favori 
+                    ? "fill-amber-400 text-amber-400 scale-110" 
+                    : "text-slate-350 hover:text-amber-400"
+                }`} 
+              />
+            </button>
+          </div>
         </div>
         {/* Deuxième ligne : Titre de la recette à gauche (plus grand et en gras), Portions à droite */}
         <div className="flex items-start justify-between mt-1 gap-2">
@@ -1080,6 +1106,7 @@ export const PlanningView: React.FC = () => {
                     key={recette.id} 
                     recette={recette} 
                     onToggleFavori={handleToggleFavori} 
+                    onShowDetails={setPreviewRecipe}
                   />
                 ))}
                 {sortedRecettesPanneau.length === 0 && (
