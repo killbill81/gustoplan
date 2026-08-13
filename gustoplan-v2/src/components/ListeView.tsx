@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal, subscribeCustomUnits } from "../services/db";
+import { subscribeListeCourses, saveListeCourses, subscribeRecettes, subscribeRayonsIngredients, subscribeIngredientsGlobal, IngredientGlobal, saveIngredientGlobal, subscribeCustomUnits, subscribeCustomCategories } from "../services/db";
 import { useAuth } from "../contexts/AuthContext";
 import { ElementListeCourses, Recette } from "../types";
 import { ShoppingCart, Plus, Trash2, CheckCircle2, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Info, Copy, PlusCircle } from "lucide-react";
 import { devinerRayon } from "../services/courseEngine";
+
+const DEFAULT_RAYONS = [
+  "Fruits & Légumes",
+  "Boucherie & Poissonnerie",
+  "Frais & Crèmerie",
+  "Épicerie",
+  "Autre / Divers"
+];
 
 
 interface ListeViewProps {
@@ -35,6 +43,8 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     action: () => void;
   } | null>(null);
 
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+
   useEffect(() => {
     if (!foyer?.id || !user?.uid) return;
     const unsubscribe = subscribeListeCourses(foyer.id, (loadedElements) => {
@@ -44,14 +54,34 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
     const unsubRayons = subscribeRayonsIngredients(foyer.id, setCustomRayons);
     const unsubIngredients = subscribeIngredientsGlobal(user.uid, setGlobalIngredients);
     const unsubCustomUnits = subscribeCustomUnits(foyer.id, setCustomUnits);
+    const unsubCategories = subscribeCustomCategories(foyer.id, setCustomCategories);
     return () => {
       unsubscribe();
       unsubRecettes();
       unsubRayons();
       unsubIngredients();
       unsubCustomUnits();
+      unsubCategories();
     };
   }, [foyer?.id, user?.uid]);
+
+  const getCategoryIndex = (catName: string) => {
+    const catLower = catName.trim().toLowerCase();
+    const categoriesList = customCategories.length > 0 ? customCategories : DEFAULT_RAYONS;
+    const idx = categoriesList.findIndex(c => c.trim().toLowerCase() === catLower);
+    return idx !== -1 ? idx : 999;
+  };
+
+  const sortRayonsKeys = (keys: string[]) => {
+    return [...keys].sort((a, b) => {
+      const idxA = getCategoryIndex(a);
+      const idxB = getCategoryIndex(b);
+      if (idxA !== idxB) {
+        return idxA - idxB;
+      }
+      return a.localeCompare(b, "fr", { sensitivity: "base" });
+    });
+  };
 
   const resolveCategoryForIngredient = (name: string): string => {
     const cleanName = name.trim().toLowerCase();
@@ -376,13 +406,13 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
       rayonsGroupesExport[itemRayon].push(item);
     });
 
-    Object.keys(rayonsGroupesExport).forEach((rayonName) => {
+    sortRayonsKeys(Object.keys(rayonsGroupesExport)).forEach((rayonName) => {
       text += `🛒 ${rayonName.toUpperCase()}\n`;
       rayonsGroupesExport[rayonName].forEach((item) => {
         const qtyText = item.quantite > 0 ? ` : ${item.quantite} ${item.unite}` : "";
         let sourcesText = "";
         if (item.sources && item.sources.length > 0) {
-          const srcDetails = item.sources.map(src => `${src.jour} ${src.repas} - ${src.recetteTitre}`).join(" | ");
+          const srcDetails = item.sources.map(src => `${src.jour} ${src.repas} - ${src.recetteTitre}${src.portions ? ` (${src.portions}P)` : ""}`).join(" | ");
           sourcesText = ` (${srcDetails})`;
         }
         text += `- ${item.nom}${qtyText}${sourcesText}\n`;
@@ -561,7 +591,7 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
       {/* Liste des ingrédients par rayons */}
       <div className="flex-grow overflow-y-auto space-y-5 pb-20 md:pb-6">
         {/* Articles Non Cochés */}
-        {Object.keys(rayonsGroupes).map((rayonName) => {
+        {sortRayonsKeys(Object.keys(rayonsGroupes)).map((rayonName) => {
           const colors = getRayonColors(rayonName);
           return (
             <div key={rayonName} className={`border rounded-2xl p-4 transition-all ${colors.bgCard}`}>
@@ -658,7 +688,10 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                       <div className="mt-1.5 pl-6.5 text-[10px] text-slate-500 flex flex-col gap-0.5 border-t border-slate-50 pt-1.5 w-full">
                         {item.sources.map((src, idx) => (
                           <div key={idx} className="capitalize flex items-center justify-between">
-                            <span>• {src.jour} {src.repas} - <span className="font-semibold text-slate-650">{src.recetteTitre}</span></span>
+                            <span>
+                              • {src.jour} {src.repas} - <span className="font-semibold text-slate-650">{src.recetteTitre}</span>
+                              {src.portions ? <span className="font-bold text-indigo-600/90 ml-1">({src.portions}P)</span> : null}
+                            </span>
                             <span className="text-indigo-650 font-bold ml-1">({src.quantite} {src.unite})</span>
                           </div>
                         ))}
@@ -671,7 +704,9 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                         {item.sources.map((src, idx) => (
                           <div key={idx} className="flex justify-between items-center capitalize">
                             <span>• {src.jour} {src.repas}</span>
-                            <span className="font-semibold text-slate-700 truncate max-w-[120px]" title={src.recetteTitre}>{src.recetteTitre}</span>
+                            <span className="font-semibold text-slate-700 truncate max-w-[140px]" title={src.recetteTitre}>
+                              {src.recetteTitre} {src.portions ? `(${src.portions}P)` : ""}
+                            </span>
                             <span className="text-indigo-600 font-bold">({src.quantite} {src.unite})</span>
                           </div>
                         ))}
@@ -741,7 +776,10 @@ export const ListeView: React.FC<ListeViewProps> = ({ onCollapse, context = "lis
                     <div className="mt-1.5 pl-6.5 text-[10px] text-slate-400 flex flex-col gap-0.5 border-t border-slate-200/50 pt-1.5 w-full line-through">
                       {item.sources.map((src, idx) => (
                         <div key={idx} className="capitalize flex items-center justify-between">
-                          <span>• {src.jour} {src.repas} - <span className="font-semibold">{src.recetteTitre}</span></span>
+                          <span>
+                            • {src.jour} {src.repas} - <span className="font-semibold">{src.recetteTitre}</span>
+                            {src.portions ? <span className="font-bold ml-1">({src.portions}P)</span> : null}
+                          </span>
                           <span className="ml-1">({src.quantite} {src.unite})</span>
                         </div>
                       ))}

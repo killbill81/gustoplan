@@ -126,7 +126,8 @@ export function genererListeCourses(
                 jour: jour,
                 repas: repasKey as "midi" | "soir",
                 quantite: Math.round(quantiteAjustee * 100) / 100,
-                unite: ing.unite
+                unite: ing.unite,
+                portions: repas.portions || 1
               };
 
               if (ingredientsMap[cle]) {

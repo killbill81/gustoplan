@@ -57,6 +57,7 @@ export interface ElementSourceRecette {
   repas: 'midi' | 'soir';
   quantite: number;
   unite: string;
+  portions?: number;
 }
 
 export interface ElementListeCourses {
