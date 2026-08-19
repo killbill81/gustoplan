@@ -72,3 +72,9 @@ dist - Copie/
 
 # dataconnect generated files
 .dataconnect
+
+# Secret Keys & Credentials
+*service-account*.json
+*-key.json
+*.pem
+NETTOYAGE TABLES  + SAUV BDD COMPLETE/
